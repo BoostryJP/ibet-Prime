@@ -1,3 +1,6 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -72,6 +75,10 @@ class TestRetrieveLedgerHistory:
         async_db.add(_token)
 
         _issuer_account = Account()
+        _issuer_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _issuer_account.eoa_password = E2EEUtils.encrypt("password")
+        _issuer_account.rsa_status = AccountRsaStatus.UNSET.value
+        _issuer_account.is_deleted = False
         _issuer_account.issuer_address = issuer_address
         async_db.add(_issuer_account)
 
@@ -328,6 +335,10 @@ class TestRetrieveLedgerHistory:
         async_db.add(_token)
 
         _issuer_account = Account()
+        _issuer_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _issuer_account.eoa_password = E2EEUtils.encrypt("password")
+        _issuer_account.rsa_status = AccountRsaStatus.UNSET.value
+        _issuer_account.is_deleted = False
         _issuer_account.issuer_address = issuer_address
         async_db.add(_issuer_account)
 
@@ -583,6 +594,10 @@ class TestRetrieveLedgerHistory:
         async_db.add(_token)
 
         _issuer_account = Account()
+        _issuer_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _issuer_account.eoa_password = E2EEUtils.encrypt("password")
+        _issuer_account.rsa_status = AccountRsaStatus.UNSET.value
+        _issuer_account.is_deleted = False
         _issuer_account.issuer_address = issuer_address
         async_db.add(_issuer_account)
 
@@ -869,6 +884,10 @@ class TestRetrieveLedgerHistory:
         async_db.add(_token)
 
         _issuer_account = Account()
+        _issuer_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _issuer_account.eoa_password = E2EEUtils.encrypt("password")
+        _issuer_account.rsa_status = AccountRsaStatus.UNSET.value
+        _issuer_account.is_deleted = False
         _issuer_account.issuer_address = issuer_address
         async_db.add(_issuer_account)
 
@@ -1192,6 +1211,10 @@ class TestRetrieveLedgerHistory:
         async_db.add(_token)
 
         _issuer_account = Account()
+        _issuer_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _issuer_account.eoa_password = E2EEUtils.encrypt("password")
+        _issuer_account.rsa_status = AccountRsaStatus.UNSET.value
+        _issuer_account.is_deleted = False
         _issuer_account.issuer_address = issuer_address
         async_db.add(_issuer_account)
 
@@ -1510,6 +1533,10 @@ class TestRetrieveLedgerHistory:
         async_db.add(_token)
 
         _issuer_account = Account()
+        _issuer_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _issuer_account.eoa_password = E2EEUtils.encrypt("password")
+        _issuer_account.rsa_status = AccountRsaStatus.UNSET.value
+        _issuer_account.is_deleted = False
         _issuer_account.issuer_address = issuer_address
         async_db.add(_issuer_account)
 
@@ -1898,6 +1925,10 @@ class TestRetrieveLedgerHistory:
         async_db.add(_token)
 
         _issuer_account = Account()
+        _issuer_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _issuer_account.eoa_password = E2EEUtils.encrypt("password")
+        _issuer_account.rsa_status = AccountRsaStatus.UNSET.value
+        _issuer_account.is_deleted = False
         _issuer_account.issuer_address = issuer_address
         async_db.add(_issuer_account)
 

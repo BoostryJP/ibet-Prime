@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -23,7 +25,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import Account
 from app.model.ibet import IbetStraightBondContract
 from app.utils.e2ee_utils import E2EEUtils
 from config import EOA_PASSWORD_PATTERN_MSG
@@ -49,6 +51,7 @@ class TestChangeIssuerEOAPassword:
 
         # prepare data
         account = Account()
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _old_keyfile
         account.eoa_password = E2EEUtils.encrypt(_old_password)
@@ -72,8 +75,6 @@ class TestChangeIssuerEOAPassword:
         _account = (await async_db.scalars(select(Account).limit(1))).first()
         assert _account is not None
         _account_keyfile = _account.keyfile
-        assert _account_keyfile is not None
-        assert _account.eoa_password is not None
         _account_eoa_password = E2EEUtils.decrypt(_account.eoa_password)
         assert _account_keyfile != _old_keyfile
         assert _account_eoa_password == _new_password
@@ -240,6 +241,7 @@ class TestChangeIssuerEOAPassword:
 
         # prepare data
         account = Account()
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _old_keyfile
         account.eoa_password = E2EEUtils.encrypt(_old_password)
@@ -276,6 +278,7 @@ class TestChangeIssuerEOAPassword:
 
         # prepare data
         account = Account()
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _old_keyfile
         account.eoa_password = E2EEUtils.encrypt(_old_password)

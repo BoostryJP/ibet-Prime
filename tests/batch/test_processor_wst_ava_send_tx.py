@@ -1,3 +1,6 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -130,6 +133,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -192,6 +198,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -265,6 +274,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -336,6 +348,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -414,6 +429,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -485,6 +503,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -554,6 +575,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -623,6 +647,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -695,6 +722,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -767,6 +797,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -842,6 +875,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -905,6 +941,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)
@@ -964,6 +1003,9 @@ class TestProcessor:
 
         # Prepare test data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         async_db.add(account)

@@ -601,8 +601,6 @@ async def force_lock(
         raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
-    if _account.keyfile is None:
-        raise InvalidParameterError("keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
@@ -698,8 +696,6 @@ async def force_unlock(
         raise InvalidParameterError("account_address is not a valid address")
 
     # Get private key
-    if _account.keyfile is None:
-        raise InvalidParameterError("keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )

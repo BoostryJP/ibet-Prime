@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -24,7 +26,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
+from app.model.db import Account, AccountRsaKeyTemporary
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_generate_rsa_key import Processor
 from tests.account_config import default_eth_account
@@ -73,6 +75,7 @@ class TestProcessor:
         # prepare data
         # data:CREATING
         account_1 = Account()
+        account_1.is_deleted = False
         account_1.issuer_address = issuer_address_1
         account_1.keyfile = keyfile_1
         account_1.eoa_password = eoa_password_1
@@ -82,6 +85,7 @@ class TestProcessor:
 
         # data:CHANGING
         account_2 = Account()
+        account_2.is_deleted = False
         account_2.issuer_address = issuer_address_2
         account_2.keyfile = keyfile_2
         account_2.eoa_password = eoa_password_2
@@ -100,6 +104,7 @@ class TestProcessor:
 
         # data:UNSET(Non-Target)
         account_3 = Account()
+        account_3.is_deleted = False
         account_3.issuer_address = issuer_address_3
         account_3.keyfile = keyfile_3
         account_3.eoa_password = eoa_password_3
@@ -108,6 +113,7 @@ class TestProcessor:
 
         # data:SET(Non-Target)
         account_4 = Account()
+        account_4.is_deleted = False
         account_4.issuer_address = issuer_address_4
         account_4.keyfile = keyfile_4
         account_4.eoa_password = eoa_password_4

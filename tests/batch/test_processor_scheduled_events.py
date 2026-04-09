@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -74,6 +76,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -226,6 +230,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -379,6 +385,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -516,8 +524,13 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
-        account.eoa_password = E2EEUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt(
+            "incorrect_password"
+        )  # incorrect password to cause decryption failure
         async_db.add(account)
 
         # prepare data : ScheduledEvents
@@ -579,6 +592,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -654,6 +669,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -735,6 +752,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -826,6 +845,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile

@@ -8728,13 +8728,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / 
-            Contract Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400Model'
         '404':
           description: Not Found Error
           content:
@@ -8807,13 +8800,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / 
-            Contract Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400Model'
         '404':
           description: Not Found Error
           content:
@@ -8886,13 +8872,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IbetWSTTransactionResponse'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / 
-            Contract Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error400Model'
         '404':
           description: Not Found Error
           content:
@@ -13793,44 +13772,6 @@ components:
         - detail
       title: ERC20InsufficientAllowanceErrorResponse
       description: Insufficient allowance for ERC20 token transfer
-    Error400MetaModel:
-      properties:
-        code:
-          type: integer
-          title: Code
-          examples:
-            - 0
-            - 1
-            - 2
-            - 100001
-        title:
-          type: string
-          title: Title
-          examples:
-            - InvalidParameterError
-            - SendTransactionError
-            - ContractRevertError
-      type: object
-      required:
-        - code
-        - title
-      title: Error400MetaModel
-    Error400Model:
-      properties:
-        meta:
-          $ref: '#/components/schemas/Error400MetaModel'
-        detail:
-          type: string
-          title: Detail
-          examples:
-            - this token is temporarily unavailable
-            - failed to register token address token list
-            - The address has already been registered.
-      type: object
-      required:
-        - meta
-        - detail
-      title: Error400Model
     Error401MetaModel:
       properties:
         code:

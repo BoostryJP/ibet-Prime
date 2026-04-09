@@ -1,3 +1,6 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -22,7 +25,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import Account
 from tests.account_config import default_eth_account
 
 
@@ -43,6 +46,7 @@ class TestDeleteIssuer:
 
         # prepare data
         account = Account()
+        account.eoa_password = E2EEUtils.encrypt("password")
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.rsa_status = AccountRsaStatus.UNSET.value

@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -64,6 +66,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -136,6 +140,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -208,6 +214,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -492,6 +500,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -587,6 +597,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -633,6 +645,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -688,6 +702,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -734,6 +750,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -789,6 +807,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -847,6 +867,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -905,6 +927,8 @@ class TestForceLock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

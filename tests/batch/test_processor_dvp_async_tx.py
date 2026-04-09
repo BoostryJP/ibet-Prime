@@ -111,6 +111,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -179,6 +180,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -272,6 +274,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -407,6 +410,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = "invalid_keyfile"  # type: ignore
         _account.eoa_password = self.issuer_eoa_password
@@ -468,6 +472,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -541,6 +546,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -604,6 +610,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -677,6 +684,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -743,6 +751,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -837,6 +846,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -973,6 +983,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -1045,6 +1056,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -1115,6 +1127,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -1185,6 +1198,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -1255,6 +1269,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password
@@ -1398,6 +1413,7 @@ class TestProcessor:
     ):
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.keyfile = self.issuer_keyfile
         _account.eoa_password = self.issuer_eoa_password

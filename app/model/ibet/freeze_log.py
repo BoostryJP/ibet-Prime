@@ -52,10 +52,6 @@ class FreezeLogContract:
         """
 
         try:
-            if self.log_account.eoa_password is None:
-                raise SendTransactionError("log account eoa_password is not configured")
-            if self.log_account.keyfile is None:
-                raise SendTransactionError("log account keyfile is not configured")
             private_key = decode_keyfile_json(
                 raw_keyfile_json=self.log_account.keyfile,
                 password=E2EEUtils.decrypt(self.log_account.eoa_password).encode(
@@ -101,8 +97,6 @@ class FreezeLogContract:
         """
 
         try:
-            assert self.log_account.eoa_password is not None
-            assert self.log_account.keyfile is not None
             private_key = decode_keyfile_json(
                 raw_keyfile_json=self.log_account.keyfile,
                 password=E2EEUtils.decrypt(self.log_account.eoa_password).encode(

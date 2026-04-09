@@ -1,3 +1,7 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+from tests.account_config import default_eth_account
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -101,6 +105,10 @@ class TestProcessor:
             async_db.add(_tmp_data)
 
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
         async_db.add(_account)
@@ -259,6 +267,10 @@ class TestProcessor:
         async_db.add(_tmp_data)
 
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = None
         async_db.add(_account)

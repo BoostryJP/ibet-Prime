@@ -189,8 +189,13 @@ async def list_all_issued_tokens(
     else:  # DESC
         stmt = stmt.order_by(desc(sort_attr))
 
-    if str(sort_item) != "created":
-        # NOTE: Set secondary sort for consistent results
+    # NOTE: Set secondary sort for consistent results when the primary sort key ties.
+    if str(sort_item) == "created":
+        if request_query.sort_order == 0:  # ASC
+            stmt = stmt.order_by(asc(Token.token_address))
+        else:  # DESC
+            stmt = stmt.order_by(desc(Token.token_address))
+    else:
         stmt = stmt.order_by(desc(Token.created))
 
     # Pagination
@@ -557,7 +562,7 @@ async def get_ibet_wst_whitelist_with_personal_info(
     "/tokens/{token_address}/ibet_wst/whitelists/add",
     operation_id="AddIbetWSTWhitelist",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(400, 404, 422),
+    responses=get_routers_responses(404, 422),
 )
 async def add_ibet_wst_whitelist(
     db: DBAsyncSession,
@@ -601,8 +606,6 @@ async def add_ibet_wst_whitelist(
     )
 
     # Get private key
-    if _account.keyfile is None:
-        raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
@@ -685,7 +688,7 @@ async def add_ibet_wst_whitelist(
     "/tokens/{token_address}/ibet_wst/whitelists/delete",
     operation_id="DeleteIbetWSTWhitelist",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(400, 404, 422),
+    responses=get_routers_responses(404, 422),
 )
 async def delete_ibet_wst_whitelist(
     db: DBAsyncSession,
@@ -728,8 +731,6 @@ async def delete_ibet_wst_whitelist(
     )
 
     # Get private key
-    if _account.keyfile is None:
-        raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=_account.keyfile, password=decrypt_password.encode("utf-8")
     )
@@ -810,7 +811,7 @@ async def delete_ibet_wst_whitelist(
     "/tokens/{token_address}/ibet_wst/positions/force_burn",
     operation_id="ForceBurnIbetWSTPosition",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(400, 404, 422),
+    responses=get_routers_responses(404, 422),
 )
 async def force_burn_ibet_wst_position(
     db: DBAsyncSession,
@@ -854,8 +855,6 @@ async def force_burn_ibet_wst_position(
     )
 
     # Get private key
-    if issuer_account.keyfile is None:
-        raise HTTPException(status_code=400, detail="Keyfile not found")
     private_key = decode_keyfile_json(
         raw_keyfile_json=issuer_account.keyfile,
         password=decrypt_password.encode("utf-8"),

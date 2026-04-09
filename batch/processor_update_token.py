@@ -126,8 +126,6 @@ class Processor:
                         await db_session.commit()
                         continue
 
-                    assert _account.keyfile is not None
-                    assert _account.eoa_password is not None
                     keyfile_json = _account.keyfile
                     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                     private_key = decode_keyfile_json(

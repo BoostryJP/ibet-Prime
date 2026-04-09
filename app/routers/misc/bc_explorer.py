@@ -77,7 +77,6 @@ async def service_list_block_data(
             "block_data": [],
         }
 
-    assert idx_block_data_block_number.latest_block_number is not None
     total = idx_block_data_block_number.latest_block_number + 1
 
     stmt = select(IDXBlockData)

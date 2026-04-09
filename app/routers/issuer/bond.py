@@ -282,10 +282,9 @@ async def _is_ibet_wst_deploy_in_progress(
 
 
 def _decode_private_key(
-    keyfile_json: dict[str, Any] | None,
+    keyfile_json: dict[str, Any],
     decrypt_password: str,
 ) -> bytes:
-    assert keyfile_json is not None
     return decode_keyfile_json(
         raw_keyfile_json=keyfile_json,
         password=decrypt_password.encode("utf-8"),

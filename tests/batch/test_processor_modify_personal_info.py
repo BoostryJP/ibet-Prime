@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -32,7 +34,6 @@ from web3.middleware import ExtraDataToPOAMiddleware
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
-    AccountRsaStatus,
     IDXPersonalInfo,
     PersonalInfoDataSource,
     Token,
@@ -219,6 +220,7 @@ class TestProcessor:
         # prepare data
         # account
         account = Account()
+        account.is_deleted = False
         account.issuer_address = user_1["address"]
         account.keyfile = user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")

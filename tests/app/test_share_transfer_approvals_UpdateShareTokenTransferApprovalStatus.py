@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -85,6 +87,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -222,6 +226,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -360,6 +366,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -496,6 +504,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -771,6 +781,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -807,6 +819,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -843,6 +857,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -888,6 +904,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -934,6 +952,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1000,6 +1020,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1066,6 +1088,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1130,6 +1154,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1194,6 +1220,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1271,6 +1299,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1367,6 +1397,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1481,6 +1513,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1578,6 +1612,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1686,6 +1722,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1782,6 +1820,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1883,6 +1923,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1952,6 +1994,8 @@ class TestUpdateShareTokenTransferApprovalStatus:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")

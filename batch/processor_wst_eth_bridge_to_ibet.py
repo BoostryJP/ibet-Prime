@@ -95,11 +95,6 @@ class EthWSTBridgeToIbetProcessor:
                     )
                     continue
 
-                if issuer.keyfile is None or issuer.eoa_password is None:
-                    LOG.warning(
-                        f"Issuer key data is missing for transaction: id={pending_tx.tx_id}"
-                    )
-                    continue
                 issuer_pk = decode_keyfile_json(
                     raw_keyfile_json=issuer.keyfile,
                     password=E2EEUtils.decrypt(issuer.eoa_password).encode("utf-8"),

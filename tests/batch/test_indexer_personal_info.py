@@ -153,6 +153,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = user_1["rsa_private_key"]
         account.rsa_public_key = user_1["rsa_public_key"]
@@ -218,6 +221,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -307,6 +313,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -428,6 +437,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -597,6 +609,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -821,6 +836,9 @@ class TestProcessor:
 
         # Prepare data : Account(Issuer1)
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address_1
         account.rsa_private_key = issuer_rsa_private_key_1
         account.rsa_public_key = issuer_rsa_public_key_1
@@ -830,6 +848,9 @@ class TestProcessor:
 
         # Prepare data : Account(Issuer2)
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address_2
         account.rsa_private_key = issuer_rsa_private_key_2
         account.rsa_public_key = issuer_rsa_public_key_2
@@ -1046,6 +1067,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -1177,6 +1201,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key

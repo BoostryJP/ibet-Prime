@@ -1,3 +1,7 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+from tests.account_config import default_eth_account
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -104,6 +108,9 @@ class TestProcessor:
         async_db.add(token)
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
         account.issuer_address = self.issuer_address_1
         account.is_deleted = False
         async_db.add(account)
@@ -154,6 +161,9 @@ class TestProcessor:
         async_db.add(token)
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
         account.issuer_address = self.issuer_address_1
         account.is_deleted = True  # Account is deleted
         async_db.add(account)
@@ -230,6 +240,9 @@ class TestProcessor:
         async_db.add(token)
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
         account.issuer_address = self.issuer_address_1
         account.is_deleted = False
         async_db.add(account)
@@ -326,6 +339,9 @@ class TestProcessor:
         async_db.add(token)
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
         account.issuer_address = self.issuer_address_1
         account.is_deleted = False
         async_db.add(account)
@@ -421,6 +437,9 @@ class TestProcessor:
         async_db.add(token)
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
         account.issuer_address = self.issuer_address_1
         account.is_deleted = False
         async_db.add(account)
@@ -516,6 +535,9 @@ class TestProcessor:
         async_db.add(token)
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
         account.issuer_address = self.issuer_address_1
         account.is_deleted = False
         async_db.add(account)
@@ -611,6 +633,9 @@ class TestProcessor:
         async_db.add(token)
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
         account.issuer_address = self.issuer_address_1
         account.is_deleted = False
         async_db.add(account)

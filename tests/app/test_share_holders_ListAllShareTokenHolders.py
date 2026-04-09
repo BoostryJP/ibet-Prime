@@ -1,3 +1,6 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -56,6 +59,10 @@ class TestListAllShareTokenHolders:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -95,6 +102,10 @@ class TestListAllShareTokenHolders:
 
         # prepare data: Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -223,6 +234,10 @@ class TestListAllShareTokenHolders:
 
         # prepare data: Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -363,6 +378,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -632,6 +651,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -756,6 +779,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -925,6 +952,10 @@ class TestListAllShareTokenHolders:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1111,6 +1142,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1316,6 +1351,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1548,6 +1587,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1780,6 +1823,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1985,6 +2032,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2217,6 +2268,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2449,6 +2504,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2654,6 +2713,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2887,6 +2950,10 @@ class TestListAllShareTokenHolders:
         _account_address_4 = "0x1CBd3b2770909D4e10f157cABC84C7264073C9Ec"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3157,6 +3224,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3365,6 +3436,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3600,6 +3675,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3833,6 +3912,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4036,6 +4119,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4266,6 +4353,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4469,6 +4560,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4729,6 +4824,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4989,6 +5088,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -5249,6 +5352,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -5509,6 +5616,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -5769,6 +5880,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6030,6 +6145,10 @@ class TestListAllShareTokenHolders:
         _account_address_4 = "0x917eFFaC072dcda308e2337636f562D0A96F42eA"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6330,6 +6449,10 @@ class TestListAllShareTokenHolders:
         _account_address_4 = "0x917eFFaC072dcda308e2337636f562D0A96F42eA"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6629,6 +6752,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6859,6 +6986,10 @@ class TestListAllShareTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -7082,6 +7213,10 @@ class TestListAllShareTokenHolders:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -7120,6 +7255,10 @@ class TestListAllShareTokenHolders:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
