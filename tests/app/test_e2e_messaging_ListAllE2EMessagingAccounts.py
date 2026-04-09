@@ -59,6 +59,8 @@ class TestListAllE2EMessagingAccounts:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
+        _account.keyfile = {}
+        _account.eoa_password = "password"
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         async_db.add(_account)
@@ -66,6 +68,9 @@ class TestListAllE2EMessagingAccounts:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
@@ -98,17 +103,24 @@ class TestListAllE2EMessagingAccounts:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
+        _account.keyfile = {}
+        _account.eoa_password = "password"
         async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
 
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000001"
+        _account.keyfile = {}
+        _account.eoa_password = "password"
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         _account.is_deleted = True
@@ -116,6 +128,8 @@ class TestListAllE2EMessagingAccounts:
 
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000002"
+        _account.keyfile = {}
+        _account.eoa_password = "password"
         _account.rsa_key_generate_interval = 3
         _account.rsa_generation = 4
         async_db.add(_account)
@@ -123,17 +137,25 @@ class TestListAllE2EMessagingAccounts:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000002"
         _rsa_key.rsa_public_key = "rsa_public_key_2_1"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
 
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000003"
+        _account.keyfile = {}
+        _account.eoa_password = "password"
         async_db.add(_account)
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_1"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
@@ -141,6 +163,9 @@ class TestListAllE2EMessagingAccounts:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_2"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
@@ -148,6 +173,9 @@ class TestListAllE2EMessagingAccounts:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000003"
         _rsa_key.rsa_public_key = "rsa_public_key_3_3"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)

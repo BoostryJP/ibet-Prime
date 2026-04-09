@@ -157,8 +157,8 @@ async def create_e2e_messaging_account(
     _account.account_address = addr
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
-    _account.rsa_key_generate_interval = data.rsa_key_generate_interval
-    _account.rsa_generation = data.rsa_generation
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 24
+    _account.rsa_generation = data.rsa_generation or 7
     _account.is_deleted = False
     db.add(_account)
 
@@ -396,8 +396,8 @@ async def update_e2e_messaging_account_rsa_key(
         )
     ).first()
 
-    _account.rsa_key_generate_interval = data.rsa_key_generate_interval
-    _account.rsa_generation = data.rsa_generation
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 24
+    _account.rsa_generation = data.rsa_generation or 7
     await db.merge(_account)
     await db.commit()
 
@@ -434,7 +434,7 @@ async def change_e2e_messaging_account_eoa_password(
             .limit(1)
         )
     ).first()
-    if _account is None or _account.eoa_password is None or _account.keyfile is None:
+    if _account is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging account is not exists"
         )
@@ -515,11 +515,7 @@ async def change_e2e_messaging_account_rsa_passphrase(
             .limit(1)
         )
     ).first()
-    if (
-        _rsa_key is None
-        or _rsa_key.rsa_passphrase is None
-        or _rsa_key.rsa_private_key is None
-    ):
+    if _rsa_key is None:
         raise HTTPException(
             status_code=404, detail="e2e messaging rsa key is not exists"
         )

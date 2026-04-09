@@ -100,18 +100,22 @@ class AvaBridgeEventViewer:
         if wst_address is None:
             raise ValueError("IbetWST address is not configured for avalanche")
 
+        # Initialize issuer address
         self.issuer_address = token.issuer_address
-        self.ibet_token_address = token.token_address
-        token_abi = cast(Any, token).abi
 
+        # Initialize ibet token address
+        self.ibet_token_address = token.token_address
+
+        # Initialize ibet token event view
         ibet_token_contract = IbetWeb3.eth.contract(
             address=to_checksum_address(token.token_address),
-            abi=token_abi,
+            abi=token.abi,
         )
         self.ibet_event_view = AsyncContractEventsView(
             address=token.token_address, contract_events=ibet_token_contract.events
         )
 
+        # Initialize IbetWST event view
         wst_contract = AvaAsyncContractUtils.get_contract(
             contract_name="AuthIbetWST", contract_address=wst_address
         )
@@ -121,8 +125,8 @@ class AvaBridgeEventViewer:
 
     async def get_ibet_event_logs(
         self, event_name: str, block_from: int, block_to: int
-    ) -> Sequence[EventLog]:
-        logs = await AsyncContractUtils.get_event_logs(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    ) -> list[EventLog]:
+        logs = await AsyncContractUtils.get_event_logs(
             contract=self.ibet_event_view,
             event=event_name,
             block_from=block_from,
@@ -132,8 +136,8 @@ class AvaBridgeEventViewer:
 
     async def get_wst_event_logs(
         self, event_name: str, block_from: int, block_to: int
-    ) -> Sequence[EventLog]:
-        logs = await AvaAsyncContractUtils.get_event_logs(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    ) -> list[EventLog]:
+        logs = await AvaAsyncContractUtils.get_event_logs(
             contract=self.wst_event_view,
             event=event_name,
             block_from=block_from,
@@ -326,7 +330,7 @@ class AvaWSTBridgeMonitoringProcessor:
             await db_session.close()
 
     @staticmethod
-    async def get_latest_block_number(network: Literal["avalanche", "ibetfin"]):
+    async def get_latest_block_number(network: Literal["avalanche", "ibetfin"]) -> int:
         """
         Get the latest block number.
         """
@@ -392,7 +396,7 @@ class AvaWSTBridgeMonitoringProcessor:
                 event_name="Lock", block_from=block_from, block_to=block_to
             )
             for lock_event in lock_events:
-                args = cast(dict[str, Any], lock_event["args"])
+                args = lock_event["args"]
                 # Filter out events that do not match the issuer address
                 if args["lockAddress"] != bridge_event_viewer.issuer_address:
                     continue
@@ -417,18 +421,13 @@ class AvaWSTBridgeMonitoringProcessor:
                         f"Cannot find issuer for IbetWST address: {wst_address}"
                     )
                     continue
-
-                issuer_keyfile = cast(Any, issuer).keyfile
-                if issuer_keyfile is None or issuer.eoa_password is None:
+                if issuer.keyfile is None or issuer.eoa_password is None:
                     LOG.warning(
                         f"Issuer key data is missing for IbetWST address: {wst_address}"
                     )
                     continue
-
-                keyfile = cast(dict[str, Any], issuer_keyfile)
-
                 issuer_pk = decode_keyfile_json(
-                    raw_keyfile_json=keyfile,
+                    raw_keyfile_json=issuer.keyfile,
                     password=E2EEUtils.decrypt(issuer.eoa_password).encode("utf-8"),
                 )
 
@@ -462,9 +461,7 @@ class AvaWSTBridgeMonitoringProcessor:
                             to_address=args["accountAddress"],
                             value=args["value"],
                         )
-                        if AVA_MASTER_ACCOUNT_ADDRESS is None:
-                            LOG.warning("AVA_MASTER_ACCOUNT_ADDRESS is not configured")
-                            continue
+                        assert AVA_MASTER_ACCOUNT_ADDRESS is not None
                         wst_tx.tx_sender = AVA_MASTER_ACCOUNT_ADDRESS
                         wst_tx.authorizer = issuer.issuer_address
                         wst_tx.authorization = IbetWSTAuthorization(
@@ -488,13 +485,13 @@ class AvaWSTBridgeMonitoringProcessor:
         """
         Process burn events from IbetWST and issue unlock transactions for ibet tokens.
         """
-        for _, bridge_event_viewer in self.wst_list.items():
+        for bridge_event_viewer in self.wst_list.values():
             # Get Burn events from IbetWST
             burn_events = await bridge_event_viewer.get_wst_event_logs(
                 event_name="Burn", block_from=block_from, block_to=block_to
             )
             for burn_event in burn_events:
-                args = cast(dict[str, Any], burn_event["args"])
+                args = burn_event["args"]
                 # Issue unlock transaction for ibet token
                 tx_id = str(uuid.uuid4())
                 bridge_tx = AvaToIbetBridgeTx()
@@ -518,13 +515,13 @@ class AvaWSTBridgeMonitoringProcessor:
         """
         Process transfer events from IbetWST and issue forceChangeLockedAccount transactions for ibet tokens.
         """
-        for _, bridge_event_viewer in self.wst_list.items():
+        for bridge_event_viewer in self.wst_list.values():
             # Get Transfer events from IbetWST
             transfer_events = await bridge_event_viewer.get_wst_event_logs(
                 event_name="Transfer", block_from=block_from, block_to=block_to
             )
             for transfer_event in transfer_events:
-                args = cast(dict[str, Any], transfer_event["args"])
+                args = transfer_event["args"]
                 if args["from"] == ZERO_ADDRESS or args["to"] == ZERO_ADDRESS:
                     # Skip if the transfer is from or to the zero address
                     continue

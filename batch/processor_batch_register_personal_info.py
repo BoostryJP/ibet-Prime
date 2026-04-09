@@ -80,7 +80,7 @@ class Processor:
     personal_info_contract_accessor_map: dict[str, PersonalInfoContract]
     is_shutdown: Event
 
-    def __init__(self, worker_num, is_shutdown: Event):
+    def __init__(self, worker_num: int, is_shutdown: Event):
         self.worker_num = worker_num
         self.personal_info_contract_accessor_map = {}
         self.is_shutdown = is_shutdown
@@ -286,8 +286,8 @@ class Processor:
         # - Exclusion control is performed to eliminate duplication of data to be acquired.
 
         async with lock:  # Exclusion control
-            locked_update_id = []
-            exclude_issuer = []
+            locked_update_id: list[str] = []
+            exclude_issuer: list[str] = []
             for threads_processing in processing_issuer.values():
                 for upload_id, issuer_address in threads_processing.items():
                     locked_update_id.append(upload_id)
@@ -336,7 +336,7 @@ class Processor:
 
             # Issuer to be processed => upload_1.issuer_address
             # Retrieve the data of the Issuer to be processed
-            upload_list = []
+            upload_list: list[BatchRegisterPersonalInfoUpload] = []
             if upload_1 is not None:
                 upload_list = [upload_1]
                 if BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE > 1:
@@ -370,7 +370,7 @@ class Processor:
     @staticmethod
     async def __get_registration_data(
         db_session: AsyncSession, upload_id: str, status: int
-    ):
+    ) -> Sequence[BatchRegisterPersonalInfo]:
         register_list: Sequence[BatchRegisterPersonalInfo] = (
             await db_session.scalars(
                 select(BatchRegisterPersonalInfo).where(
@@ -383,7 +383,7 @@ class Processor:
         ).all()
         return register_list
 
-    async def __release_processing_issuer(self, upload_id):
+    async def __release_processing_issuer(self, upload_id: str) -> None:
         async with lock:
             processing_issuer[self.worker_num].pop(upload_id, None)
 

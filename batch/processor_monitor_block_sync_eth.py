@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
+from typing import TypedDict
 
 import uvloop
 from sqlalchemy import delete, select
@@ -51,31 +52,42 @@ process_name = "PROCESSOR-Monitor-Block-Sync-Ethereum"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
-class RingBuffer:
-    def __init__(self, size, default=None):
-        self._next = 0
-        self._buffer = [default] * size
+class HistoryData(TypedDict):
+    time: float
+    block_number: int
 
-    def append(self, data):
+
+class RingBuffer:
+    def __init__(self, size: int, default: HistoryData):
+        self._next = 0
+        self._buffer: list[HistoryData] = [default] * size
+
+    def append(self, data: HistoryData) -> None:
         """
         Append data to the ring buffer, overwriting the oldest data if full.
         """
         self._buffer[self._next] = data
         self._next = (self._next + 1) % len(self._buffer)
 
-    def peek_oldest(self):
+    def peek_oldest(self) -> HistoryData:
         """
         Get the oldest data in the ring buffer.
         """
         return self._buffer[self._next]
 
 
+class NodeInfo(TypedDict):
+    priority: int
+    web3: Web3
+    history: RingBuffer
+
+
 class Processor:
     def __init__(self):
-        self.node_info = {}
-        self.main_web3_provider = None
-        self.standby_web3_provider_list = []
-        self.valid_endpoint_uri_list = []
+        self.node_info: dict[str, NodeInfo] = {}
+        self.main_web3_provider: str = ""
+        self.standby_web3_provider_list: list[str] = []
+        self.valid_endpoint_uri_list: list[str] = []
 
     async def initial_setup(self):
         """
@@ -83,9 +95,10 @@ class Processor:
         """
         self.main_web3_provider = ETH_WEB3_HTTP_PROVIDER
         self.standby_web3_provider_list = ETH_WEB3_HTTP_PROVIDER_STANDBY
-        self.valid_endpoint_uri_list = (
-            list(ETH_WEB3_HTTP_PROVIDER) + ETH_WEB3_HTTP_PROVIDER_STANDBY
-        )
+        self.valid_endpoint_uri_list = [
+            ETH_WEB3_HTTP_PROVIDER,
+            *ETH_WEB3_HTTP_PROVIDER_STANDBY,
+        ]
         db_session = BatchAsyncSessionLocal()
         try:
             # Delete old node data
@@ -143,11 +156,6 @@ class Processor:
         """
         Set the node information for block synchronization monitoring.
         """
-        self.node_info[endpoint_uri] = {}
-
-        # Set node priority
-        self.node_info[endpoint_uri]["priority"] = priority
-
         # Set web3 instance for the node
         # - Diable retry logic explicitly to avoid retrying on connection errors,
         web3 = Web3(
@@ -156,50 +164,65 @@ class Processor:
                 exception_retry_configuration=None,
             )
         )
-        self.node_info[endpoint_uri]["web3"] = web3
+        self.node_info[endpoint_uri] = {
+            "priority": priority,
+            "web3": web3,
+            "history": RingBuffer(
+                BLOCK_SYNC_STATUS_CALC_PERIOD,
+                {"time": time.time(), "block_number": 0},
+            ),
+        }
 
         # Get starting point for block monitoring
         try:
             # NOTE:
             #   Since monitoring data is not retained immediately after processing,
             #   the previous block number is retrieved.
-            latest_block_number = web3.eth.block_number
+            latest_block_number = int(web3.eth.block_number)
             block = web3.eth.get_block(
                 max(latest_block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0)
             )
         except Exception:
             await self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
             LOG.error(f"Node connection failed: {endpoint_uri}")
-            block = {"timestamp": time.time(), "number": 0}
+            timestamp = time.time()
+            block_number = 0
+        else:
+            timestamp = float(block.get("timestamp", time.time()))
+            block_number = int(block.get("number", 0))
 
         # Initialize history for block synchronization status
         history = RingBuffer(
             BLOCK_SYNC_STATUS_CALC_PERIOD,
-            {"time": block["timestamp"], "block_number": block["number"]},
+            {"time": timestamp, "block_number": block_number},
         )
         self.node_info[endpoint_uri]["history"] = history
 
     async def __process(self, db_session: AsyncSession, endpoint_uri: str):
         is_synced = True
-        errors = []
-        priority: int = self.node_info[endpoint_uri]["priority"]
-        web3: Web3 = self.node_info[endpoint_uri]["web3"]
-        history: RingBuffer = self.node_info[endpoint_uri]["history"]
+        errors: list[str] = []
+        priority = self.node_info[endpoint_uri]["priority"]
+        web3 = self.node_info[endpoint_uri]["web3"]
+        history = self.node_info[endpoint_uri]["history"]
 
         # Check block synchronization status
         syncing = web3.eth.syncing
-        if syncing:
-            remaining_blocks = syncing["highestBlock"] - syncing["currentBlock"]
+        if isinstance(syncing, dict):
+            remaining_blocks = int(syncing.get("highestBlock", 0)) - int(
+                syncing.get("currentBlock", 0)
+            )
             if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
-                # If the remaining blocks are more than the threshold(2 blocks), mark as not synced
+                # If the remaining blocks are more than the threshold, mark as not synced
                 is_synced = False
                 errors.append(
-                    f"highestBlock={syncing['highestBlock']}, currentBlock={syncing['currentBlock']}"
+                    f"highestBlock={syncing.get('highestBlock')}, currentBlock={syncing.get('currentBlock')}"
                 )
 
         # Check block generation speed
-        latest_block_number = web3.eth.block_number
-        latest_data = {"time": time.time(), "block_number": latest_block_number}
+        latest_data: HistoryData = {
+            "time": time.time(),
+            "block_number": int(web3.eth.block_number),
+        }
 
         oldest_data = history.peek_oldest()
         elapsed_time = latest_data["time"] - oldest_data["time"]

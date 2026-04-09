@@ -26,7 +26,7 @@ from typing import Sequence
 import uvloop
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import desc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,6 +57,7 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 class Processor:
     def __init__(self):
+        assert E2E_MESSAGING_CONTRACT_ADDRESS is not None
         self.e2e_messaging_contract = AsyncContractUtils.get_contract(
             contract_name="E2EMessaging",
             contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
@@ -93,8 +94,8 @@ class Processor:
         ).all()
         return e2e_messaging_account_list
 
-    @staticmethod
     async def __auto_generate_rsa_key(
+        self,
         db_session: AsyncSession,
         base_time: int,
         e2e_messaging_account: E2EMessagingAccount,
@@ -112,6 +113,7 @@ class Processor:
                     .limit(1)
                 )
             ).first()
+            assert _account_rsa_key is not None
 
             latest_time = int(_account_rsa_key.block_timestamp.timestamp())
             interval = e2e_messaging_account.rsa_key_generate_interval * 3600
@@ -143,7 +145,7 @@ class Processor:
                 return
             try:
                 tx_hash, _ = await E2EMessaging(
-                    E2E_MESSAGING_CONTRACT_ADDRESS
+                    self.e2e_messaging_contract.address
                 ).set_public_key(
                     public_key=rsa_public_key,
                     key_type="RSA4096",
@@ -175,7 +177,8 @@ class Processor:
             _account_rsa_key.rsa_public_key = rsa_public_key
             _account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(pass_phrase)
             _account_rsa_key.block_timestamp = datetime.fromtimestamp(
-                block["timestamp"], UTC
+                block["timestamp"],  # type: ignore
+                UTC,
             ).replace(tzinfo=None)
             db_session.add(_account_rsa_key)
 

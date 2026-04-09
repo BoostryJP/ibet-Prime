@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
-from typing import Any, TypedDict, cast
+from typing import TypedDict
 
 import uvloop
 from sqlalchemy import delete, select
@@ -173,7 +173,11 @@ class Processor:
             ),
         }
 
+        # Get starting point for block monitoring
         try:
+            # NOTE:
+            #   Since monitoring data is not retained immediately after processing,
+            #   the previous block number is retrieved.
             latest_block_number = web3.eth.block_number
             block = web3.eth.get_block(
                 max(latest_block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0)
@@ -181,16 +185,15 @@ class Processor:
         except Exception:
             await self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
             LOG.error(f"Node connection failed: {endpoint_uri}")
-            block = {"timestamp": time.time(), "number": 0}
-
-        block_data = cast(dict[str, Any], block)
+            timestamp = time.time()
+            block_number = 0
+        else:
+            timestamp = float(block.get("timestamp", time.time()))
+            block_number = int(block.get("number", 0))
 
         history = RingBuffer(
             BLOCK_SYNC_STATUS_CALC_PERIOD,
-            {
-                "time": float(block_data.get("timestamp", time.time())),
-                "block_number": int(block_data.get("number", 0)),
-            },
+            {"time": timestamp, "block_number": block_number},
         )
         self.node_info[endpoint_uri]["history"] = history
 
@@ -201,17 +204,20 @@ class Processor:
         web3 = self.node_info[endpoint_uri]["web3"]
         history = self.node_info[endpoint_uri]["history"]
 
-        syncing = cast(dict[str, Any] | bool, web3.eth.syncing)
+        # Check block synchronization status
+        syncing = web3.eth.syncing
         if isinstance(syncing, dict):
             remaining_blocks = int(syncing.get("highestBlock", 0)) - int(
                 syncing.get("currentBlock", 0)
             )
             if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
+                # If the remaining blocks are more than the threshold, mark as not synced
                 is_synced = False
                 errors.append(
                     f"highestBlock={syncing.get('highestBlock')}, currentBlock={syncing.get('currentBlock')}"
                 )
 
+        # Check block generation speed
         latest_data: HistoryData = {
             "time": time.time(),
             "block_number": int(web3.eth.block_number),
@@ -224,11 +230,13 @@ class Processor:
             elapsed_time / 60 * EXPECTED_BLOCK_GENERATION_PER_MIN
         ) * BLOCK_GENERATION_SPEED_THRESHOLD
         if generated_count < threshold:
+            # If the generated block count is less than the threshold, mark as not synced
             is_synced = False
             errors.append(f"{generated_count} blocks in {int(elapsed_time)} sec")
 
         history.append(latest_data)
 
+        # Update node status in the database
         node: AvalancheNode | None = (
             await db_session.scalars(
                 select(AvalancheNode)
@@ -245,13 +253,16 @@ class Processor:
             is_synced=is_synced,
         )
 
+        # Output logs
         if status_changed:
             if is_synced:
                 LOG.info(f"{endpoint_uri} Block synchronization is working")
             else:
                 LOG.error(f"{endpoint_uri} Block synchronization is down: %s", errors)
-        elif not is_synced:
-            LOG.warning(f"{endpoint_uri} Block synchronization is down: %s", errors)
+        else:
+            if not is_synced:
+                # If the same previous processing status, log output with WARING level.
+                LOG.warning(f"{endpoint_uri} Block synchronization is down: %s", errors)
 
         await db_session.commit()
 

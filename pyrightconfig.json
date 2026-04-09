@@ -4,14 +4,9 @@
         "eth_config.py",
         "avalanche_config.py",
         "app/",
-        "batch/indexer_*.py",
-        "tests/app/",
-        "tests/batch/test_indexer_*.py",
-        "tests/batch/test_processor_create_ledger.py",
-        "tests/account_config.py",
-        "tests/conftest.py",
-        "tests/contract_utils.py",
-        "tests/types.py"
+        "batch/",
+        "tests/",
+        "server.py"
     ],
     "exclude": [
         "**/node_modules",
@@ -23,7 +18,6 @@
         "docs/",
         "migrations/",
         "run.py",
-        "server.py"
     ],
     "typeCheckingMode": "strict"
 }

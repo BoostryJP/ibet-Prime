@@ -21,7 +21,7 @@ import logging
 import sys
 
 
-def get_logger(process_name: str = None):
+def get_logger(process_name: str) -> logging.Logger:
     LOG = logging.getLogger("background")
     LOG.propagate = False
 

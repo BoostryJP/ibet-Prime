@@ -204,7 +204,7 @@ class Processor:
                 )
             )
         ).all()
-        personal_info_contract_list = set()
+        personal_info_contract_list: Set[PersonalInfoContract] = set()
         for token in token_list:
             if token.type == TokenType.IBET_SHARE.value:
                 token_contract = await IbetShareContract(token.token_address).get()
@@ -224,6 +224,9 @@ class Processor:
                         .limit(1)
                     )
                 ).first()
+                if issuer_account is None:
+                    LOG.error(f"Issuer account not found: {issuer_address}")
+                    continue
                 personal_info_contract_list.add(
                     PersonalInfoContract(
                         logger=LOG,

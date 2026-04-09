@@ -212,6 +212,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -238,6 +240,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -298,6 +301,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -324,6 +329,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = "test1"
         _e2e_account_rsa_key.rsa_public_key = "test1"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -335,6 +341,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = "test2"
         _e2e_account_rsa_key.rsa_public_key = "test2"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -346,6 +353,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -357,6 +365,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = "test3"
         _e2e_account_rsa_key.rsa_public_key = "test3"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -368,6 +377,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = "test4"
         _e2e_account_rsa_key.rsa_public_key = "test4"
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -427,12 +437,16 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_2
+        _e2e_account.keyfile = default_eth_account("user2")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -508,6 +522,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -519,6 +534,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_2
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -606,6 +622,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -630,6 +648,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -684,6 +703,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -695,6 +716,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -745,6 +767,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -773,6 +797,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -823,6 +848,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -838,6 +865,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -888,6 +916,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -914,6 +944,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -964,6 +995,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -989,6 +1022,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1039,6 +1073,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1063,6 +1099,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1111,6 +1148,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1137,6 +1176,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1186,6 +1226,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1210,6 +1252,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1260,6 +1303,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1283,6 +1328,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1333,6 +1379,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1357,6 +1405,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1407,6 +1456,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1436,6 +1487,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1486,6 +1538,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1507,6 +1561,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)
@@ -1557,6 +1612,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccount
         _e2e_account = E2EMessagingAccount()
         _e2e_account.account_address = user_address_1
+        _e2e_account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _e2e_account.eoa_password = E2EEUtils.encrypt("password")
         _e2e_account.is_deleted = False
         async_db.add(_e2e_account)
 
@@ -1584,6 +1641,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         # Prepare data : E2EMessagingAccountRsaKey
         _e2e_account_rsa_key = E2EMessagingAccountRsaKey()
         _e2e_account_rsa_key.account_address = user_address_1
+        _e2e_account_rsa_key.transaction_hash = "tx_hash"
         _e2e_account_rsa_key.rsa_private_key = self.rsa_private_key
         _e2e_account_rsa_key.rsa_public_key = self.rsa_public_key
         _e2e_account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(self.rsa_passphrase)

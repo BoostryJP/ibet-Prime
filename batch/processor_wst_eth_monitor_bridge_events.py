@@ -22,10 +22,11 @@ import json
 import secrets
 import sys
 import uuid
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence, cast
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
+from eth_utils.address import to_checksum_address
 from pydantic import BaseModel
 from pydantic_core import ValidationError
 from sqlalchemy import and_, select
@@ -81,6 +82,9 @@ process_name = "PROCESSOR-ETH-WST-Monitor-Bridge-Events"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
+EventLog = dict[str, Any]
+
+
 class BridgeEventViewer:
     """
     Class to view events related to IbetWST bridge operations.
@@ -104,10 +108,11 @@ class BridgeEventViewer:
 
         # Initialize ibet token event view
         ibet_token_contract = IbetWeb3.eth.contract(
-            address=token.token_address, abi=token.abi
+            address=to_checksum_address(token.token_address), abi=token.abi
         )
         self.ibet_event_view = AsyncContractEventsView(
-            address=token.token_address, contract_events=ibet_token_contract.events
+            address=token.token_address,
+            contract_events=ibet_token_contract.events,
         )
 
         # Initialize IbetWST event view
@@ -120,25 +125,25 @@ class BridgeEventViewer:
 
     async def get_ibet_event_logs(
         self, event_name: str, block_from: int, block_to: int
-    ) -> Sequence[dict]:
+    ) -> list[EventLog]:
         logs = await AsyncContractUtils.get_event_logs(
             contract=self.ibet_event_view,
             event=event_name,
             block_from=block_from,
             block_to=block_to,
         )
-        return logs
+        return cast(list[EventLog], logs)
 
     async def get_wst_event_logs(
         self, event_name: str, block_from: int, block_to: int
-    ) -> Sequence[dict]:
+    ) -> list[EventLog]:
         logs = await EthAsyncContractUtils.get_event_logs(
             contract=self.wst_event_view,
             event=event_name,
             block_from=block_from,
             block_to=block_to,
         )
-        return logs
+        return cast(list[EventLog], logs)
 
 
 class BridgeMessageMint(BaseModel):
@@ -204,15 +209,15 @@ class EthWSTBridgeMonitoringProcessor:
                 )
             ).all()
 
-            wst_address_all: tuple[str, ...] = tuple(
-                {
-                    token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
-                    for token in load_target_tokens
-                    if token.is_ibet_wst_deployed(IbetWSTBlockchain.ETHEREUM)
-                    and token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
-                    is not None
-                }
-            )
+            wst_address_set: set[str] = set()
+            for token in load_target_tokens:
+                if not token.is_ibet_wst_deployed(IbetWSTBlockchain.ETHEREUM):
+                    continue
+                wst_address = token.get_ibet_wst_address(IbetWSTBlockchain.ETHEREUM)
+                if wst_address is None:
+                    continue
+                wst_address_set.add(wst_address)
+            wst_address_all: tuple[str, ...] = tuple(wst_address_set)
 
             # Get the list of all WST tokens that have been loaded
             loaded_address_list: tuple[str, ...] = tuple(self.wst_list.keys())
@@ -330,7 +335,7 @@ class EthWSTBridgeMonitoringProcessor:
             await db_session.close()
 
     @staticmethod
-    async def get_latest_block_number(network: Literal["ethereum", "ibetfin"]):
+    async def get_latest_block_number(network: Literal["ethereum", "ibetfin"]) -> int:
         """
         Get the latest block number
         """
@@ -359,7 +364,7 @@ class EthWSTBridgeMonitoringProcessor:
         if synced_block is None:
             return 0
         else:
-            return synced_block.latest_block_number
+            return synced_block.latest_block_number or 0
 
     @staticmethod
     async def set_synced_block_number(
@@ -422,6 +427,11 @@ class EthWSTBridgeMonitoringProcessor:
                         f"Cannot find issuer for IbetWST address: {wst_address}"
                     )
                     continue
+                if issuer.keyfile is None or issuer.eoa_password is None:
+                    LOG.warning(
+                        f"Issuer key data is missing for IbetWST address: {wst_address}"
+                    )
+                    continue
                 issuer_pk = decode_keyfile_json(
                     raw_keyfile_json=issuer.keyfile,
                     password=E2EEUtils.decrypt(issuer.eoa_password).encode("utf-8"),
@@ -458,6 +468,7 @@ class EthWSTBridgeMonitoringProcessor:
                             to_address=args["accountAddress"],
                             value=args["value"],
                         )
+                        assert ETH_MASTER_ACCOUNT_ADDRESS is not None
                         wst_tx.tx_sender = ETH_MASTER_ACCOUNT_ADDRESS
                         wst_tx.authorizer = issuer.issuer_address
                         wst_tx.authorization = IbetWSTAuthorization(
@@ -481,7 +492,7 @@ class EthWSTBridgeMonitoringProcessor:
         """
         Process burn events from IbetWST and issue unlock transactions for ibet tokens.
         """
-        for wst_address, bridge_event_viewer in self.wst_list.items():
+        for bridge_event_viewer in self.wst_list.values():
             # Get Burn events from IbetWST
             burn_events = await bridge_event_viewer.get_wst_event_logs(
                 event_name="Burn", block_from=block_from, block_to=block_to
@@ -511,7 +522,7 @@ class EthWSTBridgeMonitoringProcessor:
         """
         Process transfer events from IbetWST and issue forceChangeLockedAccount transactions for ibet tokens.
         """
-        for wst_address, bridge_event_viewer in self.wst_list.items():
+        for bridge_event_viewer in self.wst_list.values():
             # Get Transfer events from IbetWST
             burn_events = await bridge_event_viewer.get_wst_event_logs(
                 event_name="Transfer", block_from=block_from, block_to=block_to

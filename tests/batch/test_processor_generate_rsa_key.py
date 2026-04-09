@@ -17,10 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
 from unittest import mock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
@@ -29,7 +31,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession):
     return Processor()
 
 
@@ -40,7 +42,7 @@ class TestProcessor:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(self, processor: Processor, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         keyfile_1 = user_1["keyfile_json"]
@@ -123,7 +125,7 @@ class TestProcessor:
 
         # NOTE: It takes time because RSA key length is too long.
         #       so shorten it.
-        def crypto_publickey_rsa_generate(*args, **kwargs):
+        def crypto_publickey_rsa_generate(*args: Any, **kwargs: Any):
             assert len(args) > 0
             assert args[0] == 10240
             args_list = list(args)
@@ -141,11 +143,12 @@ class TestProcessor:
         patch.stop()
 
         # assertion
-        account_after = (
-            await async_db.scalars(select(Account).order_by(Account.created))
-        ).all()
+        account_after = {
+            account.issuer_address: account
+            for account in (await async_db.scalars(select(Account))).all()
+        }
         assert len(account_after) == 4
-        _account = account_after[0]
+        _account = account_after[issuer_address_1]
         assert _account.issuer_address == issuer_address_1
         assert _account.keyfile == keyfile_1
         assert _account.eoa_password == eoa_password_1
@@ -153,7 +156,7 @@ class TestProcessor:
         assert _account.rsa_public_key is not None
         assert _account.rsa_passphrase == rsa_passphrase_1
         assert _account.rsa_status == AccountRsaStatus.SET.value
-        _account = account_after[1]
+        _account = account_after[issuer_address_2]
         assert _account.issuer_address == issuer_address_2
         assert _account.keyfile == keyfile_2
         assert _account.eoa_password == eoa_password_2
@@ -167,7 +170,7 @@ class TestProcessor:
         )
         assert _account.rsa_passphrase == rsa_passphrase_2
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value  # don't change
-        _account = account_after[2]
+        _account = account_after[issuer_address_3]
         assert _account.issuer_address == issuer_address_3
         assert _account.keyfile == keyfile_3
         assert _account.eoa_password == eoa_password_3
@@ -175,7 +178,7 @@ class TestProcessor:
         assert _account.rsa_public_key is None
         assert _account.rsa_passphrase is None
         assert _account.rsa_status == AccountRsaStatus.UNSET.value
-        _account = account_after[3]
+        _account = account_after[issuer_address_4]
         assert _account.issuer_address == issuer_address_4
         assert _account.keyfile == keyfile_4
         assert _account.eoa_password == eoa_password_4

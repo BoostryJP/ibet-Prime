@@ -19,11 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 
 import logging
 import uuid
+from typing import Any
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
 
 from app.model.db import (
@@ -55,7 +57,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -80,7 +82,7 @@ class TestProcessor:
 
     # Normal_1
     # - If there is no target data, it confirms that nothing is processed
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(self, processor: Any, async_db: AsyncSession):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -106,7 +108,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.finalized is True
 
@@ -116,7 +118,9 @@ class TestProcessor:
         "app.utils.ava_contract_utils.AvaAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(side_effect=TimeExhausted),
     )
-    async def test_normal_2(self, processor, async_db, caplog):
+    async def test_normal_2(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -143,7 +147,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx_af.finalized is False
 
@@ -170,7 +174,9 @@ class TestProcessor:
         "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
-    async def test_normal_3_1_1(self, processor, async_db, caplog):
+    async def test_normal_3_1_1(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -197,7 +203,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -241,7 +247,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_1_2(self, processor, async_db, caplog):
+    async def test_normal_3_1_2(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -285,7 +293,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -297,7 +305,7 @@ class TestProcessor:
         # Verify that the whitelist entry has been created
         idx_whitelist: IDXAvaIbetWSTWhitelist = (
             await async_db.scalars(select(IDXAvaIbetWSTWhitelist).limit(1))
-        ).first()
+        ).one()
         assert idx_whitelist is not None
         assert (
             idx_whitelist.ibet_wst_address
@@ -342,7 +350,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_1_3(self, processor, async_db, caplog):
+    async def test_normal_3_1_3(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -392,7 +402,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -429,7 +439,9 @@ class TestProcessor:
         "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
-    async def test_normal_3_2(self, processor, async_db, caplog):
+    async def test_normal_3_2(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -456,7 +468,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.FAILED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -486,7 +498,9 @@ class TestProcessor:
         "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
-    async def test_normal_4_1(self, processor, async_db, caplog):
+    async def test_normal_4_1(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -527,7 +541,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -537,7 +551,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(Token).where(Token.ibet_wst_tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert token_af.is_ibet_wst_deployed("avalanche") is True
         assert (
             token_af.get_ibet_wst_address("avalanche")
@@ -582,7 +596,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_1(self, processor, async_db, caplog):
+    async def test_normal_4_2_1(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -625,7 +641,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -673,7 +689,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_2(self, processor, async_db, caplog):
+    async def test_normal_4_2_2(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -716,7 +734,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -763,7 +781,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_3(self, processor, async_db, caplog):
+    async def test_normal_4_2_3(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -807,7 +827,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -819,7 +839,7 @@ class TestProcessor:
         # Verify that the whitelist entry has been created
         idx_whitelist: IDXAvaIbetWSTWhitelist = (
             await async_db.scalars(select(IDXAvaIbetWSTWhitelist).limit(1))
-        ).first()
+        ).one()
         assert idx_whitelist is not None
         assert (
             idx_whitelist.ibet_wst_address
@@ -866,7 +886,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_4(self, processor, async_db, caplog):
+    async def test_normal_4_2_4(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -916,7 +938,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -979,7 +1001,9 @@ class TestProcessor:
         "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_5(self, processor, async_db, caplog):
+    async def test_normal_4_2_5(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1026,7 +1050,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1091,7 +1115,9 @@ class TestProcessor:
         "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_6(self, processor, async_db, caplog):
+    async def test_normal_4_2_6(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1131,7 +1157,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1196,7 +1222,9 @@ class TestProcessor:
         "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_7(self, processor, async_db, caplog):
+    async def test_normal_4_2_7(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1236,7 +1264,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1301,7 +1329,9 @@ class TestProcessor:
         "app.model.wst.wst.AvalancheERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_8(self, processor, async_db, caplog):
+    async def test_normal_4_2_8(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1341,7 +1371,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1397,7 +1427,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_9(self, processor, async_db, caplog):
+    async def test_normal_4_2_9(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1443,7 +1475,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1492,7 +1524,9 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_10(self, processor, async_db, caplog):
+    async def test_normal_4_2_10(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1535,7 +1569,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1572,7 +1606,9 @@ class TestProcessor:
         "app.utils.ava_contract_utils.AvaAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
-    async def test_normal_5(self, processor, async_db, caplog):
+    async def test_normal_5(
+        self, processor: Any, async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1630,7 +1666,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1640,7 +1676,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaIbetWSTTx).where(AvaIbetWSTTx.tx_id == another_tx_id).limit(1)
             )
-        ).first()
+        ).one()
         assert wst_tx_another_af.status == IbetWSTTxStatus.FAILED
         assert wst_tx_another_af.block_number is None
         assert wst_tx_another_af.gas_used is None

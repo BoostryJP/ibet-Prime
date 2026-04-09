@@ -23,6 +23,7 @@ from unittest.mock import ANY, call, patch
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import SendTransactionError
 from app.model.db import (
@@ -32,6 +33,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
     UpdateToken,
@@ -48,8 +50,12 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
-    return Processor(is_shutdown=asyncio.Event())
+def processor(async_db: AsyncSession):
+    with patch(
+        "batch.processor_update_token.TOKEN_LIST_CONTRACT_ADDRESS",
+        "0x0000000000000000000000000000000000000001",
+    ):
+        yield Processor(is_shutdown=asyncio.Event())
 
 
 class TestProcessor:
@@ -60,7 +66,7 @@ class TestProcessor:
     # <Normal_1>
     # Issuing(IbetShare, IbetStraightBond)
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -84,7 +90,7 @@ class TestProcessor:
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
-        _token_1.token_status = 0
+        _token_1.token_status = TokenStatus.PENDING
         _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
@@ -125,7 +131,7 @@ class TestProcessor:
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
-        _token_2.token_status = 0
+        _token_2.token_status = TokenStatus.PENDING
         _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
@@ -353,7 +359,7 @@ class TestProcessor:
     # <Error_1>
     # Issuing: Account does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, async_db):
+    async def test_error_1(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -375,7 +381,7 @@ class TestProcessor:
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
-        _token_1.token_status = 0
+        _token_1.token_status = TokenStatus.PENDING
         _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
@@ -413,7 +419,7 @@ class TestProcessor:
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
-        _token_2.token_status = 0
+        _token_2.token_status = TokenStatus.PENDING
         _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
@@ -579,7 +585,7 @@ class TestProcessor:
     # <Error_2>
     # Issuing: Fail to get the private key
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db):
+    async def test_error_2(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -601,7 +607,7 @@ class TestProcessor:
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
-        _token_1.token_status = 0
+        _token_1.token_status = TokenStatus.PENDING
         _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
@@ -639,7 +645,7 @@ class TestProcessor:
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
-        _token_2.token_status = 0
+        _token_2.token_status = TokenStatus.PENDING
         _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
@@ -805,7 +811,7 @@ class TestProcessor:
     # <Error_3>
     # Issuing: Send transaction error(token update)
     @pytest.mark.asyncio
-    async def test_error_3(self, processor, async_db):
+    async def test_error_3(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -827,7 +833,7 @@ class TestProcessor:
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
-        _token_1.token_status = 0
+        _token_1.token_status = TokenStatus.PENDING
         _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
@@ -865,7 +871,7 @@ class TestProcessor:
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
-        _token_2.token_status = 0
+        _token_2.token_status = TokenStatus.PENDING
         _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
@@ -1045,7 +1051,7 @@ class TestProcessor:
     # <Error_4>
     # Issuing: Send transaction error(TokenList register)
     @pytest.mark.asyncio
-    async def test_error_4(self, processor, async_db):
+    async def test_error_4(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -1067,7 +1073,7 @@ class TestProcessor:
         _token_1.issuer_address = _issuer_address
         _token_1.token_address = _token_address_1
         _token_1.abi = {}
-        _token_1.token_status = 0
+        _token_1.token_status = TokenStatus.PENDING
         _token_1.version = TokenVersion.V_25_09
         async_db.add(_token_1)
 
@@ -1105,7 +1111,7 @@ class TestProcessor:
         _token_2.issuer_address = _issuer_address
         _token_2.token_address = _token_address_2
         _token_2.abi = {}
-        _token_2.token_status = 0
+        _token_2.token_status = TokenStatus.PENDING
         _token_2.version = TokenVersion.V_25_09
         async_db.add(_token_2)
 
