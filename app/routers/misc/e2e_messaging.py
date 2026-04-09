@@ -157,8 +157,8 @@ async def create_e2e_messaging_account(
     _account.account_address = addr
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
-    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 24
-    _account.rsa_generation = data.rsa_generation or 7
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 0
+    _account.rsa_generation = data.rsa_generation or 0
     _account.is_deleted = False
     db.add(_account)
 
@@ -396,8 +396,8 @@ async def update_e2e_messaging_account_rsa_key(
         )
     ).first()
 
-    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 24
-    _account.rsa_generation = data.rsa_generation or 7
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 0
+    _account.rsa_generation = data.rsa_generation or 0
     await db.merge(_account)
     await db.commit()
 
