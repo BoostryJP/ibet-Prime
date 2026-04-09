@@ -137,10 +137,7 @@ class ProcessorEthWSTMonitorTxReceipt:
 
                 # If the block number is less than or equal to the latest finalized block number,
                 # set the finalized flag to True
-                if finalized_block_number is not None:
-                    is_finalized = block_number <= finalized_block_number
-                else:
-                    is_finalized = False
+                is_finalized = block_number <= finalized_block_number
                 wst_tx.finalized = is_finalized
                 await db_session.merge(wst_tx)
 
