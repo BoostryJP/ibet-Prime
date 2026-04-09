@@ -54,6 +54,7 @@ class Processor:
                 LOG.info(f"Process start: issuer_address={account.issuer_address}")
 
                 # rsa_passphrase is encrypted, so decrypt it.
+                assert account.rsa_passphrase is not None
                 passphrase = E2EEUtils.decrypt(account.rsa_passphrase)
 
                 # Generate RSA key

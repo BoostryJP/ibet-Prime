@@ -26,6 +26,7 @@ from unittest.mock import AsyncMock
 import pytest
 from eth_utils.address import to_checksum_address
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -50,7 +51,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -73,7 +74,9 @@ class TestProcessor:
 
     # Normal_1
     # - Confirm that nothing is processed when there is no target data to process
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(
+        self, processor: ProcessorEthWSTSendTx, async_db: AsyncSession
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -100,6 +103,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
 
     # Normal_2_1
@@ -117,7 +121,12 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.deploy_contract",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_1(self, processor, async_db, caplog):
+    async def test_normal_2_1(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -149,6 +158,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -174,7 +184,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.add_account_white_list_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_2(self, processor, async_db, caplog):
+    async def test_normal_2_2(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -217,6 +232,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -242,7 +258,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.delete_account_white_list_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_3(self, processor, async_db, caplog):
+    async def test_normal_2_3(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -283,6 +304,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -308,7 +330,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.request_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_4(self, processor, async_db, caplog):
+    async def test_normal_2_4(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -356,6 +383,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -381,7 +409,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.cancel_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_5(self, processor, async_db, caplog):
+    async def test_normal_2_5(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -422,6 +455,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -447,7 +481,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.accept_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_6(self, processor, async_db, caplog):
+    async def test_normal_2_6(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -486,6 +525,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -511,7 +551,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.reject_trade_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_7(self, processor, async_db, caplog):
+    async def test_normal_2_7(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -550,6 +595,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -575,7 +621,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.mint_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_8(self, processor, async_db, caplog):
+    async def test_normal_2_8(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -617,6 +668,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -642,7 +694,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.burn_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_9(self, processor, async_db, caplog):
+    async def test_normal_2_9(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -684,6 +741,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -709,7 +767,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.transfer_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_10(self, processor, async_db, caplog):
+    async def test_normal_2_10(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -754,6 +817,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -779,7 +843,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumIbetWST.force_burn_from_with_authorization",
         AsyncMock(return_value=("test_tx_hash", 10)),
     )
-    async def test_normal_2_11(self, processor, async_db, caplog):
+    async def test_normal_2_11(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -821,6 +890,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx.tx_nonce == 10
         assert wst_tx_af.tx_hash == "test_tx_hash"
@@ -837,7 +907,12 @@ class TestProcessor:
 
     # Error_1
     # - Confirm that processing fails when the transaction sender account cannot be found
-    async def test_error_1(self, processor, async_db, caplog):
+    async def test_error_1(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -869,6 +944,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.FAILED
 
         # Check if the log was recorded
@@ -891,7 +967,12 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.deploy_contract",
         AsyncMock(side_effect=Exception),
     )
-    async def test_error_2(self, processor, async_db, caplog):
+    async def test_error_2(
+        self,
+        processor: ProcessorEthWSTSendTx,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -923,6 +1004,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.PENDING
 
         # Check if the log was recorded

@@ -385,13 +385,14 @@ class EthAsyncContractUtils:
         return block
 
     @staticmethod
-    async def get_finalized_block_number() -> int | None:
+    async def get_finalized_block_number() -> int:
         """Get finalized block number
 
         :return: finalized block number
         """
         block = await EthWeb3.eth.get_block("finalized")
         block_number = block.get("number")
+        assert block_number is not None
         return block_number
 
     @staticmethod

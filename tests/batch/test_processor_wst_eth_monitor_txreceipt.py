@@ -24,6 +24,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
 
 from app.model.db import (
@@ -55,7 +56,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -80,7 +81,9 @@ class TestProcessor:
 
     # Normal_1
     # - If there is no target data, it confirms that nothing is processed
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(
+        self, processor: ProcessorEthWSTMonitorTxReceipt, async_db: AsyncSession
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -107,6 +110,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.finalized is True
 
@@ -116,7 +120,12 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.wait_for_transaction_receipt",
         AsyncMock(side_effect=TimeExhausted),
     )
-    async def test_normal_2(self, processor, async_db, caplog):
+    async def test_normal_2(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -144,6 +153,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SENT
         assert wst_tx_af.finalized is False
 
@@ -170,7 +180,12 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
-    async def test_normal_3_1_1(self, processor, async_db, caplog):
+    async def test_normal_3_1_1(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -198,6 +213,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -241,7 +257,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_1_2(self, processor, async_db, caplog):
+    async def test_normal_3_1_2(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -286,6 +307,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -295,7 +317,7 @@ class TestProcessor:
         )
 
         # Verify that the whitelist entry has been created
-        idx_whitelist: IDXEthIbetWSTWhitelist = (
+        idx_whitelist: IDXEthIbetWSTWhitelist | None = (
             await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
         ).first()
         assert idx_whitelist is not None
@@ -342,7 +364,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_1_3(self, processor, async_db, caplog):
+    async def test_normal_3_1_3(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -393,6 +420,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -429,7 +457,12 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=0),
     )
-    async def test_normal_3_2(self, processor, async_db, caplog):
+    async def test_normal_3_2(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -457,6 +490,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.FAILED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -486,7 +520,12 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
-    async def test_normal_4_1(self, processor, async_db, caplog):
+    async def test_normal_4_1(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -528,16 +567,18 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
         assert wst_tx_af.finalized is True
 
-        token_af = (
+        token_af: Token | None = (
             await async_db.scalars(
                 select(Token).where(Token.ibet_wst_tx_id == tx_id).limit(1)
             )
         ).first()
+        assert token_af is not None
         assert token_af.is_ibet_wst_deployed("ethereum") is True
         assert (
             token_af.get_ibet_wst_address("ethereum")
@@ -582,7 +623,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_1(self, processor, async_db, caplog):
+    async def test_normal_4_2_1(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -626,6 +672,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -673,7 +720,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_2(self, processor, async_db, caplog):
+    async def test_normal_4_2_2(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -717,6 +769,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -763,7 +816,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_3(self, processor, async_db, caplog):
+    async def test_normal_4_2_3(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -808,6 +866,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -817,7 +876,7 @@ class TestProcessor:
         }
 
         # Verify that the whitelist entry has been created
-        idx_whitelist: IDXEthIbetWSTWhitelist = (
+        idx_whitelist: IDXEthIbetWSTWhitelist | None = (
             await async_db.scalars(select(IDXEthIbetWSTWhitelist).limit(1))
         ).first()
         assert idx_whitelist is not None
@@ -866,7 +925,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_4(self, processor, async_db, caplog):
+    async def test_normal_4_2_4(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -917,6 +981,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -979,7 +1044,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_5(self, processor, async_db, caplog):
+    async def test_normal_4_2_5(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1027,6 +1097,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1091,7 +1162,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_6(self, processor, async_db, caplog):
+    async def test_normal_4_2_6(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1132,6 +1208,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1196,7 +1273,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_7(self, processor, async_db, caplog):
+    async def test_normal_4_2_7(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1237,6 +1319,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1301,7 +1384,12 @@ class TestProcessor:
         "app.model.wst.wst.EthereumERC20.decimals",
         AsyncMock(return_value=6),
     )
-    async def test_normal_4_2_8(self, processor, async_db, caplog):
+    async def test_normal_4_2_8(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1342,6 +1430,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1397,7 +1486,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_9(self, processor, async_db, caplog):
+    async def test_normal_4_2_9(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1444,6 +1538,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1492,7 +1587,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2_10(self, processor, async_db, caplog):
+    async def test_normal_4_2_10(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1536,6 +1636,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1572,7 +1673,12 @@ class TestProcessor:
         "app.utils.eth_contract_utils.EthAsyncContractUtils.get_finalized_block_number",
         AsyncMock(return_value=100),
     )
-    async def test_normal_5(self, processor, async_db, caplog):
+    async def test_normal_5(
+        self,
+        processor: ProcessorEthWSTMonitorTxReceipt,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
 
         # Prepare test data
@@ -1631,6 +1737,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_af is not None
         assert wst_tx_af.status == IbetWSTTxStatus.SUCCEEDED
         assert wst_tx_af.block_number == 100
         assert wst_tx_af.gas_used == 21000
@@ -1641,6 +1748,7 @@ class TestProcessor:
                 select(EthIbetWSTTx).where(EthIbetWSTTx.tx_id == another_tx_id).limit(1)
             )
         ).first()
+        assert wst_tx_another_af is not None
         assert wst_tx_another_af.status == IbetWSTTxStatus.FAILED
         assert wst_tx_another_af.block_number is None
         assert wst_tx_another_af.gas_used is None

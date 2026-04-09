@@ -33,9 +33,9 @@ class UpdateToken(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # token address
-    token_address: Mapped[str | None] = mapped_column(String(42), index=True)
+    token_address: Mapped[str] = mapped_column(String(42), index=True, nullable=False)
     # issuer address
-    issuer_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
+    issuer_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # token type
     type: Mapped[str] = mapped_column(String(40), nullable=False)
     # arguments

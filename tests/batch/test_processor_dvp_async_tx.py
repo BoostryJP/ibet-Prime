@@ -25,6 +25,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
 
 from app.exceptions import SendTransactionError
@@ -46,7 +47,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -83,7 +84,12 @@ class TestProcessor:
     # __send_step_tx
     # - There is no data to process.
     @pytest.mark.asyncio
-    async def test_normal_1_1_1(self, processor, async_db, caplog):
+    async def test_normal_1_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Execute processor
         await processor.process()
         async_db.expire_all()
@@ -96,7 +102,13 @@ class TestProcessor:
     # - Graceful shutdown -> Skip process
     @mock.patch("asyncio.locks.Event.is_set")
     @pytest.mark.asyncio
-    async def test_normal_1_1_2(self, mocked_locks_is_set, processor, async_db, caplog):
+    async def test_normal_1_1_2(
+        self,
+        mocked_locks_is_set: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -130,11 +142,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step == 0
         assert after_dvp_process.step_tx_hash == "tx_hash"
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.DONE
@@ -157,7 +170,13 @@ class TestProcessor:
         ],
     )
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, step_tx_status, processor, async_db, caplog):
+    async def test_normal_1_2(
+        self,
+        step_tx_status: DVPAsyncProcessStepTxStatus,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -200,11 +219,12 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step == 1
         assert after_dvp_process.step_tx_hash == "mock_create_delivery_tx_hash"
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
@@ -243,7 +263,13 @@ class TestProcessor:
         ],
     )
     @pytest.mark.asyncio
-    async def test_normal_1_3(self, process_type, processor, async_db, caplog):
+    async def test_normal_1_3(
+        self,
+        process_type: DVPAsyncProcessType,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -286,11 +312,12 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step == 1
         assert after_dvp_process.step_tx_hash == "mocked_withdraw_partial_tx_hash"
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
@@ -318,7 +345,12 @@ class TestProcessor:
     # __send_step_tx
     # - Failed to get issuer's private key (AccountNotFound)
     @pytest.mark.asyncio
-    async def test_error_1_1_1(self, processor, async_db, caplog):
+    async def test_error_1_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _dvp_process = DVPAsyncProcess()
         _dvp_process.issuer_address = self.issuer_address
@@ -344,11 +376,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step == 0
         assert after_dvp_process.step_tx_hash == "tx_hash"
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.DONE
@@ -366,11 +399,16 @@ class TestProcessor:
     # __send_step_tx
     # - Failed to get issuer's private key (KeyfileDecodingError)
     @pytest.mark.asyncio
-    async def test_error_1_1_2(self, processor, async_db, caplog):
+    async def test_error_1_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
-        _account.keyfile = "invalid_keyfile"
+        _account.keyfile = "invalid_keyfile"  # type: ignore
         _account.eoa_password = self.issuer_eoa_password
         _account.rsa_status = 3
         async_db.add(_account)
@@ -399,11 +437,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step == 0
         assert after_dvp_process.step_tx_hash == "tx_hash"
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.DONE
@@ -421,7 +460,12 @@ class TestProcessor:
     # __send_step_tx
     # - SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_1_2(self, processor, async_db, caplog):
+    async def test_error_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -460,11 +504,12 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step == 0
         assert after_dvp_process.step_tx_hash == "tx_hash"
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.DONE
@@ -487,7 +532,13 @@ class TestProcessor:
     # - Graceful shutdown -> Skip process
     @mock.patch("asyncio.locks.Event.is_set")
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, mocked_locks_is_set, processor, async_db, caplog):
+    async def test_normal_2_1(
+        self,
+        mocked_locks_is_set: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -521,11 +572,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
         assert after_dvp_process.process_status == DVPAsyncProcessStatus.PROCESSING
 
@@ -543,7 +595,13 @@ class TestProcessor:
         "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, mocked_wait_for_tx, processor, async_db, caplog):
+    async def test_normal_2_2(
+        self,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -577,11 +635,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
         assert after_dvp_process.process_status == DVPAsyncProcessStatus.PROCESSING
 
@@ -609,7 +668,12 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_2_3(
-        self, mocked_wait_for_tx, process_type, processor, async_db, caplog
+        self,
+        mocked_wait_for_tx: MagicMock,
+        process_type: DVPAsyncProcessType,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _account = Account()
@@ -644,11 +708,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.DONE
         assert after_dvp_process.process_status == DVPAsyncProcessStatus.DONE_SUCCESS
 
@@ -669,7 +734,12 @@ class TestProcessor:
     @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_normal_2_4_1(
-        self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
+        self,
+        mocked_withdraw_partial: MagicMock,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _account = Account()
@@ -708,11 +778,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
         assert after_dvp_process.revert_tx_hash == "mocked_withdraw_partial_tx_hash"
         assert (
@@ -757,7 +828,12 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_2_4_2(
-        self, mocked_wait_for_tx, process_type, processor, async_db, caplog
+        self,
+        mocked_wait_for_tx: MagicMock,
+        process_type: DVPAsyncProcessType,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _account = Account()
@@ -794,11 +870,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_hash is None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.RETRY
         assert after_dvp_process.revert_tx_hash is None
@@ -822,7 +899,12 @@ class TestProcessor:
     @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_2_1(
-        self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
+        self,
+        mocked_withdraw_partial: MagicMock,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _dvp_process = DVPAsyncProcess()
@@ -853,11 +935,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
         assert after_dvp_process.revert_tx_hash is None
         assert after_dvp_process.revert_tx_status is None
@@ -881,7 +964,12 @@ class TestProcessor:
     @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_2_2(
-        self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
+        self,
+        mocked_withdraw_partial: MagicMock,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _account = Account()
@@ -919,11 +1007,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.PENDING
         assert after_dvp_process.revert_tx_hash is None
         assert after_dvp_process.revert_tx_status is None
@@ -947,7 +1036,13 @@ class TestProcessor:
     # - Graceful shutdown -> Skip process
     @mock.patch("asyncio.locks.Event.is_set")
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, mocked_locks_is_set, processor, async_db, caplog):
+    async def test_normal_3_1(
+        self,
+        mocked_locks_is_set: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -983,11 +1078,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
         assert after_dvp_process.revert_tx_hash == "revert_tx_hash"
         assert (
@@ -1010,7 +1106,13 @@ class TestProcessor:
         "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, mocked_wait_for_tx, processor, async_db, caplog):
+    async def test_normal_3_2(
+        self,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -1046,11 +1148,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
         assert after_dvp_process.revert_tx_hash == "revert_tx_hash"
         assert (
@@ -1073,7 +1176,13 @@ class TestProcessor:
         "app.utils.ibet_contract_utils.AsyncContractUtils.wait_for_transaction_receipt"
     )
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, mocked_wait_for_tx, processor, async_db, caplog):
+    async def test_normal_3_3(
+        self,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
@@ -1109,11 +1218,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
         assert after_dvp_process.revert_tx_hash == "revert_tx_hash"
         assert after_dvp_process.revert_tx_status == DVPAsyncProcessRevertTxStatus.DONE
@@ -1136,7 +1246,12 @@ class TestProcessor:
     @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_normal_3_4(
-        self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
+        self,
+        mocked_withdraw_partial: MagicMock,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _account = Account()
@@ -1174,11 +1289,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
         assert after_dvp_process.revert_tx_hash == "mocked_withdraw_tx_hash"
         assert (
@@ -1205,7 +1321,12 @@ class TestProcessor:
     @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_3_1(
-        self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
+        self,
+        mocked_withdraw_partial: MagicMock,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _dvp_process = DVPAsyncProcess()
@@ -1236,11 +1357,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
         assert after_dvp_process.revert_tx_hash == "revert_tx_hash"
         assert (
@@ -1267,7 +1389,12 @@ class TestProcessor:
     @mock.patch("app.model.ibet.exchange.IbetSecurityTokenDVPNoWait.withdraw_partial")
     @pytest.mark.asyncio
     async def test_error_3_2(
-        self, mocked_withdraw_partial, mocked_wait_for_tx, processor, async_db, caplog
+        self,
+        mocked_withdraw_partial: MagicMock,
+        mocked_wait_for_tx: MagicMock,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Prepare data
         _account = Account()
@@ -1305,11 +1432,12 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        after_dvp_process: DVPAsyncProcess = (
+        after_dvp_process: DVPAsyncProcess | None = (
             await async_db.scalars(
                 select(DVPAsyncProcess).where(DVPAsyncProcess.id == 1).limit(1)
             )
         ).first()
+        assert after_dvp_process is not None
         assert after_dvp_process.step_tx_status == DVPAsyncProcessStepTxStatus.FAILED
         assert after_dvp_process.revert_tx_hash == "revert_tx_hash"
         assert (

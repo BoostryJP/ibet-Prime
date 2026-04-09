@@ -23,7 +23,7 @@ from asyncio import Event
 from typing import Sequence
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import and_, asc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -122,6 +122,7 @@ class Processor:
             try:
                 if record.process_type == DVPAsyncProcessType.CREATE_DELIVERY:
                     # 0) Deposit -> 1) CreateDelivery
+                    assert record.data is not None
                     tx_hash = await dvp_contract_nw.create_delivery(
                         tx_params=CreateDeliveryParams(
                             token_address=record.token_address,
@@ -193,6 +194,7 @@ class Processor:
 
             # Wait for tx receipt
             try:
+                assert record.step_tx_hash is not None
                 tx_receipt = await AsyncContractUtils.wait_for_transaction_receipt(
                     tx_hash=record.step_tx_hash, timeout=1
                 )
@@ -288,8 +290,9 @@ class Processor:
 
             # Wait for tx receipt
             try:
+                assert record.revert_tx_hash is not None
                 tx_receipt = await AsyncContractUtils.wait_for_transaction_receipt(
-                    tx_hash=record.step_tx_hash, timeout=1
+                    tx_hash=record.revert_tx_hash, timeout=1
                 )
             except TimeExhausted:
                 LOG.info(f"[SyncRevertTxResult] End: record_id={record.id}")
@@ -343,7 +346,7 @@ class Processor:
             LOG.info(f"[SyncRevertTxResult] End: record_id={record.id}")
 
     @staticmethod
-    async def __get_issuers_pk(db_session: AsyncSession, issuer_address):
+    async def __get_issuers_pk(db_session: AsyncSession, issuer_address: str) -> bytes:
         """Get issuer's private key"""
         issuer_account: Account | None = (
             await db_session.scalars(
@@ -354,11 +357,13 @@ class Processor:
             raise AccountNotFound
 
         try:
+            assert issuer_account.keyfile is not None
+            assert issuer_account.eoa_password is not None
             issuer_pk = decode_keyfile_json(
                 raw_keyfile_json=issuer_account.keyfile,
                 password=E2EEUtils.decrypt(issuer_account.eoa_password).encode("utf-8"),
             )
-        except:
+        except Exception:
             raise KeyfileDecodingError from None
 
         return issuer_pk

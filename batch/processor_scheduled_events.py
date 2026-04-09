@@ -23,10 +23,10 @@ import time
 import uuid
 from asyncio import Event
 from datetime import UTC, datetime
-from typing import List, Optional, Sequence, Set
+from typing import Any, List, Optional, Set
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -103,7 +103,7 @@ class Processor:
     @staticmethod
     async def __get_events_of_one_issuer(
         db_session: AsyncSession, filter_time: datetime
-    ):
+    ) -> list[ScheduledEvents]:
         async with lock:
             event: Optional[ScheduledEvents] = (
                 await db_session.scalars(
@@ -125,20 +125,22 @@ class Processor:
             issuer_address = event.issuer_address
             processing_issuers.add(issuer_address)
 
-        events_list: Sequence[ScheduledEvents] = (
-            await db_session.scalars(
-                select(ScheduledEvents)
-                .where(
-                    and_(
-                        ScheduledEvents.status == 0,
-                        ScheduledEvents.scheduled_datetime <= filter_time,
-                        ScheduledEvents.issuer_address == issuer_address,
-                        ScheduledEvents.is_soft_deleted != True,
+        events_list: list[ScheduledEvents] = list(
+            (
+                await db_session.scalars(
+                    select(ScheduledEvents)
+                    .where(
+                        and_(
+                            ScheduledEvents.status == 0,
+                            ScheduledEvents.scheduled_datetime <= filter_time,
+                            ScheduledEvents.issuer_address == issuer_address,
+                            ScheduledEvents.is_soft_deleted != True,
+                        )
                     )
+                    .order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id)
                 )
-                .order_by(ScheduledEvents.scheduled_datetime, ScheduledEvents.id)
-            )
-        ).all()
+            ).all()
+        )
         return events_list
 
     @staticmethod
@@ -183,6 +185,8 @@ class Processor:
                     )
                     await db_session.commit()
                     continue
+                assert _account.keyfile is not None
+                assert _account.eoa_password is not None
                 keyfile_json = _account.keyfile
                 decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                 private_key = decode_keyfile_json(
@@ -299,7 +303,7 @@ class Processor:
         db_session: AsyncSession,
         issuer_address: str,
         code: int,
-        scheduled_event_id: str,
+        scheduled_event_id: str | None,
         token_type: str,
         token_address: str,
     ):
@@ -322,8 +326,8 @@ class Processor:
         token_address: str,
         issuer_address: str,
         token_type: str,
-        arguments: dict,
-        original_contents: dict,
+        arguments: dict[str, Any],
+        original_contents: dict[str, Any],
     ):
         operation_log = TokenUpdateOperationLog()
         operation_log.token_address = token_address

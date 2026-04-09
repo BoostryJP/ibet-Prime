@@ -52,9 +52,10 @@ class TestCreateE2EMessagingAccount:
     # Normal Case
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
+    # Set RSA key generation settings to default values
     @pytest.mark.asyncio
-    async def test_normal_1(
+    async def test_normal_1_1(
         self,
         async_client: AsyncClient,
         async_db: AsyncSession,
@@ -136,6 +137,118 @@ class TestCreateE2EMessagingAccount:
         assert E2EEUtils.decrypt(_account.eoa_password) == self.valid_password
         assert _account.rsa_key_generate_interval == 24
         assert _account.rsa_generation == 7
+        assert _account.is_deleted is False
+        assert 0 == len(_rsa_key_before)
+        assert 1 == len(_rsa_key_after)
+        _rsa_key = _rsa_key_after[0]
+        assert _rsa_key.id == 1
+        assert (
+            _rsa_key.transaction_hash
+            == "0x0000000000000000000000000000000000000000000000000000000000000001"
+        )
+        assert _rsa_key.account_address == resp.json()["account_address"]
+        assert _rsa_key.rsa_private_key == ANY
+        assert _rsa_key.rsa_public_key == resp.json()["rsa_public_key"]
+        assert _rsa_key.rsa_passphrase is not None
+        assert (
+            E2EEUtils.decrypt(_rsa_key.rsa_passphrase)
+            == E2E_MESSAGING_RSA_DEFAULT_PASSPHRASE
+        )
+        assert _rsa_key.block_timestamp == datetime(2099, 4, 27, 12, 34, 56)
+        assert 0 == len(_transaction_before)
+        assert 1 == len(_transaction_after)
+        _transaction = _transaction_after[0]
+        assert _transaction.tx_from == resp.json()["account_address"]
+
+    # <Normal_1_2>
+    # Set RSA key generation settings
+    @pytest.mark.asyncio
+    async def test_normal_1_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ):
+        _accounts_before = (await async_db.scalars(select(E2EMessagingAccount))).all()
+        _rsa_key_before = (
+            await async_db.scalars(select(E2EMessagingAccountRsaKey))
+        ).all()
+        _transaction_before = (await async_db.scalars(select(TransactionLock))).all()
+
+        # mock
+        mock_E2EMessaging_set_public_key = mock.patch(
+            target="app.model.ibet.e2e_messaging.E2EMessaging.set_public_key",
+            side_effect=[
+                (
+                    "0x0000000000000000000000000000000000000000000000000000000000000001",
+                    {"blockNumber": 12345},
+                )
+            ],
+        )
+        mock_ContractUtils_get_block_by_transaction_hash = mock.patch(
+            target="app.utils.ibet_contract_utils.AsyncContractUtils.get_block_by_transaction_hash",
+            side_effect=[
+                {
+                    "number": 12345,
+                    "timestamp": datetime(
+                        2099, 4, 27, 12, 34, 56, tzinfo=UTC
+                    ).timestamp(),
+                },
+            ],
+        )
+
+        with (
+            mock.patch(
+                "app.routers.misc.e2e_messaging.E2E_MESSAGING_CONTRACT_ADDRESS",
+                ibet_e2e_messaging_contract.address,
+            ),
+            mock_E2EMessaging_set_public_key,
+            mock_ContractUtils_get_block_by_transaction_hash,
+        ):
+            # request target api
+            req_param = {
+                "eoa_password": E2EEUtils.encrypt(self.valid_password),
+                "rsa_key_generate_interval": 1,
+                "rsa_generation": 2,
+            }
+            resp = await async_client.post(self.base_url, json=req_param)
+
+            # assertion
+            E2EMessaging.set_public_key.assert_called_with(  # type: ignore
+                public_key=ANY,
+                key_type="RSA4096",
+                tx_sender=resp.json()["account_address"],
+                tx_sender_key=ANY,
+            )
+            AsyncContractUtils.get_block_by_transaction_hash.assert_called_with(  # type: ignore
+                tx_hash="0x0000000000000000000000000000000000000000000000000000000000000001",
+            )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "account_address": ANY,
+            "rsa_key_generate_interval": 1,
+            "rsa_generation": 2,
+            "rsa_public_key": ANY,
+            "is_deleted": False,
+        }
+
+        _accounts_after = (await async_db.scalars(select(E2EMessagingAccount))).all()
+        _rsa_key_after = (
+            await async_db.scalars(select(E2EMessagingAccountRsaKey))
+        ).all()
+        _transaction_after = (await async_db.scalars(select(TransactionLock))).all()
+
+        assert 0 == len(_accounts_before)
+        assert 1 == len(_accounts_after)
+        _account = _accounts_after[0]
+        assert _account.account_address == resp.json()["account_address"]
+        assert _account.keyfile is not None
+        assert _account.eoa_password is not None
+        assert E2EEUtils.decrypt(_account.eoa_password) == self.valid_password
+        assert _account.rsa_key_generate_interval == 1
+        assert _account.rsa_generation == 2
         assert _account.is_deleted is False
         assert 0 == len(_rsa_key_before)
         assert 1 == len(_rsa_key_after)

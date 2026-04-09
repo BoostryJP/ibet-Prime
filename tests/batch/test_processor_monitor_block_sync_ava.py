@@ -17,11 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 
 from app.model.db import AvalancheNode
@@ -32,7 +34,7 @@ web3 = Web3(Web3.HTTPProvider(AVA_WEB3_HTTP_PROVIDER))
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession):
     return Processor()
 
 
@@ -52,7 +54,7 @@ class TestProcessor:
         AVA_WEB3_HTTP_PROVIDER,
     )
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(self, processor: Processor, async_db: AsyncSession):
         await processor.initial_setup()
 
         # Run 1st: Normal state
@@ -60,7 +62,10 @@ class TestProcessor:
         async_db.expire_all()
 
         await async_db.rollback()
-        _node = (await async_db.scalars(select(AvalancheNode).limit(1))).first()
+        _node: AvalancheNode | None = (
+            await async_db.scalars(select(AvalancheNode).limit(1))
+        ).first()
+        assert _node is not None
         assert _node.id == 1
         assert _node.endpoint_uri == AVA_WEB3_HTTP_PROVIDER
         assert _node.priority == 0
@@ -76,7 +81,10 @@ class TestProcessor:
             await async_db.rollback()
             async_db.expire_all()
 
-        _node = (await async_db.scalars(select(AvalancheNode).limit(1))).first()
+        _node: AvalancheNode | None = (
+            await async_db.scalars(select(AvalancheNode).limit(1))
+        ).first()
+        assert _node is not None
         assert _node.is_synced == False
 
         # Run 3rd: Return to normal state
@@ -84,7 +92,10 @@ class TestProcessor:
         await async_db.rollback()
         async_db.expire_all()
 
-        _node = (await async_db.scalars(select(AvalancheNode).limit(1))).first()
+        _node: AvalancheNode | None = (
+            await async_db.scalars(select(AvalancheNode).limit(1))
+        ).first()
+        assert _node is not None
         assert _node.is_synced == True
 
         # Run 4th: Abnormal state
@@ -100,7 +111,10 @@ class TestProcessor:
             await async_db.rollback()
             async_db.expire_all()
 
-        _node = (await async_db.scalars(select(AvalancheNode).limit(1))).first()
+        _node: AvalancheNode | None = (
+            await async_db.scalars(select(AvalancheNode).limit(1))
+        ).first()
+        assert _node is not None
         assert _node.is_synced == False
 
         # Run 5th: Return to normal state
@@ -116,7 +130,10 @@ class TestProcessor:
             await async_db.rollback()
             async_db.expire_all()
 
-        _node = (await async_db.scalars(select(AvalancheNode).limit(1))).first()
+        _node: AvalancheNode | None = (
+            await async_db.scalars(select(AvalancheNode).limit(1))
+        ).first()
+        assert _node is not None
         assert _node.is_synced == True
 
     # <Normal_2>
@@ -126,48 +143,49 @@ class TestProcessor:
         ["http://localhost:1000"],
     )
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, async_db):
+    async def test_normal_2(self, processor: Processor, async_db: AsyncSession):
         await processor.initial_setup()
         await async_db.rollback()
 
         # pre assertion
-        _node = (await async_db.scalars(select(AvalancheNode).limit(1))).first()
+        _node: AvalancheNode | None = (
+            await async_db.scalars(select(AvalancheNode).limit(1))
+        ).first()
+        assert _node is not None
         assert _node.id == 1
         assert _node.endpoint_uri == "http://localhost:1000"
         assert _node.priority == 1
         assert _node.is_synced == False
 
         # node sync(processing)
-        org_value = processor.node_info["http://localhost:1000"][
+        provider: Any = processor.node_info["http://localhost:1000"][
             "web3"
-        ].manager.provider.endpoint_uri
-        processor.node_info["http://localhost:1000"][
-            "web3"
-        ].manager.provider.endpoint_uri = (
+        ].manager.provider
+        org_value = provider.endpoint_uri
+        provider.endpoint_uri = (
             AVA_WEB3_HTTP_PROVIDER  # Temporarily replace setting values
         )
         await processor.process()
         await async_db.rollback()
         async_db.expire_all()
 
-        processor.node_info["http://localhost:1000"][
-            "web3"
-        ].manager.provider.endpoint_uri = org_value
+        provider.endpoint_uri = org_value
 
         # assertion
-        _node = (
+        _node: AvalancheNode | None = (
             await async_db.scalars(
                 select(AvalancheNode)
                 .where(AvalancheNode.endpoint_uri == "http://localhost:1000")
                 .limit(1)
             )
         ).first()
+        assert _node is not None
         assert _node.is_synced == True
 
     # <Normal_3>
     # Delete old node data
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db):
+    async def test_normal_3(self, processor: Processor, async_db: AsyncSession):
         node = AvalancheNode()
         node.id = 1
         node.endpoint_uri = "old_node"
@@ -188,7 +206,10 @@ class TestProcessor:
         async_db.expire_all()
 
         # assertion-2
-        new_node = (await async_db.scalars(select(AvalancheNode).limit(1))).first()
+        new_node: AvalancheNode | None = (
+            await async_db.scalars(select(AvalancheNode).limit(1))
+        ).first()
+        assert new_node is not None
         assert new_node.id == 1
         assert new_node.endpoint_uri == AVA_WEB3_HTTP_PROVIDER
         assert new_node.priority == 0
@@ -209,7 +230,7 @@ class TestProcessor:
         ["http://localhost:1000", "http://localhost:2000"],
     )
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, async_db):
+    async def test_error_1(self, processor: Processor, async_db: AsyncSession):
         await processor.initial_setup()
         await async_db.rollback()
 
@@ -242,7 +263,7 @@ class TestProcessor:
         ["http://localhost:1000", "http://localhost:2000"],
     )
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db):
+    async def test_error_2(self, processor: Processor, async_db: AsyncSession):
         await processor.initial_setup()
         await processor.process()
         await async_db.rollback()

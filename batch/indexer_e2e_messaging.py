@@ -280,10 +280,6 @@ class Processor:
         # Decrypt AES key
         rsa_private_key = account_rsa_key.rsa_private_key
         encrypted_rsa_passphrase = account_rsa_key.rsa_passphrase
-        if rsa_private_key is None or encrypted_rsa_passphrase is None:
-            LOG.warning(f"RSA key data is invalid: account_address={to_address}")
-            return None
-
         rsa_passphrase = E2EEUtils.decrypt(encrypted_rsa_passphrase)
         try:
             rsa_key = RSA.importKey(rsa_private_key, passphrase=rsa_passphrase)

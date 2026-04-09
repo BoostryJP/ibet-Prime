@@ -24,6 +24,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ContractRevertError
 from app.model.db import (
@@ -41,7 +42,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -65,7 +66,12 @@ class TestProcessor:
 
     # Normal_1
     # No records to process
-    async def test_normal_1(self, processor, async_db, caplog):
+    async def test_normal_1(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         await processor.send_ibet_tx()
         async_db.expire_all()
 
@@ -85,7 +91,12 @@ class TestProcessor:
             )
         ),
     )
-    async def test_normal_2_1(self, processor, async_db, caplog):
+    async def test_normal_2_1(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -117,7 +128,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
-        ).first()
+        ).one()
         assert ava_to_ibet_tx_af.tx_hash == "test_tx_hash_1"
         assert ava_to_ibet_tx_af.block_number == 123456
         assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.SUCCEEDED
@@ -141,7 +152,12 @@ class TestProcessor:
             )
         ),
     )
-    async def test_normal_2_2(self, processor, async_db, caplog):
+    async def test_normal_2_2(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -173,7 +189,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
-        ).first()
+        ).one()
         assert ava_to_ibet_tx_af.tx_hash == "test_tx_hash_2"
         assert ava_to_ibet_tx_af.block_number == 654321
         assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.SUCCEEDED
@@ -185,7 +201,12 @@ class TestProcessor:
 
     # Normal_3
     # ETH table records are ignored by AVA processor
-    async def test_normal_3(self, processor, async_db, caplog):
+    async def test_normal_3(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         eth_tx_id = str(uuid.uuid4())
         eth_to_ibet_tx = EthToIbetBridgeTx(
             tx_id=eth_tx_id,
@@ -211,7 +232,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == eth_tx_id)
             )
-        ).first()
+        ).one()
         assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING
         assert caplog.messages == []
 
@@ -221,7 +242,12 @@ class TestProcessor:
 
     # Error_1
     # Issuer account not found
-    async def test_error_1(self, processor, async_db, caplog):
+    async def test_error_1(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         tx_id = str(uuid.uuid4())
         ava_to_ibet_tx = AvaToIbetBridgeTx(
             tx_id=tx_id,
@@ -247,7 +273,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
-        ).first()
+        ).one()
         assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING
         assert caplog.messages == [
             f"Sending ibet bridge transaction: id={tx_id}, type=force_unlock",
@@ -256,7 +282,12 @@ class TestProcessor:
 
     # Error_2
     # Unknown transaction type
-    async def test_error_2(self, processor, async_db, caplog):
+    async def test_error_2(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -288,7 +319,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
-        ).first()
+        ).one()
         assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.FAILED
         assert caplog.messages == [
             f"Sending ibet bridge transaction: id={tx_id}, type=unknown_type",
@@ -301,7 +332,12 @@ class TestProcessor:
         "batch.processor_wst_ava_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
         AsyncMock(side_effect=[ContractRevertError(code_msg="111201")]),
     )
-    async def test_error_3(self, processor, async_db, caplog):
+    async def test_error_3(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -333,7 +369,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
-        ).first()
+        ).one()
         assert ava_to_ibet_tx_af.tx_hash is None
         assert ava_to_ibet_tx_af.block_number is None
         assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.FAILED
@@ -348,7 +384,12 @@ class TestProcessor:
         "batch.processor_wst_ava_bridge_to_ibet.IbetSecurityTokenInterface.force_unlock",
         AsyncMock(side_effect=[Exception]),
     )
-    async def test_error_4(self, processor, async_db, caplog):
+    async def test_error_4(
+        self,
+        processor: AvaWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         account = Account()
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
@@ -381,7 +422,7 @@ class TestProcessor:
             await async_db.scalars(
                 select(AvaToIbetBridgeTx).where(AvaToIbetBridgeTx.tx_id == tx_id)
             )
-        ).first()
+        ).one()
         assert ava_to_ibet_tx_af.tx_hash is None
         assert ava_to_ibet_tx_af.block_number is None
         assert ava_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING

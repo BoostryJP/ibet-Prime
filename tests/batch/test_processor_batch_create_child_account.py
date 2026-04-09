@@ -23,8 +23,10 @@ import secrets
 
 import pytest
 from coincurve import PublicKey
-from eth_utils import keccak, to_checksum_address
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -39,7 +41,7 @@ from batch.processor_batch_create_child_account import LOG, Processor
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -75,7 +77,12 @@ class TestProcessor:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db, caplog):
+    async def test_normal_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         for i in range(3):
             _tmp_data = TmpChildAccountBatchCreate()
@@ -164,7 +171,12 @@ class TestProcessor:
     # Issuer account not found
     # - Account is None
     @pytest.mark.asyncio
-    async def test_error_1_1(self, processor, async_db, caplog):
+    async def test_error_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _tmp_data = TmpChildAccountBatchCreate()
         _tmp_data.issuer_address = self.issuer_address
@@ -224,7 +236,12 @@ class TestProcessor:
     # Issuer account not found
     # - Account.public_key is None
     @pytest.mark.asyncio
-    async def test_error_1_2(self, processor, async_db, caplog):
+    async def test_error_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _tmp_data = TmpChildAccountBatchCreate()
         _tmp_data.issuer_address = self.issuer_address

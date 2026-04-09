@@ -56,6 +56,8 @@ class TestListAllE2EMessages:
         if _account is None:
             _account = E2EMessagingAccount()
             _account.account_address = e2e_messaging["to_address"]
+            _account.keyfile = {}
+            _account.eoa_password = "password"
             async_db.add(_account)
 
         await async_db.commit()

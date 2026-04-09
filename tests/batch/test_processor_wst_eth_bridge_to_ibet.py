@@ -24,6 +24,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ContractRevertError
 from app.model.db import (
@@ -43,7 +44,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -71,7 +72,12 @@ class TestProcessor:
     # Normal_1
     # No records to process
     # - Skip processing if no records to process
-    async def test_normal_1(self, processor, async_db, caplog):
+    async def test_normal_1(
+        self,
+        processor: EthWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Execute batch
         await processor.send_ibet_tx()
         async_db.expire_all()
@@ -95,7 +101,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_2_1(self, processor, async_db, caplog):
+    async def test_normal_2_1(
+        self,
+        processor: EthWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -131,6 +142,7 @@ class TestProcessor:
                 select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
+        assert eth_to_ibet_tx_af is not None
         assert eth_to_ibet_tx_af.tx_hash == "test_tx_hash_1"
         assert eth_to_ibet_tx_af.block_number == 123456
         assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.SUCCEEDED
@@ -158,7 +170,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_2_2(self, processor, async_db, caplog):
+    async def test_normal_2_2(
+        self,
+        processor: EthWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -194,6 +211,7 @@ class TestProcessor:
                 select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
+        assert eth_to_ibet_tx_af is not None
         assert eth_to_ibet_tx_af.tx_hash == "test_tx_hash_1"
         assert eth_to_ibet_tx_af.block_number == 123456
         assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.SUCCEEDED
@@ -211,7 +229,12 @@ class TestProcessor:
     # Error_1
     # Issuer account not found
     # - Skip processing if the issuer account is not found
-    async def test_error_1(self, processor, async_db, caplog):
+    async def test_error_1(
+        self,
+        processor: EthWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare test data
         tx_id = str(uuid.uuid4())
         eth_to_ibet_tx = EthToIbetBridgeTx(
@@ -247,12 +270,18 @@ class TestProcessor:
                 select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
+        assert eth_to_ibet_tx_af is not None
         assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING
 
     # Error_2
     # Unknown transaction type
     # - Update the status to FAILED if the transaction type is unknown
-    async def test_error_2(self, processor, async_db, caplog):
+    async def test_error_2(
+        self,
+        processor: EthWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -288,6 +317,7 @@ class TestProcessor:
                 select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
+        assert eth_to_ibet_tx_af is not None
         assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.FAILED
 
         # Check the log
@@ -309,7 +339,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_error_3(self, processor, async_db, caplog):
+    async def test_error_3(
+        self,
+        processor: EthWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -345,6 +380,7 @@ class TestProcessor:
                 select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
+        assert eth_to_ibet_tx_af is not None
         assert eth_to_ibet_tx_af.tx_hash is None
         assert eth_to_ibet_tx_af.block_number is None
         assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.FAILED
@@ -366,7 +402,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_error_4(self, processor, async_db, caplog):
+    async def test_error_4(
+        self,
+        processor: EthWSTBridgeToIbetProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare test data
         account = Account()
         account.issuer_address = self.issuer["address"]
@@ -403,6 +444,7 @@ class TestProcessor:
                 select(EthToIbetBridgeTx).where(EthToIbetBridgeTx.tx_id == tx_id)
             )
         ).first()
+        assert eth_to_ibet_tx_af is not None
         assert eth_to_ibet_tx_af.tx_hash is None
         assert eth_to_ibet_tx_af.block_number is None
         assert eth_to_ibet_tx_af.status == ToIbetBridgeTxStatus.PENDING

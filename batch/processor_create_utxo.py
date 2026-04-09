@@ -22,10 +22,9 @@ import json
 import sys
 import time
 from datetime import UTC, datetime
-from typing import Sequence
+from typing import Any, Sequence, TypedDict
 
 import uvloop
-from hexbytes import HexBytes
 from sqlalchemy import and_, select
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,10 +56,25 @@ LOG = batch_log.get_logger(process_name=process_name)
 web3 = AsyncWeb3Wrapper()
 
 
+class NormalizedEvent(TypedDict):
+    event: str
+    args: dict[str, Any]
+    transaction_hash: str
+    block_number: int
+    log_index: int
+
+
 class Processor:
     def __init__(self):
         self.token_contract_list: list[AsyncContractEventsView] = []
         self.token_type_map: dict[str, TokenType] = {}
+
+    @staticmethod
+    async def __get_block_timestamp(block_number: int) -> datetime:
+        block = await web3.eth.get_block(block_number)
+        timestamp = block.get("timestamp")
+        assert timestamp is not None
+        return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
 
     async def process(self):
         db_session: AsyncSession = BatchAsyncSessionLocal()
@@ -166,7 +180,7 @@ class Processor:
         if _utxo_block_number is None:
             return 0
         else:
-            return _utxo_block_number.latest_block_number
+            return _utxo_block_number.latest_block_number or 0
 
     @staticmethod
     async def __set_utxo_block_number(db_session: AsyncSession, block_number: int):
@@ -228,7 +242,7 @@ class Processor:
             block_to=block_to,
             argument_filters={"token": token_contract.address},
         )
-        tmp_events = []
+        tmp_events: list[NormalizedEvent] = []
         for _event in exchange_contract_events:
             if token_contract.address == _event["args"]["token"]:
                 tmp_events.append(
@@ -343,7 +357,8 @@ class Processor:
             else:
                 from_account = args.get("from", ZERO_ADDRESS)
                 to_account = args.get("to", ZERO_ADDRESS)
-                amount = int(args.get("value"))
+                value = args.get("value")
+                amount = int(value) if value is not None else None
 
             # Skip create UTXO if met the following conditions:
             # - If the from_account or to_account is a contract, it is considered a deposit or withdrawal to/from the exchange.
@@ -362,9 +377,9 @@ class Processor:
             reallocation_from = None
             if event_type == "Transfer":
                 tx = await AsyncContractUtils.get_transaction(transaction_hash)
-                tx_data: HexBytes | None = tx.get("input")
+                tx_data = tx.get("input")
                 # Check if the transaction data contains the reallocation marker("c0ffee00")
-                if "c0ffee00" in tx_data.hex():
+                if tx_data is not None and "c0ffee00" in tx_data.hex():
                     # Attempt to parse the call data as JSON
                     try:
                         raw_call_data = tx_data.hex().split("c0ffee00", 1)[1]
@@ -375,9 +390,7 @@ class Processor:
                         pass
 
             # Retrieve block timestamp
-            block_timestamp = datetime.fromtimestamp(
-                (await web3.eth.get_block(block_number))["timestamp"], UTC
-            ).replace(tzinfo=None)  # UTC
+            block_timestamp = await self.__get_block_timestamp(block_number)
 
             if amount is not None and amount <= sys.maxsize:
                 event_triggered = True
@@ -442,9 +455,7 @@ class Processor:
 
             transaction_hash = event["transactionHash"].to_0x_hex()
             block_number = event["blockNumber"]
-            block_timestamp = datetime.fromtimestamp(
-                (await web3.eth.get_block(block_number))["timestamp"], UTC
-            ).replace(tzinfo=None)  # UTC
+            block_timestamp = await self.__get_block_timestamp(block_number)
 
             if amount is not None and amount <= sys.maxsize:
                 event_triggered = True
@@ -498,9 +509,7 @@ class Processor:
 
             transaction_hash = event["transactionHash"].to_0x_hex()
             block_number = event["blockNumber"]
-            block_timestamp = datetime.fromtimestamp(
-                (await web3.eth.get_block(block_number))["timestamp"], UTC
-            ).replace(tzinfo=None)  # UTC
+            block_timestamp = await self.__get_block_timestamp(block_number)
 
             if amount is not None and amount <= sys.maxsize:
                 event_triggered = True
@@ -570,7 +579,7 @@ class Processor:
                     db_session.add(_utxo)
                 else:
                     # Update existing UTXO
-                    utxo_amount = _utxo.amount
+                    utxo_amount = _utxo.amount or 0
                     _utxo.amount = utxo_amount + amount
                     await db_session.merge(_utxo)
             else:
@@ -591,6 +600,7 @@ class Processor:
                 ).all()
                 remaining = amount
                 for _source_utxo in _source_utxo_list:
+                    source_utxo_amount = _source_utxo.amount or 0
                     _reallocation_utxo: UTXO | None = (
                         await db_session.scalars(
                             select(UTXO)
@@ -608,13 +618,14 @@ class Processor:
                     if remaining <= 0:
                         # If the remaining amount is less than or equal to 0, break the loop.
                         break
-                    elif _source_utxo.amount <= remaining:
+                    elif source_utxo_amount <= remaining:
                         # If the source UTXO amount is less than or equal to the reallocation amount,
                         # create or update a UTXO from the source UTXO.
                         if _reallocation_utxo is not None:
                             # If the UTXO already exists, update the amount
+                            reallocation_utxo_amount = _reallocation_utxo.amount or 0
                             _reallocation_utxo.amount = (
-                                _reallocation_utxo.amount + _source_utxo.amount
+                                reallocation_utxo_amount + source_utxo_amount
                             )
                             await db_session.merge(_reallocation_utxo)
                         else:
@@ -629,20 +640,21 @@ class Processor:
                             _reallocation_utxo.token_address = (
                                 _source_utxo.token_address
                             )
-                            _reallocation_utxo.amount = _source_utxo.amount
+                            _reallocation_utxo.amount = source_utxo_amount
                             _reallocation_utxo.block_number = _source_utxo.block_number
                             _reallocation_utxo.block_timestamp = (
                                 _source_utxo.block_timestamp
                             )
                             db_session.add(_reallocation_utxo)
-                        remaining = remaining - _source_utxo.amount
+                        remaining = remaining - source_utxo_amount
                     else:
                         # If the source UTXO amount is greater than the reallocation amount,
                         # create or update a new UTXO with the remaining amount.
                         if _reallocation_utxo is not None:
                             # If the UTXO already exists, update the amount
+                            reallocation_utxo_amount = _reallocation_utxo.amount or 0
                             _reallocation_utxo.amount = (
-                                _reallocation_utxo.amount + remaining
+                                reallocation_utxo_amount + remaining
                             )
                             await db_session.merge(_reallocation_utxo)
                         else:
@@ -680,11 +692,11 @@ class Processor:
             ).all()
             remaining = amount
             for _utxo in _utxo_list:
-                utxo_amount = _utxo.amount
+                utxo_amount = _utxo.amount or 0
                 if remaining <= 0:
                     # If the remaining amount is less than or equal to 0, break the loop.
                     break
-                elif _utxo.amount <= remaining:
+                elif utxo_amount <= remaining:
                     # If the UTXO amount is less than or equal to the spent amount,
                     # set the UTXO amount to 0 and update the remaining amount.
                     _utxo.amount = 0

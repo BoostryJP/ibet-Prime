@@ -20,10 +20,10 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import json
 import sys
-from typing import Sequence
+from typing import Sequence, cast
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -95,6 +95,11 @@ class EthWSTBridgeToIbetProcessor:
                     )
                     continue
 
+                if issuer.keyfile is None or issuer.eoa_password is None:
+                    LOG.warning(
+                        f"Issuer key data is missing for transaction: id={pending_tx.tx_id}"
+                    )
+                    continue
                 issuer_pk = decode_keyfile_json(
                     raw_keyfile_json=issuer.keyfile,
                     password=E2EEUtils.decrypt(issuer.eoa_password).encode("utf-8"),
@@ -107,14 +112,18 @@ class EthWSTBridgeToIbetProcessor:
                 try:
                     # Depending on the transaction type, call the appropriate method
                     if pending_tx.tx_type == ToIbetBridgeTxType.FORCE_UNLOCK:
-                        tx_params: IbetBridgeTxParamsForceUnlock = pending_tx.tx_params
+                        force_unlock_params = cast(
+                            IbetBridgeTxParamsForceUnlock, pending_tx.tx_params
+                        )
                         tx_hash, tx_receipt = await ibet_token_contract.force_unlock(
                             tx_params=ForceUnlockParams(
-                                lock_address=tx_params["lock_address"],
-                                account_address=tx_params["account_address"],
-                                recipient_address=tx_params["recipient_address"],
-                                value=tx_params["value"],
-                                data=json.dumps(tx_params["data"]),
+                                lock_address=force_unlock_params["lock_address"],
+                                account_address=force_unlock_params["account_address"],
+                                recipient_address=force_unlock_params[
+                                    "recipient_address"
+                                ],
+                                value=force_unlock_params["value"],
+                                data=json.dumps(force_unlock_params["data"]),
                             ),
                             tx_sender=pending_tx.tx_sender,
                             tx_sender_key=issuer_pk,
@@ -123,23 +132,24 @@ class EthWSTBridgeToIbetProcessor:
                         pending_tx.tx_type
                         == ToIbetBridgeTxType.FORCE_CHANGE_LOCKED_ACCOUNT
                     ):
-                        tx_params: IbetBridgeTxParamsForceChangeLockedAccount = (
-                            pending_tx.tx_params
+                        force_change_params = cast(
+                            IbetBridgeTxParamsForceChangeLockedAccount,
+                            pending_tx.tx_params,
                         )
                         (
                             tx_hash,
                             tx_receipt,
                         ) = await ibet_token_contract.force_change_locked_account(
                             tx_params=ForceChangeLockedAccountParams(
-                                lock_address=tx_params["lock_address"],
-                                before_account_address=tx_params[
+                                lock_address=force_change_params["lock_address"],
+                                before_account_address=force_change_params[
                                     "before_account_address"
                                 ],
-                                after_account_address=tx_params[
+                                after_account_address=force_change_params[
                                     "after_account_address"
                                 ],
-                                value=tx_params["value"],
-                                data=json.dumps(tx_params["data"]),
+                                value=force_change_params["value"],
+                                data=json.dumps(force_change_params["data"]),
                             ),
                             tx_sender=pending_tx.tx_sender,
                             tx_sender_key=issuer_pk,

@@ -25,6 +25,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.types import RPCEndpoint
 
@@ -56,7 +57,7 @@ ava_web3 = Web3(Web3.HTTPProvider(AVA_WEB3_HTTP_PROVIDER))
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -94,7 +95,12 @@ class TestProcessor:
     # Normal_1_1
     # No transactions to process
     # - Check if the latest block number is updated
-    async def test_normal_1_1(self, processor, async_db, caplog):
+    async def test_normal_1_1(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -112,7 +118,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == latest_block_ibet
 
         synced_block_eth = (
@@ -121,7 +127,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == latest_block_eth
 
         # Check log
@@ -160,7 +166,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_1_2(self, processor, async_db, caplog):
+    async def test_normal_1_2(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -199,7 +210,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == latest_block_ibet
 
         synced_block_eth = (
@@ -208,7 +219,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == latest_block_eth
 
         # Check AvaIbetWSTTx
@@ -230,7 +241,12 @@ class TestProcessor:
     # Normal_2
     # Synced block number is greater than the latest block number
     # - Check if the process is skipped
-    async def test_normal_2(self, processor, async_db, caplog):
+    async def test_normal_2(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare IbetWSTBridgeSyncedBlockNumber
         synced_block_ibet = IbetWSTBridgeSyncedBlockNumber(
             network="ibetfin", latest_block_number=999999999
@@ -254,7 +270,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == 999999999
 
         synced_block_eth = (
@@ -263,7 +279,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == 888888888
 
         # Check log
@@ -305,7 +321,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_1_1(self, processor, async_db, caplog):
+    async def test_normal_3_1_1(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -343,7 +364,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == latest_block_ibet
 
         synced_block_eth = (
@@ -352,7 +373,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == latest_block_eth
 
         # Check AvaIbetWSTTx
@@ -422,7 +443,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_1_2(self, processor, async_db, caplog):
+    async def test_normal_3_1_2(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -460,7 +486,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == latest_block_ibet
 
         synced_block_eth = (
@@ -469,7 +495,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == latest_block_eth
 
         # Check AvaIbetWSTTx
@@ -539,7 +565,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_3_2(self, processor, async_db, caplog):
+    async def test_normal_3_2(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -577,7 +608,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == latest_block_ibet
 
         synced_block_eth = (
@@ -586,7 +617,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == latest_block_eth
 
         # Check AvaIbetWSTTx
@@ -636,7 +667,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_1(self, processor, async_db, caplog):
+    async def test_normal_4_1(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -674,7 +710,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == latest_block_ibet
 
         synced_block_eth = (
@@ -683,7 +719,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == latest_block_eth
 
         # Check AvaIbetWSTTx
@@ -746,7 +782,12 @@ class TestProcessor:
             ]
         ),
     )
-    async def test_normal_4_2(self, processor, async_db, caplog):
+    async def test_normal_4_2(
+        self,
+        processor: AvaWSTBridgeMonitoringProcessor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Generate empty block
         ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
@@ -784,7 +825,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "ibetfin")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_ibet.latest_block_number == latest_block_ibet
 
         synced_block_eth = (
@@ -793,7 +834,7 @@ class TestProcessor:
                 .where(IbetWSTBridgeSyncedBlockNumber.network == "avalanche")
                 .limit(1)
             )
-        ).first()
+        ).one()
         assert synced_block_eth.latest_block_number == latest_block_eth
 
         # Check AvaIbetWSTTx
