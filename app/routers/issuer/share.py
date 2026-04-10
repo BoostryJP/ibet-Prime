@@ -22,7 +22,7 @@ import uuid
 from collections import defaultdict
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, Any, List, Optional, Sequence, cast as typing_cast
+from typing import Annotated, Any, List, Optional, Sequence
 
 import pytz
 from eth_keyfile.keyfile import decode_keyfile_json
@@ -1625,7 +1625,7 @@ async def list_all_batch_share_redemption(
         record_list = (
             (
                 await db.execute(
-                    select(BatchIssueRedeem, IDXPersonalInfo)
+                    select(BatchIssueRedeem, Nullable(IDXPersonalInfo))
                     .outerjoin(
                         IDXPersonalInfo,
                         and_(
@@ -1646,7 +1646,6 @@ async def list_all_batch_share_redemption(
         str, list[tuple[BatchIssueRedeem, IDXPersonalInfo | None]]
     ] = defaultdict(list)
     for record in record_list:
-        assert record[0].upload_id is not None
         record_list_by_upload_id[record[0].upload_id].append(record)
 
     personal_info_default = {
@@ -1664,7 +1663,6 @@ async def list_all_batch_share_redemption(
         if _upload.created is None:
             continue
         created_utc = pytz.timezone("UTC").localize(_upload.created)
-        assert _upload.upload_id is not None
         results: list[dict[str, Any]] = [
             {
                 "account_address": record[0].account_address,
@@ -2094,8 +2092,9 @@ async def schedule_share_token_update_events_in_batch(
                 )
 
         # Register an event
+        _event_id = str(uuid.uuid4())
         _scheduled_event = ScheduledEvents()
-        _scheduled_event.event_id = str(uuid.uuid4())
+        _scheduled_event.event_id = _event_id
         _scheduled_event.issuer_address = issuer_address
         _scheduled_event.token_address = token_address
         _scheduled_event.token_type = TokenType.IBET_SHARE
@@ -2107,8 +2106,7 @@ async def schedule_share_token_update_events_in_batch(
         _scheduled_event.status = ScheduledEventStatus.PROCESSING
         db.add(_scheduled_event)
 
-        assert _scheduled_event.event_id is not None
-        _event_id_list.append(typing_cast(str, _scheduled_event.event_id))
+        _event_id_list.append(_event_id)
 
     await db.commit()
 
@@ -2162,7 +2160,6 @@ async def retrieve_scheduled_share_token_update_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
 
-    assert _token_event.scheduled_datetime is not None
     assert _token_event.created is not None
     scheduled_datetime_utc = pytz.timezone("UTC").localize(
         _token_event.scheduled_datetime
@@ -2237,7 +2234,6 @@ async def delete_scheduled_share_token_update_event(
     if _token_event is None:
         raise HTTPException(status_code=404, detail="event not found")
 
-    assert _token_event.scheduled_datetime is not None
     assert _token_event.created is not None
     scheduled_datetime_utc = pytz.timezone("UTC").localize(
         _token_event.scheduled_datetime
