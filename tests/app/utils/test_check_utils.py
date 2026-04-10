@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -49,6 +51,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -75,6 +79,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -101,6 +107,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -136,6 +144,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -193,6 +203,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -218,6 +230,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -247,6 +261,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -273,6 +289,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -299,6 +317,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -333,6 +353,8 @@ class TestCheckAuth:
 
         # prepare data
         _account = Account()
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = test_account["address"]
         _account.keyfile = test_account["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt(self.eoa_password)

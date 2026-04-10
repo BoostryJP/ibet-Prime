@@ -282,7 +282,7 @@ async def change_issuer_eoa_password(
             select(Account).where(Account.issuer_address == issuer_address).limit(1)
         )
     ).first()
-    if _account is None or _account.eoa_password is None or _account.keyfile is None:
+    if _account is None:
         raise HTTPException(status_code=404, detail="issuer does not exist")
 
     # Check Password Policy

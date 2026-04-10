@@ -224,8 +224,6 @@ async def get_tx_sender_account(
             )
         ).first()
         if tx_sender_account is not None:
-            assert tx_sender_account.keyfile is not None
-            assert tx_sender_account.eoa_password is not None
             private_key = decode_keyfile_json(
                 raw_keyfile_json=tx_sender_account.keyfile,
                 password=E2EEUtils.decrypt(tx_sender_account.eoa_password).encode(

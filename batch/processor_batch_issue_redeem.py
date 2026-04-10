@@ -126,8 +126,6 @@ class Processor:
                     continue
 
                 try:
-                    assert issuer_account.keyfile is not None
-                    assert issuer_account.eoa_password is not None
                     issuer_pk = decode_keyfile_json(
                         raw_keyfile_json=issuer_account.keyfile,
                         password=E2EEUtils.decrypt(issuer_account.eoa_password).encode(

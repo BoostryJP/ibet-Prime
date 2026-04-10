@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -46,15 +48,17 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 async def initialize(issuer: UnitTestAccount, async_db: AsyncSession):
+    eoa_password = "password"
+
     _account = Account()
     _account.issuer_address = issuer["address"]
     _account.keyfile = issuer["keyfile_json"]
-    eoa_password = "password"
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     _account.rsa_private_key = issuer["rsa_private_key"]
     _account.rsa_public_key = issuer["rsa_public_key"]
-    rsa_password = "password"
-    _account.rsa_passphrase = E2EEUtils.encrypt(rsa_password)
+    _account.rsa_passphrase = E2EEUtils.encrypt("password")
+    _account.rsa_status = AccountRsaStatus.UNSET.value
+    _account.is_deleted = False
     async_db.add(_account)
     await async_db.commit()
 

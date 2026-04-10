@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -22,7 +24,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
+from app.model.db import Account, AccountRsaKeyTemporary
 from app.utils.e2ee_utils import E2EEUtils
 from config import (
     PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE,
@@ -50,6 +52,7 @@ class TestCreateIssuerRSAKey:
         _user_1 = default_eth_account("user1")
 
         _account_before = Account()
+        _account_before.is_deleted = False
         _account_before.issuer_address = _user_1["address"]
         _account_before.keyfile = _user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")
@@ -93,6 +96,7 @@ class TestCreateIssuerRSAKey:
         _user_2 = default_eth_account("user2")
 
         _account_before = Account()
+        _account_before.is_deleted = False
         _account_before.issuer_address = _user_1["address"]
         _account_before.keyfile = _user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")
@@ -154,6 +158,7 @@ class TestCreateIssuerRSAKey:
         _user_1 = default_eth_account("user1")
 
         _account_before = Account()
+        _account_before.is_deleted = False
         _account_before.issuer_address = _user_1["address"]
         _account_before.keyfile = _user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")
@@ -250,6 +255,7 @@ class TestCreateIssuerRSAKey:
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")
@@ -282,6 +288,7 @@ class TestCreateIssuerRSAKey:
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")
@@ -310,6 +317,7 @@ class TestCreateIssuerRSAKey:
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")
@@ -341,6 +349,7 @@ class TestCreateIssuerRSAKey:
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")

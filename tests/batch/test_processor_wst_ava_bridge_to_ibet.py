@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -98,6 +100,8 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -159,6 +163,8 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -289,6 +295,8 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -339,6 +347,8 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -391,6 +401,8 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")

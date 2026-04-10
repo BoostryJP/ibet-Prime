@@ -199,8 +199,6 @@ class PersonalInfoContract:
 
         try:
             if self.private_key is None:
-                assert self.issuer.eoa_password is not None
-                assert self.issuer.keyfile is not None
                 self.private_key = decode_keyfile_json(
                     raw_keyfile_json=self.issuer.keyfile,
                     password=E2EEUtils.decrypt(self.issuer.eoa_password).encode(
@@ -267,8 +265,6 @@ class PersonalInfoContract:
 
         try:
             if self.private_key is None:
-                assert self.issuer.eoa_password is not None
-                assert self.issuer.keyfile is not None
                 self.private_key = decode_keyfile_json(
                     raw_keyfile_json=self.issuer.keyfile,
                     password=E2EEUtils.decrypt(self.issuer.eoa_password).encode(

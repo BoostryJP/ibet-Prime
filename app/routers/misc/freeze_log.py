@@ -196,7 +196,7 @@ async def change_eoa_password(
             .limit(1)
         )
     ).first()
-    if _account is None or _account.eoa_password is None or _account.keyfile is None:
+    if _account is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Check Old Password
@@ -259,11 +259,7 @@ async def record_new_log(
             .limit(1)
         )
     ).first()
-    if (
-        log_account is None
-        or log_account.eoa_password is None
-        or log_account.keyfile is None
-    ):
+    if log_account is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Authentication
@@ -317,7 +313,7 @@ async def update_log(
             .limit(1)
         )
     ).first()
-    if log_account is None or log_account.eoa_password is None:
+    if log_account is None:
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Authentication

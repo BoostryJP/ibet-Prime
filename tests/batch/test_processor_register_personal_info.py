@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -159,6 +161,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -209,6 +213,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -320,6 +326,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -484,6 +492,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -745,6 +755,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
@@ -879,6 +891,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
@@ -1013,6 +1027,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]

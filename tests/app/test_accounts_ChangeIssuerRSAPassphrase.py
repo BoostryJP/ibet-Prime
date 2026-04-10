@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -24,7 +26,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils
 from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
 from tests.account_config import default_eth_account
@@ -53,6 +55,9 @@ class TestChangeIssuerRSAPassphrase:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.rsa_private_key = _old_rsa_private_key
         account.rsa_public_key = _rsa_public_key
@@ -237,6 +242,9 @@ class TestChangeIssuerRSAPassphrase:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.rsa_private_key = _old_rsa_private_key
         account.rsa_public_key = _rsa_public_key
@@ -275,6 +283,9 @@ class TestChangeIssuerRSAPassphrase:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.rsa_private_key = _old_rsa_private_key
         account.rsa_public_key = _rsa_public_key

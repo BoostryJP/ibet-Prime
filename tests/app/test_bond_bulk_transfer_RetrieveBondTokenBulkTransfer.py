@@ -1,3 +1,6 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -78,6 +81,9 @@ class TestRetrieveBondTokenBulkTransfer:
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)
@@ -141,6 +147,9 @@ class TestRetrieveBondTokenBulkTransfer:
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)
@@ -365,6 +374,9 @@ class TestRetrieveBondTokenBulkTransfer:
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)
@@ -471,6 +483,9 @@ class TestRetrieveBondTokenBulkTransfer:
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)

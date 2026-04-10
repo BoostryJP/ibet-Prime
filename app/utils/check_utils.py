@@ -169,7 +169,7 @@ async def check_account_for_auth(
             select(Account).where(Account.issuer_address == issuer_address).limit(1)
         )
     ).first()
-    if account is None or account.eoa_password is None:
+    if account is None:
         raise AuthorizationError
     decrypted_eoa_password = E2EEUtils.decrypt(account.eoa_password)
     return account, decrypted_eoa_password

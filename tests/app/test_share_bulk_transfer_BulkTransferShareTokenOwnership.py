@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -73,6 +75,8 @@ class TestBulkTransferShareTokenOwnership:
     async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -161,6 +165,8 @@ class TestBulkTransferShareTokenOwnership:
     async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -463,6 +469,8 @@ class TestBulkTransferShareTokenOwnership:
     async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -541,6 +549,8 @@ class TestBulkTransferShareTokenOwnership:
     async def test_error_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -580,6 +590,8 @@ class TestBulkTransferShareTokenOwnership:
     async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -619,6 +631,8 @@ class TestBulkTransferShareTokenOwnership:
     async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -669,6 +683,8 @@ class TestBulkTransferShareTokenOwnership:
     async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.from_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

@@ -305,7 +305,6 @@ async def create_dvp_delivery(
 
     # Get private key
     keyfile_json = _account.keyfile
-    assert keyfile_json is not None
     private_key = decode_keyfile_json(
         raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
     )
@@ -564,7 +563,6 @@ async def update_dvp_delivery(
         case "Cancel":
             # Get private key
             keyfile_json = _account.keyfile
-            assert keyfile_json is not None
             private_key = decode_keyfile_json(
                 raw_keyfile_json=keyfile_json, password=decrypt_password.encode("utf-8")
             )

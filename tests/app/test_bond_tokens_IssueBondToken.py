@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -73,6 +75,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -220,6 +224,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -366,6 +372,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -523,6 +531,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -687,6 +697,8 @@ class TestIssueBondToken:
         test_account = default_eth_account("user1")
 
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -981,6 +993,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1404,6 +1418,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1448,6 +1464,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1494,6 +1512,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account_1["address"]
         account.keyfile = test_account_2["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1546,6 +1566,8 @@ class TestIssueBondToken:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")

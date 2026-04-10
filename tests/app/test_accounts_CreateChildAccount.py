@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -37,7 +39,9 @@ from app.model.db import (
     PersonalInfoDataSource,
     PersonalInfoEventType,
 )
+from app.utils.e2ee_utils import E2EEUtils
 from config import ASYNC_DATABASE_URL
+from tests.account_config import default_eth_account
 
 
 class TestCreateChildAccount:
@@ -87,6 +91,10 @@ class TestCreateChildAccount:
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()
@@ -191,6 +199,10 @@ class TestCreateChildAccount:
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()
@@ -337,6 +349,10 @@ class TestCreateChildAccount:
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = None  # public-key is not set
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
         await async_db.commit()
 
@@ -372,6 +388,10 @@ class TestCreateChildAccount:
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()
@@ -432,6 +452,10 @@ class TestCreateChildAccount:
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()

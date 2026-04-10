@@ -421,11 +421,7 @@ class AvaWSTBridgeMonitoringProcessor:
                         f"Cannot find issuer for IbetWST address: {wst_address}"
                     )
                     continue
-                if issuer.keyfile is None or issuer.eoa_password is None:
-                    LOG.warning(
-                        f"Issuer key data is missing for IbetWST address: {wst_address}"
-                    )
-                    continue
+
                 issuer_pk = decode_keyfile_json(
                     raw_keyfile_json=issuer.keyfile,
                     password=E2EEUtils.decrypt(issuer.eoa_password).encode("utf-8"),
