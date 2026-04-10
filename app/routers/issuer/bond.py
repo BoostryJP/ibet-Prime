@@ -21,7 +21,7 @@ import json
 import uuid
 from collections import defaultdict
 from datetime import UTC, datetime
-from typing import Annotated, Any, List, Optional, Sequence, cast as typing_cast
+from typing import Annotated, Any, List, Optional, Sequence
 
 import pytz
 from eth_keyfile.keyfile import decode_keyfile_json
@@ -1686,8 +1686,7 @@ async def list_all_batch_bond_redemption(
         str, list[tuple[BatchIssueRedeem, IDXPersonalInfo | None]]
     ] = defaultdict(list)
     for record in record_list:
-        if record[0].upload_id is not None:
-            record_list_by_upload_id[record[0].upload_id].append(record)
+        record_list_by_upload_id[record[0].upload_id].append(record)
 
     personal_info_default = {
         "key_manager": None,
@@ -2173,8 +2172,9 @@ async def schedule_bond_token_update_events_in_batch(
                 )
 
         # Register an event
+        _event_id = str(uuid.uuid4())
         _scheduled_event = ScheduledEvents()
-        _scheduled_event.event_id = str(uuid.uuid4())
+        _scheduled_event.event_id = _event_id
         _scheduled_event.issuer_address = issuer_address
         _scheduled_event.token_address = token_address
         _scheduled_event.token_type = TokenType.IBET_STRAIGHT_BOND
@@ -2186,8 +2186,7 @@ async def schedule_bond_token_update_events_in_batch(
         _scheduled_event.status = ScheduledEventStatus.PROCESSING
         db.add(_scheduled_event)
 
-        assert _scheduled_event.event_id is not None
-        _event_id_list.append(typing_cast(str, _scheduled_event.event_id))
+        _event_id_list.append(_event_id)
 
     await db.commit()
 

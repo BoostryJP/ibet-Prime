@@ -59,7 +59,7 @@ class BatchIssueRedeem(Base):
     # sequence id
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # upload id (UUID)
-    upload_id: Mapped[str | None] = mapped_column(String(36), index=True)
+    upload_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
     # target account
     account_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # amount
