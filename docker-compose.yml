@@ -9,19 +9,19 @@ services:
       - POSTGRES_DB=apldb
     tmpfs:
       - /var/lib/postgresql/data
-  ibet-hardhat-network:
+  ibet-anvil-network:
     build:
       context: ./
       dockerfile: tests/Dockerfile_ibet
     ports:
       - "8545:8545"
-  eth-hardhat-network:
+  eth-anvil-network:
     build:
       context: ./
       dockerfile: tests/Dockerfile_eth
     ports:
       - "8546:8545"
-  ava-hardhat-network:
+  ava-anvil-network:
     build:
       context: ./
       dockerfile: tests/Dockerfile_ava
@@ -46,13 +46,13 @@ services:
       - DVP_AGENT_FEATURE_ENABLED=1
     links:
       - postgres:postgres
-      - ibet-hardhat-network:ibet
-      - eth-hardhat-network:eth
-      - ava-hardhat-network:ava
+      - ibet-anvil-network:ibet
+      - eth-anvil-network:eth
+      - ava-anvil-network:ava
     depends_on:
       - postgres
-      - ibet-hardhat-network
-      - eth-hardhat-network
-      - ava-hardhat-network
+      - ibet-anvil-network
+      - eth-anvil-network
+      - ava-anvil-network
     volumes:
       - ./cov:/app/ibet-Prime/cov

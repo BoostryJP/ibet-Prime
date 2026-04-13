@@ -33,7 +33,11 @@ from sqlalchemy.orm import aliased
 
 import config
 from app.database import DBAsyncSession
-from app.exceptions import InvalidParameterError, SendTransactionError
+from app.exceptions import (
+    ContractRevertError,
+    InvalidParameterError,
+    SendTransactionError,
+)
 from app.model.db import (
     DVPAsyncProcess,
     DVPAsyncProcessStatus,
@@ -322,7 +326,7 @@ async def create_dvp_delivery(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     # Structure and encrypt data
@@ -576,7 +580,7 @@ async def update_dvp_delivery(
                     tx_sender=issuer_address,
                     tx_sender_key=private_key,
                 )
-            except SendTransactionError:
+            except (SendTransactionError, ContractRevertError):
                 raise SendTransactionError("failed to cancel delivery")
 
     return

@@ -30,7 +30,11 @@ from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import select
 
 from app.database import DBAsyncSession
-from app.exceptions import InvalidParameterError, SendTransactionError
+from app.exceptions import (
+    ContractRevertError,
+    InvalidParameterError,
+    SendTransactionError,
+)
 from app.model.db import FreezeLogAccount, TransactionLock
 from app.model.ibet import FreezeLogContract
 from app.model.schema import (
@@ -285,7 +289,7 @@ async def record_new_log(
             log_message=req.log_message,
             freezing_grace_block_count=req.freezing_grace_block_count,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to record log")
 
     return json_response({"log_index": log_index})
@@ -339,7 +343,7 @@ async def update_log(
             log_index=log_index,
             log_message=req.log_message,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to update log")
 
     return

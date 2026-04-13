@@ -564,7 +564,6 @@ async def list_account_lock_unlock_events(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
         OperationNotSupportedVersionError,
     ),
 )
@@ -645,9 +644,7 @@ async def force_lock(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except ContractRevertError:
-        raise
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     return
@@ -663,7 +660,6 @@ async def force_lock(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
     ),
 )
 async def force_unlock(
@@ -767,9 +763,7 @@ async def force_unlock(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except ContractRevertError:
-        raise
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     return

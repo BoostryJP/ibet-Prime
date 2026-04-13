@@ -335,8 +335,7 @@ class AvaWSTBridgeMonitoringProcessor:
         Get the latest block number.
         """
         if network == "avalanche":
-            block = await AvaWeb3.eth.get_block("finalized")
-            block_number = block.get("number")
+            block_number = await AvaAsyncContractUtils.get_finalized_block_number()
         else:
             block_number = await IbetWeb3.eth.block_number
 

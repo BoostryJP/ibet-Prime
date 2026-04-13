@@ -296,9 +296,7 @@ def _decode_private_key(
     "/tokens",
     operation_id="IssueBondToken",
     response_model=TokenAddressResponse,
-    responses=get_routers_responses(
-        422, 401, AuthorizationError, SendTransactionError, ContractRevertError
-    ),
+    responses=get_routers_responses(422, 401, AuthorizationError, SendTransactionError),
 )
 async def issue_bond_token(
     db: DBAsyncSession,
@@ -410,7 +408,7 @@ async def issue_bond_token(
                 tx_sender=issuer_address,
                 tx_sender_key=private_key,
             )
-        except SendTransactionError:
+        except (SendTransactionError, ContractRevertError):
             raise SendTransactionError("failed to register token address token list")
 
         # Insert initial position data
@@ -668,7 +666,6 @@ async def retrieve_bond_token(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
         OperationNotSupportedVersionError,
         OperationNotAllowedStateError,
     ),
@@ -785,7 +782,7 @@ async def update_bond_token(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     # Activate IbetWST
@@ -1089,7 +1086,6 @@ async def list_bond_additional_issuance_history(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
     ),
 )
 async def issue_additional_bond(
@@ -1149,7 +1145,7 @@ async def issue_additional_bond(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     return
@@ -1526,7 +1522,6 @@ async def list_bond_redemption_history(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
     ),
 )
 async def redeem_bond(
@@ -1586,7 +1581,7 @@ async def redeem_bond(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     return
@@ -2987,7 +2982,6 @@ async def register_bond_token_holder_extra_info(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
         PersonalInfoExceedsSizeLimit,
     ),
 )
@@ -3086,7 +3080,7 @@ async def register_bond_token_holder_personal_info(
                 data=input_personal_info,
                 default_value=None,
             )
-        except SendTransactionError:
+        except (SendTransactionError, ContractRevertError):
             raise SendTransactionError("failed to register personal information")
 
     return
@@ -3606,7 +3600,6 @@ async def list_bond_token_lock_unlock_events(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
     ),
 )
 async def transfer_bond_token_ownership(
@@ -3664,7 +3657,7 @@ async def transfer_bond_token_ownership(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     return
@@ -4338,7 +4331,6 @@ async def list_specific_bond_token_transfer_approval_history(
         AuthorizationError,
         InvalidParameterError,
         SendTransactionError,
-        ContractRevertError,
         OperationNotAllowedStateError,
     ),
 )

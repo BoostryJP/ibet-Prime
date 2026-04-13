@@ -340,8 +340,7 @@ class EthWSTBridgeMonitoringProcessor:
         Get the latest block number
         """
         if network == "ethereum":
-            block = await EthWeb3.eth.get_block("finalized")
-            block_number = block.get("number")
+            block_number = await EthAsyncContractUtils.get_finalized_block_number()
         else:
             block_number = await IbetWeb3.eth.block_number
 

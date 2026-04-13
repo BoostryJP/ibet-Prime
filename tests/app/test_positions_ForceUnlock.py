@@ -1148,10 +1148,10 @@ class TestForceUnlock:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
-            "meta": {"code": 111201, "title": "ContractRevertError"},
-            "detail": "Unlock amount is greater than locked amount.",
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }
 
     # <Error_5>

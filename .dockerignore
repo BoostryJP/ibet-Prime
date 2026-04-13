@@ -5,6 +5,7 @@
 **/*.py[cod]
 .cache/
 .pytest_cache/
+.mypy_cache/
 .git/
 .idea/
 .DS_Store
