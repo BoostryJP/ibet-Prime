@@ -109,23 +109,14 @@ You will see the JSON response as:
 
 ### API docs
 
-#### Swagger UI
-
 Now go to [http://0.0.0.0:5000/docs](http://0.0.0.0:5000/docs).
 
 You will see the automatic interactive API documentation provided by Swagger UI:
 
 ![swagger](https://user-images.githubusercontent.com/963333/146362141-da0fc0d2-1518-4041-a274-be2b743966a1.png)
 
-
-#### ReDoc
-
 And now, go to [http://0.0.0.0:5000/redoc](http://0.0.0.0:5000/redoc).
-
-You will see the alternative automatic documentation provided by ReDoc:
-
-![redoc](https://user-images.githubusercontent.com/963333/146362775-c1ec56fa-f0b0-48a4-8926-75c2b7159c90.png)
-
+You will see the alternative automatic documentation provided by ReDoc.
 
 ## Branching model
 
