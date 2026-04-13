@@ -1,6 +1,0 @@
-{
-  "packageManager": "npm@11.12.1",
-  "devDependencies": {
-    "hardhat": "~2.28.6"
-  }
-}

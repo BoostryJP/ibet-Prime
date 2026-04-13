@@ -804,13 +804,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SendTransactionErrorResponse'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / 
-            Contract Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ContractRevertErrorResponse'
     get:
       tags:
         - bond
@@ -948,7 +941,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
@@ -1230,10 +1222,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Issueadditionalbond
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -1595,10 +1584,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Redeembond
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -2594,7 +2580,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
                 title: Response 400 Registerbondtokenholderpersonalinfo
@@ -3016,10 +3001,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Transferbondtokenownership
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -3476,7 +3458,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                 title: Response 400 Updatebondtokentransferapprovalstatus
@@ -5249,7 +5230,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
                 title: Response 400 Forcelock
@@ -5325,10 +5305,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Forceunlock
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -5453,13 +5430,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SendTransactionErrorResponse'
-        '400':
-          description: Invalid Parameter Error / Send Transaction Error / 
-            Contract Revert Error etc
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ContractRevertErrorResponse'
     get:
       tags:
         - share
@@ -5597,7 +5567,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                   - $ref: '#/components/schemas/OperationNotSupportedVersionErrorResponse'
@@ -5879,10 +5848,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Issueadditionalshare
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -6244,10 +6210,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Redeemshare
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -7243,7 +7206,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/PersonalInfoExceedsSizeLimitResponse'
                 title: Response 400 Registersharetokenholderpersonalinfo
@@ -7665,10 +7627,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Transfersharetokenownership
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -8125,7 +8084,6 @@ paths:
             application/json:
               schema:
                 anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                 title: Response 400 Updatesharetokentransferapprovalstatus

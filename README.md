@@ -26,7 +26,7 @@ English | [日本語](./README_JA.md)
 - [PostgreSQL](https://www.postgresql.org/) - version 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
-  - We use [hardhat network](https://hardhat.org/hardhat-network/) for local development and unit testing, and we use the latest version.
+  - We use [Anvil](https://www.getfoundry.sh/anvil) for local development and unit testing.
 
 
 ## Supported ibet smart contract version
@@ -46,7 +46,10 @@ English | [日本語](./README_JA.md)
     - Password: issuerapipass
     - Database: issuerapidb
     - Test database: issuerapidb_test
-- The TokenList and E2EMessaging contracts from the ibet-SmartContract project must be deployed in advance.
+- An ibet node must be available and connected.
+  - The TokenList and E2EMessaging contracts from the ibet-SmartContract project must be deployed in advance.
+- An Ethereum node is optional, but can be set up and connected.
+- An Avalanche node is optional, but can be set up and connected.
 
 ### Install packages
 
@@ -60,23 +63,34 @@ Install python packages with:
 $ uv sync --frozen --no-install-project --no-dev --all-extras
 ```
 
-### Install pre-commit hook
-```bash
-$ uv run pre-commit install
-```
-
-### Install hardhat
-```bash
-$ npm install
-```
-
 ### Setting environment variables
 
 See [docs/environment_variables.md](docs/environment_variables.md) for the list of environment variables.
+Set the required variables according to each use case.
 
 ### DB migrations
 
 See [migrations/README.md](migrations/README.md).
+
+
+## Development Information
+
+### Install pre-commit hook
+
+We provide a pre-commit hook to check code quality before commits.
+
+```bash
+$ uv run pre-commit install
+```
+
+### Setting environment variables
+
+You can create a `.env` file to define local environment variables.
+
+### Running tests
+
+For test container startup, see [docker-compose.yml](docker-compose.yml).
+When running individual test cases, set up a local Python runtime environment and configure the required environment variables first.
 
 
 ## Starting the Server

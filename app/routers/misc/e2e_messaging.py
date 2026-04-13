@@ -88,9 +88,7 @@ utc_tz = pytz.timezone("UTC")
     "/accounts",
     operation_id="CreateE2EMessagingAccount",
     response_model=E2EMessagingAccountResponse,
-    responses=get_routers_responses(
-        422, InvalidParameterError, SendTransactionError, ContractRevertError
-    ),
+    responses=get_routers_responses(422, InvalidParameterError, SendTransactionError),
 )
 async def create_e2e_messaging_account(
     db: DBAsyncSession,
@@ -149,7 +147,7 @@ async def create_e2e_messaging_account(
             tx_sender=addr,
             tx_sender_key=private_key,
         )
-    except SendTransactionError:
+    except (SendTransactionError, ContractRevertError):
         raise SendTransactionError("failed to send transaction")
 
     # Register account data to the DB

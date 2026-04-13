@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import logging
 import uuid
 from collections.abc import Generator, Sequence
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
@@ -2271,7 +2271,11 @@ class TestProcessor:
         target_holders_list_id = target_holders_list.id
 
         # Setting stored index to 9,999,999
-        await processor.collect()
+        with patch(
+            "app.utils.ibet_contract_utils.AsyncContractUtils.get_event_logs",
+            new=AsyncMock(return_value=[]),
+        ):
+            await processor.collect()
         async_db.expire_all()
 
         # Then processor call "__process_all" method 10 times.

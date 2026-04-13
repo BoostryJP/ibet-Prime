@@ -34,7 +34,11 @@ from sqlalchemy import and_, desc, func, select
 
 import config
 from app.database import DBAsyncSession
-from app.exceptions import InvalidParameterError, SendTransactionError
+from app.exceptions import (
+    ContractRevertError,
+    InvalidParameterError,
+    SendTransactionError,
+)
 from app.model.db import DVPAgentAccount, IDXDelivery, TransactionLock
 from app.model.ibet.exchange import IbetSecurityTokenDVP
 from app.model.ibet.tx_params.ibet_security_token_dvp import (
@@ -517,7 +521,7 @@ async def update_dvp_agent_delivery(
                     tx_sender=agent_account.account_address,
                     tx_sender_key=private_key,
                 )
-            except SendTransactionError:
+            except (SendTransactionError, ContractRevertError):
                 raise SendTransactionError("failed to finish delivery")
             return
         case "Abort":
@@ -530,6 +534,6 @@ async def update_dvp_agent_delivery(
                     tx_sender=agent_account.account_address,
                     tx_sender_key=private_key,
                 )
-            except SendTransactionError:
+            except (SendTransactionError, ContractRevertError):
                 raise SendTransactionError("failed to abort delivery")
             return

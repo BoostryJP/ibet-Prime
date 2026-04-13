@@ -381,7 +381,7 @@ class TestGetFinalizedBlockNumber:
         # Assert
         latest_block_number = latest_block.get("number")
         assert latest_block_number is not None
-        assert block_number == latest_block_number
+        assert block_number == latest_block_number - 2
 
 
 # Test for get_event_logs

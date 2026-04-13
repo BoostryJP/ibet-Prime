@@ -27,7 +27,7 @@
 - [PostgreSQL](https://www.postgresql.org/) - バージョン 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。
-  - 最新の [hardhat network](https://hardhat.org/hardhat-network/) をローカル開発およびユニットテストで利用しています。
+  - ローカル開発およびユニットテストでは [Anvil](https://www.getfoundry.sh/anvil) を利用しています。
 
 ## コントラクトのバージョン
 
@@ -45,9 +45,10 @@
     - パスワード: issuerapipass
     - DB: issuerapidb
     - テスト用 DB: issuerapidb_test
-- ibet-SmartContract の以下のコントラクトを事前にデプロイする必要があります。
-  - TokenList
-  - E2EMessaging
+- ibet Node を構築し、接続できる状態にしてください。
+  - ibet-SmartContract プロジェクトの TokenList および E2EMessaging コントラクトを事前にデプロイしてください。
+- （任意）ethereum Node を構築し、接続できる状態にしてください。
+- （任意）Avalanche Node を構築し、接続できる状態にしてください。
 
 ### パッケージインストール
 
@@ -61,19 +62,10 @@ $ uv venv
 $ uv sync --frozen --no-install-project --no-dev --all-extras
 ```
 
-### pre-commit hookのインストール
-```bash
-$ uv run pre-commit install
-```
-
-### hardhatのインストール
-```bash
-$ npm install
-```
-
 ### 環境変数の設定
 
 環境変数の一覧は [docs/environment_variables_ja.md](docs/environment_variables_ja.md) を参照してください。
+各ユースケースに応じて、必要な環境変数を設定してください。
 
 ### DB マイグレーション
 
@@ -93,23 +85,34 @@ $ ./run.sh server (Press CTRL+C to quit)
 
 ### API 仕様書
 
-#### Swagger UI
-
 サーバーを起動した状態で、[http://0.0.0.0:5000/docs](http://0.0.0.0:5000/docs) を開いてください。
 
 Swagger UI 形式のドキュメントを参照することができるはずです。
 
 ![swagger](https://user-images.githubusercontent.com/963333/146362141-da0fc0d2-1518-4041-a274-be2b743966a1.png)
 
+同様に、[http://0.0.0.0:5000/redoc](http://0.0.0.0:5000/redoc) では、ReDoc 形式のドキュメントを参照することができます。
 
-#### ReDoc
 
-同様に、[http://0.0.0.0:5000/redoc](http://0.0.0.0:5000/redoc) を開いてください。
+## 開発環境に関する情報
 
-ReDoc 形式のドキュメントを参照することができるはずです。
+### pre-commit hookのインストール
 
-![redoc](https://user-images.githubusercontent.com/963333/146362775-c1ec56fa-f0b0-48a4-8926-75c2b7159c90.png)
+commit 前にコードの品質をチェックするための pre-commit hook を用意しています。
+以下のコマンドで pre-commit hook をインストールします。
 
+```bash
+$ uv run pre-commit install
+```
+
+### 環境変数の設定
+
+ローカル環境の環境変数は、`.env` ファイルを作成し、定義することが可能です。
+
+### テスト実行
+
+テスト用コンテナの起動に関しては、`docker-compose.yml` を参照してください。
+個別にテストケースを実行する場合は、ローカルに Python 実行環境を構築し、環境変数を設定した上で、テストケースを実行してください。
 
 ## ブランチ作成方針
 

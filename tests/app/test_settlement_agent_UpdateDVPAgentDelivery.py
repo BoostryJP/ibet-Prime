@@ -75,7 +75,7 @@ async def deploy_bond_token_contract(
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-class TestUpdateDVPDelivery:
+class TestUpdateDVPAgentDelivery:
     # target API endpoint
     base_url = "/settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}"
 

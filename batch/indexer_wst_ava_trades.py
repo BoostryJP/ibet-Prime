@@ -38,7 +38,6 @@ from app.model.wst import AvalancheIbetWST, IbetWSTTrade
 from app.utils.ava_contract_utils import (
     AvaAsyncContractEventsView,
     AvaAsyncContractUtils,
-    AvaWeb3,
 )
 from batch import free_malloc
 from batch.utils import batch_log
@@ -167,10 +166,7 @@ class Processor:
 
         :return: finalized block number
         """
-        block = await AvaWeb3.eth.get_block("finalized")
-        block_number = block.get("number")
-        assert block_number is not None
-        return int(block_number)
+        return await AvaAsyncContractUtils.get_finalized_block_number()
 
     @staticmethod
     async def get_from_block_number(db_session: AsyncSession) -> int:

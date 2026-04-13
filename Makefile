@@ -3,11 +3,9 @@
 install:
 	uv sync --frozen --no-install-project --all-extras
 	uv run pre-commit install
-	npm install
 
 update:
 	uv lock --upgrade
-	npm update
 
 format:
 	uv run ruff format && uv run ruff check --fix --select I
