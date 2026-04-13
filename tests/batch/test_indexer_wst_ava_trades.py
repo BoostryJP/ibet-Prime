@@ -94,7 +94,8 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         # Generate empty block
-        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        for _ in range(3):
+            await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
@@ -146,7 +147,8 @@ class TestProcessor:
         caplog: pytest.LogCaptureFixture,
     ):
         # Generate empty block
-        await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
+        for _ in range(3):
+            await AvaWeb3.provider.make_request(RPCEndpoint("evm_mine"), [])
 
         # Prepare test data
         token = Token()
