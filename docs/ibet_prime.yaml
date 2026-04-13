@@ -3756,10 +3756,7 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
-                  - $ref: '#/components/schemas/InvalidParameterErrorResponse'
-                title: Response 400 Createe2Emessagingaccount
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
         '503':
           description: Service Unavailable Error
           content:
@@ -8084,6 +8081,7 @@ paths:
             application/json:
               schema:
                 anyOf:
+                  - $ref: '#/components/schemas/ContractRevertErrorResponse'
                   - $ref: '#/components/schemas/InvalidParameterErrorResponse'
                   - $ref: '#/components/schemas/OperationNotAllowedStateErrorResponse'
                 title: Response 400 Updatesharetokentransferapprovalstatus
