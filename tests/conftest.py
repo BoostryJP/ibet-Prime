@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterator
 from typing import cast
 
 import pytest
@@ -42,6 +42,7 @@ from app.model.db import Base
 from app.utils.ibet_contract_utils import ContractUtils as IbetContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
+from tests.helpers.anvil_transaction_sync import install_anvil_transaction_sync_patch
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -64,6 +65,22 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     session_scope_marker = pytest.mark.asyncio(loop_scope="session")
     for async_test in pytest_asyncio_tests:
         async_test.add_marker(session_scope_marker, append=False)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def anvil_transaction_sync_patch() -> Iterator[None]:
+    try:
+        client_version = web3.client_version
+    except Exception:
+        yield
+        return
+
+    if "anvil" not in client_version.lower():
+        yield
+        return
+
+    with install_anvil_transaction_sync_patch(web3):
+        yield
 
 
 #####################################################
