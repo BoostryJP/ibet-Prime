@@ -17,47 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-import decimal
-import json
 from typing import Any
-
-import orjson
-from fastapi.responses import ORJSONResponse
-
-from config import RESPONSE_VALIDATION_MODE
-
-
-def decimal_default(obj: Any):
-    if isinstance(obj, decimal.Decimal):
-        return float(obj)
-    raise TypeError
-
-
-class CustomORJSONResponse(ORJSONResponse):
-    media_type = "application/json"
-
-    def render(self, content: Any) -> bytes:
-        try:
-            result = orjson.dumps(
-                content,
-                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
-                default=decimal_default,
-            )
-            return result
-        except TypeError as e:
-            if e.args[0] == "Integer exceeds 64-bit range":
-                return json.dumps(
-                    content,
-                    ensure_ascii=False,
-                    allow_nan=False,
-                    indent=None,
-                    separators=(",", ":"),
-                ).encode("utf-8")
-            raise
 
 
 def json_response(content: dict[str, Any] | list[Any]):
-    if RESPONSE_VALIDATION_MODE:
-        return content
-    else:
-        return CustomORJSONResponse(content=content)
+    return content

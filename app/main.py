@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
-from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from pydantic_core import ArgsKwargs, ErrorDetails
@@ -73,6 +73,7 @@ from config import (
     FREEZE_LOG_FEATURE_ENABLED,
     IBET_WST_FEATURE_ENABLED,
     PROFILING_MODE,
+    RESPONSE_VALIDATION_MODE,
     SERVER_NAME,
 )
 
@@ -242,6 +243,31 @@ async def internal_server_error_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=jsonable_encoder({"meta": meta}),
+    )
+
+
+@app.exception_handler(ResponseValidationError)
+async def response_validation_exception_handler(
+    request: Request, exc: ResponseValidationError
+):
+    """
+    Handle response validation errors.
+
+    - If RESPONSE_VALIDATION_MODE is enabled, return 500 Internal Server Error with error details in the response body.
+    - If RESPONSE_VALIDATION_MODE is disabled, log a warning and return the original response without validation error details.
+    """
+    if RESPONSE_VALIDATION_MODE:
+        return await internal_server_error_handler(request, exc)
+
+    LOG.warning(
+        f"Invalid response: path={request.url.path}, method={request.method}, detail={exc.errors()}"
+    )
+
+    route = request.scope.get("route")
+    status_code = getattr(route, "status_code", None) or status.HTTP_200_OK
+    return JSONResponse(
+        status_code=status_code,
+        content=jsonable_encoder(exc.body),
     )
 
 
