@@ -248,7 +248,7 @@ class TestGetIbetWSTTransaction:
         await async_db.commit()
 
         # Send request
-        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+        with mock.patch("app.main.RESPONSE_VALIDATION_MODE", False):
             resp = await async_client.get(self.api_url.format(tx_id=tx_id))
 
         # Check response

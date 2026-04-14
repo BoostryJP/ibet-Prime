@@ -3107,7 +3107,7 @@ class TestRetrieveLedgerHistory:
         await async_db.commit()
 
         # request target API
-        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+        with mock.patch("app.main.RESPONSE_VALIDATION_MODE", False):
             resp = await async_client.get(
                 self.base_url.format(token_address=token_address, ledger_id=1),
                 params={

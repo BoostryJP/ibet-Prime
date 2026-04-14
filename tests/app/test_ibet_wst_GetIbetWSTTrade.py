@@ -182,7 +182,7 @@ class TestGetIbetWSTTrade:
         await self.insert_trade_eth(async_db, trade1)
 
         # Call API
-        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+        with mock.patch("app.main.RESPONSE_VALIDATION_MODE", False):
             resp = await async_client.get(
                 self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1, index=1)
             )
