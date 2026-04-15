@@ -105,7 +105,7 @@ jobs:
         with:
           node-version: 20
       - name: Install junit-report-merger
-        run: npm install -g junit-report-merger
+        run: npm install -g junit-report-merger@9.0.3
       - name: Merge reports
         run: jrm cov/pytest.xml "cov/pytest-*.xml"
       - name: Pytest coverage comment
