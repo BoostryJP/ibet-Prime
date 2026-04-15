@@ -66,6 +66,7 @@ from app.utils import o11y_utils
 from app.utils.cache_control import CacheControlMiddleware
 from app.utils.docs_utils import custom_openapi
 from config import (
+    APP_ENV,
     BC_EXPLORER_ENABLED,
     DEDICATED_DVP_AGENT_MODE,
     DEDICATED_OFFCHAIN_TX_MODE,
@@ -259,9 +260,14 @@ async def response_validation_exception_handler(
     if RESPONSE_VALIDATION_MODE:
         return await internal_server_error_handler(request, exc)
 
-    LOG.warning(
-        f"Invalid response: path={request.url.path}, method={request.method}, detail={exc.errors()}"
-    )
+    if APP_ENV == "live":
+        LOG.info(
+            f"Invalid response: path={request.url.path}, method={request.method}, detail={exc.errors()}"
+        )
+    else:
+        LOG.warning(
+            f"Invalid response: path={request.url.path}, method={request.method}, detail={exc.errors()}"
+        )
 
     route = request.scope.get("route")
     status_code = getattr(route, "status_code", None) or status.HTTP_200_OK

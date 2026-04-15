@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import configparser
 import os
 import sys
+from typing import Literal
 
 from dotenv import load_dotenv
 
@@ -41,7 +42,10 @@ TZ = os.environ.get("TZ") or "Asia/Tokyo"
 DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY") or "JPY"
 
 # Environment-specific settings
-APP_ENV = os.environ.get("APP_ENV") or "local"
+_app_env = os.environ.get("APP_ENV") or "local"
+if _app_env not in ("local", "dev", "live"):
+    raise ValueError(f"Invalid APP_ENV: {_app_env}")
+APP_ENV: Literal["local", "dev", "live"] = _app_env
 config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "conf")
 ini_file_name = f"{APP_ENV}.ini"
 INI_FILE = os.path.join(config_dir, ini_file_name)
