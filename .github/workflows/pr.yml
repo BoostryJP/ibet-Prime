@@ -45,7 +45,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        test_target: ["tests/app/", "tests/batch/"]
+        test_target: ["tests/app/", "tests/batch/", "tests/e2e/"]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
@@ -118,7 +118,7 @@ jobs:
       - name: Count test cases in coverage scope
         id: countTest
         run: |
-          RESULT=$(docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'uv run pytest --collect-only tests/app tests/batch | grep -e "<Function" -e "<Coroutine"' | wc -l)
+          RESULT=$(docker compose run -w /app/ibet-Prime ibet-prime-postgres bash --login -c 'uv run pytest --collect-only | grep -e "<Function" -e "<Coroutine"' | wc -l)
           echo "test_count=${RESULT}" >> $GITHUB_OUTPUT
       - run: echo ${{ steps.coverageComment.outputs.tests }}
       - run: echo ${{ steps.countTest.outputs.test_count }}
