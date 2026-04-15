@@ -77,8 +77,9 @@ async def ui_index(
         )
     latest_block_number = await _get_latest_block_number(db)
     return templates.TemplateResponse(
-        "misc/bc_explorer/index.html",
-        {
+        request=request,
+        name="misc/bc_explorer/index.html",
+        context={
             "request": request,
             "latest_block_number": latest_block_number,
             "initial_block_query": {
@@ -113,8 +114,9 @@ async def ui_blocks(
     # If not HTMX request, render full UI with same query
     if request.headers.get("HX-Request") != "true":
         return templates.TemplateResponse(
-            "misc/bc_explorer/index.html",
-            {
+            request=request,
+            name="misc/bc_explorer/index.html",
+            context={
                 "request": request,
                 "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {
@@ -134,8 +136,9 @@ async def ui_blocks(
     blocks = result.get("block_data", [])
     rs = result.get("result_set", {})
     return templates.TemplateResponse(
-        "misc/bc_explorer/blocks.html",
-        {
+        request=request,
+        name="misc/bc_explorer/blocks.html",
+        context={
             "request": request,
             "blocks": blocks,
             "count": rs.get("count", 0),
@@ -163,8 +166,9 @@ async def ui_block_detail(
 
     if request.headers.get("HX-Request") != "true":
         return templates.TemplateResponse(
-            "misc/bc_explorer/index.html",
-            {
+            request=request,
+            name="misc/bc_explorer/index.html",
+            context={
                 "request": request,
                 "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {},
@@ -175,8 +179,9 @@ async def ui_block_detail(
 
     block = await bc_explorer.service_get_block_data(db=db, block_number=block_number)
     return templates.TemplateResponse(
-        "misc/bc_explorer/block_detail.html",
-        {"request": request, "block": block},
+        request=request,
+        name="misc/bc_explorer/block_detail.html",
+        context={"request": request, "block": block},
     )
 
 
@@ -197,8 +202,9 @@ async def ui_txs(
 
     if request.headers.get("HX-Request") != "true":
         return templates.TemplateResponse(
-            "misc/bc_explorer/index.html",
-            {
+            request=request,
+            name="misc/bc_explorer/index.html",
+            context={
                 "request": request,
                 "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {},
@@ -211,8 +217,9 @@ async def ui_txs(
     txs = result.get("tx_data", [])
     rs = result.get("result_set", {})
     return templates.TemplateResponse(
-        "misc/bc_explorer/txs.html",
-        {
+        request=request,
+        name="misc/bc_explorer/txs.html",
+        context={
             "request": request,
             "txs": txs,
             "count": rs.get("count", 0),
@@ -240,8 +247,9 @@ async def ui_tx_detail(
 
     if request.headers.get("HX-Request") != "true":
         return templates.TemplateResponse(
-            "misc/bc_explorer/index.html",
-            {
+            request=request,
+            name="misc/bc_explorer/index.html",
+            context={
                 "request": request,
                 "latest_block_number": await _get_latest_block_number(db),
                 "initial_block_query": {},
@@ -252,6 +260,7 @@ async def ui_tx_detail(
 
     tx = await bc_explorer.service_get_tx_data(db=db, hash=hash)
     return templates.TemplateResponse(
-        "misc/bc_explorer/tx_detail.html",
-        {"request": request, "tx": tx},
+        request=request,
+        name="misc/bc_explorer/tx_detail.html",
+        context={"request": request, "tx": tx},
     )
