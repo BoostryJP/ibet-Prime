@@ -181,6 +181,8 @@ from .scheduled_events import (
     ScheduledEventResponse,
 )
 from .sealed_tx import (
+    SealedTxAddIbetWSTWhitelistRequest,
+    SealedTxDeleteIbetWSTWhitelistRequest,
     SealedTxRegisterHolderExtraInfoRequest,
     SealedTxRegisterPersonalInfoRequest,
 )

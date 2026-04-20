@@ -21,7 +21,12 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from app.model import EthereumAddress
+from app.model import ChecksumEthereumAddress, EthereumAddress
+from app.model.schema.base import IbetWSTBlockchain
+from app.model.schema.ibet_wst import (
+    AddIbetWSTWhitelistRequest,
+    DeleteIbetWSTWhitelistRequest,
+)
 from app.model.schema.personal_info import PersonalInfoInput
 
 
@@ -60,3 +65,27 @@ class SealedTxRegisterHolderExtraInfoRequest(BaseModel):
         None, description="The type of external-id3", max_length=50
     )
     external_id3: Optional[str] = Field(None, description="external-id3", max_length=50)
+
+
+class SealedTxAddIbetWSTWhitelistRequest(AddIbetWSTWhitelistRequest):
+    """Schema for IbetWST whitelist addition using sealed tx (REQUEST)"""
+
+    token_address: ChecksumEthereumAddress = Field(
+        description="Underlying ibet token address"
+    )
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
+    )
+
+
+class SealedTxDeleteIbetWSTWhitelistRequest(DeleteIbetWSTWhitelistRequest):
+    """Schema for IbetWST whitelist deletion using sealed tx (REQUEST)"""
+
+    token_address: ChecksumEthereumAddress = Field(
+        description="Underlying ibet token address"
+    )
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
+    )

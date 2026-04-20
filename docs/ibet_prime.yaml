@@ -9821,6 +9821,92 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /sealed_tx/ibet_wst/whitelists/add:
+    post:
+      tags:
+        - '[misc] sealed_tx'
+      summary: Sealed Tx Add Ibet Wst Whitelist
+      description: |-
+        Add an account to the IbetWST whitelist by sealed tx
+
+        - This endpoint allows an issuer's delegated EOA to instruct whitelist registration by sealed tx.
+      operationId: SealedTxAddIbetWSTWhitelist
+      parameters:
+        - name: X-SealedTx-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            title: X-Sealedtx-Signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SealedTxAddIbetWSTWhitelistRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
+  /sealed_tx/ibet_wst/whitelists/delete:
+    post:
+      tags:
+        - '[misc] sealed_tx'
+      summary: Sealed Tx Delete Ibet Wst Whitelist
+      description: |-
+        Delete an account from the IbetWST whitelist by sealed tx
+
+        - This endpoint allows an issuer's delegated EOA to instruct whitelist deletion by sealed tx.
+      operationId: SealedTxDeleteIbetWSTWhitelist
+      parameters:
+        - name: X-SealedTx-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+            title: X-Sealedtx-Signature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SealedTxDeleteIbetWSTWhitelistRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IbetWSTTransactionResponse'
+        '404':
+          description: Not Found Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404Model'
+        '400':
+          description: Invalid Parameter Error / Send Transaction Error / 
+            Contract Revert Error etc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvalidParameterErrorResponse'
   /ibet_wst/tokens:
     get:
       tags:
@@ -18847,6 +18933,58 @@ components:
         - token_attributes
       title: ScheduledEventWithTokenAttributes
       description: Scheduled event with token attributes
+    SealedTxAddIbetWSTWhitelistRequest:
+      properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST operation
+          default: ethereum
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address to be added to the whitelist
+        sc_account_address_in:
+          type: string
+          title: Sc Account Address In
+          description: SC account address for deposits
+        sc_account_address_out:
+          type: string
+          title: Sc Account Address Out
+          description: SC account address for withdrawals
+        token_address:
+          type: string
+          title: Token Address
+          description: Underlying ibet token address
+      type: object
+      required:
+        - st_account_address
+        - sc_account_address_in
+        - sc_account_address_out
+        - token_address
+      title: SealedTxAddIbetWSTWhitelistRequest
+      description: Schema for IbetWST whitelist addition using sealed tx 
+        (REQUEST)
+    SealedTxDeleteIbetWSTWhitelistRequest:
+      properties:
+        blockchain_platform:
+          $ref: '#/components/schemas/IbetWSTBlockchain'
+          description: Blockchain platform for IbetWST operation
+          default: ethereum
+        st_account_address:
+          type: string
+          title: St Account Address
+          description: ST account address to be removed from the whitelist
+        token_address:
+          type: string
+          title: Token Address
+          description: Underlying ibet token address
+      type: object
+      required:
+        - st_account_address
+        - token_address
+      title: SealedTxDeleteIbetWSTWhitelistRequest
+      description: Schema for IbetWST whitelist deletion using sealed tx 
+        (REQUEST)
     SealedTxPersonalInfoInput:
       properties:
         name:
