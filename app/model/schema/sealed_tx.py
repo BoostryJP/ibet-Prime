@@ -22,7 +22,6 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from app.model import ChecksumEthereumAddress, EthereumAddress
-from app.model.schema.base import IbetWSTBlockchain
 from app.model.schema.ibet_wst import (
     AddIbetWSTWhitelistRequest,
     DeleteIbetWSTWhitelistRequest,
@@ -73,10 +72,6 @@ class SealedTxAddIbetWSTWhitelistRequest(AddIbetWSTWhitelistRequest):
     token_address: ChecksumEthereumAddress = Field(
         description="Underlying ibet token address"
     )
-    blockchain_platform: IbetWSTBlockchain = Field(
-        default=IbetWSTBlockchain.ETHEREUM,
-        description="Blockchain platform for IbetWST operation",
-    )
 
 
 class SealedTxDeleteIbetWSTWhitelistRequest(DeleteIbetWSTWhitelistRequest):
@@ -84,8 +79,4 @@ class SealedTxDeleteIbetWSTWhitelistRequest(DeleteIbetWSTWhitelistRequest):
 
     token_address: ChecksumEthereumAddress = Field(
         description="Underlying ibet token address"
-    )
-    blockchain_platform: IbetWSTBlockchain = Field(
-        default=IbetWSTBlockchain.ETHEREUM,
-        description="Blockchain platform for IbetWST operation",
     )
