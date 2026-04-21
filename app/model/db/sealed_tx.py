@@ -28,5 +28,7 @@ class IbetWSTWhitelistKYCDelegatedEoa(Base):
 
     __tablename__ = "ibet_wst_whitelist_kyc_delegated_eoa"
 
+    # delegated key manager
     key_manager: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # account address
     account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
