@@ -214,6 +214,7 @@ from .token import (
     IbetStraightBondTransfer,
     IbetStraightBondUpdate,
     IssueRedeemSortItem,
+    IssueTokenResponse,
     ListAdditionalIssuanceHistoryQuery,
     ListAllAdditionalIssueUploadQuery,
     ListAllHoldersQuery,
@@ -228,7 +229,6 @@ from .token import (
     ListTokenHistorySortItem,
     ListTokenOperationLogHistoryQuery,
     ListTokenOperationLogHistoryResponse,
-    TokenAddressResponse,
     TokenUpdateOperationCategory,
 )
 from .token_holders import (

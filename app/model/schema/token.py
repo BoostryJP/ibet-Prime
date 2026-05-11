@@ -613,11 +613,12 @@ class ListAllIssuedTokensResponse(BaseModel):
     tokens: list[IssuedToken]
 
 
-class TokenAddressResponse(BaseModel):
-    """token address"""
+class IssueTokenResponse(BaseModel):
+    """Issue token response"""
 
     token_address: str
     token_status: TokenStatus
+    contract_version: IbetStraightBondContractVersion | IbetShareContractVersion
 
 
 class IbetWSTSettingsByBlockchainResponse(BaseModel):
