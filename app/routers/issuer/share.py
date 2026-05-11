@@ -149,6 +149,7 @@ from app.model.schema import (
     IbetShareTransfer,
     IbetShareUpdate,
     IssueRedeemHistoryResponse,
+    IssueTokenResponse,
     ListAdditionalIssuanceHistoryQuery,
     ListAllAdditionalIssueUploadQuery,
     ListAllHoldersQuery,
@@ -179,7 +180,6 @@ from app.model.schema import (
     ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
-    TokenAddressResponse,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenDetailResponse,
@@ -295,7 +295,7 @@ def _decode_private_key(
 @router.post(
     "/tokens",
     operation_id="IssueShareToken",
-    response_model=TokenAddressResponse,
+    response_model=IssueTokenResponse,
     responses=get_routers_responses(422, 401, AuthorizationError, SendTransactionError),
 )
 async def issue_share_token(
@@ -492,7 +492,11 @@ async def issue_share_token(
     await db.commit()
 
     return json_response(
-        {"token_address": _token.token_address, "token_status": token_status}
+        {
+            "token_address": _token.token_address,
+            "token_status": token_status,
+            "contract_version": _token.version,
+        }
     )
 
 

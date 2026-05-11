@@ -162,6 +162,7 @@ class TestIssueShareToken:
             assert resp.status_code == 200
             assert resp.json()["token_address"] == "contract_address_test1"
             assert resp.json()["token_status"] == 1
+            assert resp.json()["contract_version"] == "25_09"
 
             token_after = (await async_db.scalars(select(Token))).all()
             assert 0 == len(token_before)
