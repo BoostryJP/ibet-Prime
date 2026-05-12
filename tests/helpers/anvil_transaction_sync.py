@@ -16,7 +16,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from typing import Any, cast
 from unittest import mock
@@ -28,7 +28,7 @@ from web3.types import RPCEndpoint
 
 
 @contextmanager
-def install_anvil_transaction_sync_patch(_: Any = None) -> Iterator[None]:
+def install_anvil_transaction_sync_patch(_: Any = None) -> Generator[None, None, None]:
     """Route transaction sending through Anvil's synchronous RPC during tests."""
 
     transaction_receipt_cache: dict[HexBytes, Any] = {}

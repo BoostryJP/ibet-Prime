@@ -107,7 +107,7 @@ class AsyncWeb3Wrapper:
         return web3.net
 
     @staticmethod
-    def _get_web3(request_timeout: int) -> AsyncWeb3:
+    def _get_web3(request_timeout: int) -> AsyncWeb3[Any]:
         # Get web3 for each thread because make to FailOverHTTPProvider thread-safe
         try:
             async_web3 = thread_local.async_web3
