@@ -141,9 +141,7 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
     else:
         private_key = keccak(secrets.token_bytes(32))
     public_key = private_key_to_public_key(private_key)
-    addr = public_key_to_address(
-        private_key_to_public_key(private_key, compressed=False)
-    )
+    addr = public_key_to_address(public_key)
     keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
