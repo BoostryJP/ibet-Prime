@@ -11,7 +11,7 @@ requires-python = "==3.13.11"
 dependencies = [
     "alembic<2.0.0,>=1.14.0",
     "boto3~=1.43.0",
-    "coincurve~=21.0.0",
+    "cryptography~=44.0.0",
     "eth-keyfile==0.8.1",
     "eth-utils~=6.0.0",
     "fastapi~=0.136.1",
