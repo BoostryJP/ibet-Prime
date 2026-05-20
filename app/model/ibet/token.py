@@ -1047,7 +1047,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 try:
                     await self.create_cache(db_session)
                     await db_session.commit()
-                except (SAIntegrityError, StaleDataError):
+                except SAIntegrityError, StaleDataError:
                     await db_session.rollback()
         finally:
             await db_session.close()
@@ -1751,7 +1751,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                 try:
                     await self.create_cache(db_session)
                     await db_session.commit()
-                except (SAIntegrityError, StaleDataError):
+                except SAIntegrityError, StaleDataError:
                     await db_session.rollback()
         finally:
             await db_session.close()

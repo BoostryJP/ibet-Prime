@@ -127,7 +127,7 @@ class Processor:
                                     db=db_session, token_address=token_contract.address
                                 )
                                 await db_session.flush()
-                        except (DBAPIError, ValueError):
+                        except DBAPIError, ValueError:
                             LOG.error(
                                 f"Invalid record detected. Ledger creation request has been discarded and not saved: token_address={token_contract.address}"
                             )
@@ -386,7 +386,7 @@ class Processor:
                         call_data = json.loads(bytes.fromhex(raw_call_data))
                         if call_data.get("purpose") == "Reallocation":
                             reallocation_from = from_account
-                    except (ValueError, json.JSONDecodeError):
+                    except ValueError, json.JSONDecodeError:
                         pass
 
             # Retrieve block timestamp

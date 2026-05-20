@@ -150,7 +150,7 @@ async def create_e2e_messaging_account(
             tx_sender=addr,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     # Register account data to the DB

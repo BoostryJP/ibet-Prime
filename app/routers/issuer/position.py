@@ -644,7 +644,7 @@ async def force_lock(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     return
@@ -763,7 +763,7 @@ async def force_unlock(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     return

@@ -292,7 +292,7 @@ async def record_new_log(
             log_message=req.log_message,
             freezing_grace_block_count=req.freezing_grace_block_count,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to record log")
 
     return json_response({"log_index": log_index})
@@ -346,7 +346,7 @@ async def update_log(
             log_index=log_index,
             log_message=req.log_message,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to update log")
 
     return

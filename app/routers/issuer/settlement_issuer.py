@@ -326,7 +326,7 @@ async def create_dvp_delivery(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     # Structure and encrypt data
@@ -580,7 +580,7 @@ async def update_dvp_delivery(
                     tx_sender=issuer_address,
                     tx_sender_key=private_key,
                 )
-            except (SendTransactionError, ContractRevertError):
+            except SendTransactionError, ContractRevertError:
                 raise SendTransactionError("failed to cancel delivery")
 
     return

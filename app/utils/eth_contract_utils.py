@@ -110,7 +110,7 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                     try:
                         # Send request
                         return await super().make_request(method, params)
-                    except (ClientError, JSONDecodeError):
+                    except ClientError, JSONDecodeError:
                         # JSONDecodeError may occur when sending a request during geth shutdown, etc.
                         LOG.info(
                             f"Retry web3 request due to connection fail: method={method}, params={params}"

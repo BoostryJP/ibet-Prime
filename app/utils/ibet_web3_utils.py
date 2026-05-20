@@ -160,7 +160,7 @@ class FailOverHTTPProvider(HTTPProvider):
                     self.endpoint_uri = URI(_node.endpoint_uri)
                     try:
                         return super().make_request(method, params)
-                    except (ConnectionError, JSONDecodeError, HTTPError):
+                    except ConnectionError, JSONDecodeError, HTTPError:
                         # NOTE:
                         #  JSONDecodeError will be raised if a request is sent
                         #  while Quorum is terminating.
@@ -222,7 +222,7 @@ class AsyncFailOverHTTPProvider(AsyncHTTPProvider):
                     self.endpoint_uri = URI(_node.endpoint_uri)
                     try:
                         return await super().make_request(method, params)
-                    except (ClientError, JSONDecodeError):
+                    except ClientError, JSONDecodeError:
                         # NOTE:
                         #  JSONDecodeError will be raised if a request is sent
                         #  while Quorum is terminating.
