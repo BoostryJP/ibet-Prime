@@ -524,7 +524,7 @@ async def update_dvp_agent_delivery(
                     tx_sender=agent_account.account_address,
                     tx_sender_key=private_key,
                 )
-            except (SendTransactionError, ContractRevertError):
+            except SendTransactionError, ContractRevertError:
                 raise SendTransactionError("failed to finish delivery")
             return
         case "Abort":
@@ -537,6 +537,6 @@ async def update_dvp_agent_delivery(
                     tx_sender=agent_account.account_address,
                     tx_sender_key=private_key,
                 )
-            except (SendTransactionError, ContractRevertError):
+            except SendTransactionError, ContractRevertError:
                 raise SendTransactionError("failed to abort delivery")
             return

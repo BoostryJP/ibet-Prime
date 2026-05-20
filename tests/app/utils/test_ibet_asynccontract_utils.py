@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
@@ -289,6 +289,61 @@ class TestSendTransaction:
         assert rtn_receipt["from"] == self.test_account["address"]
         assert web3.is_address(rtn_receipt["contractAddress"])
 
+    # <Normal_2>
+    # Engine is disposed after successful send
+    @pytest.mark.asyncio
+    async def test_normal_2(self):
+        fake_engine = MagicMock()
+        fake_engine.dispose = AsyncMock()
+        fake_session = MagicMock()
+        fake_session.scalars = AsyncMock(
+            return_value=MagicMock(first=MagicMock(return_value=None))
+        )
+        fake_session.rollback = AsyncMock()
+        fake_session.close = AsyncMock()
+        fake_signed_tx = MagicMock()
+        fake_signed_tx.raw_transaction.to_0x_hex.return_value = "0xsigned"
+        fake_tx_hash = MagicMock()
+        fake_tx_hash.to_0x_hex.return_value = "0xhash"
+        fake_receipt = {"status": 1, "transactionHash": fake_tx_hash}
+
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.create_async_engine",
+                return_value=fake_engine,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.AsyncSession", return_value=fake_session
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction_count",
+                AsyncMock(return_value=0),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.account.sign_transaction",
+                return_value=fake_signed_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.send_raw_transaction",
+                AsyncMock(return_value=fake_tx_hash),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.wait_for_transaction_receipt",
+                AsyncMock(return_value=fake_receipt),
+            ),
+        ):
+            rtn_tx_hash, rtn_receipt = await AsyncContractUtils.send_transaction(
+                transaction={"from": self.test_account["address"]},
+                private_key=self.private_key,
+            )
+
+        assert rtn_tx_hash == "0xhash"
+        assert rtn_receipt == fake_receipt
+        fake_session.scalars.assert_awaited_once()
+        fake_session.rollback.assert_awaited_once()
+        fake_session.close.assert_awaited_once()
+        fake_engine.dispose.assert_awaited_once()
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -470,6 +525,55 @@ class TestSendTransactionNoWait:
         assert rtn_receipt["to"] is None
         assert rtn_receipt["from"] == self.test_account["address"]
         assert web3.is_address(rtn_receipt["contractAddress"])
+
+    # <Normal_2>
+    # Engine is disposed after successful send
+    @pytest.mark.asyncio
+    async def test_normal_2(self):
+        fake_engine = MagicMock()
+        fake_engine.dispose = AsyncMock()
+        fake_session = MagicMock()
+        fake_session.scalars = AsyncMock(
+            return_value=MagicMock(first=MagicMock(return_value=None))
+        )
+        fake_session.rollback = AsyncMock()
+        fake_session.close = AsyncMock()
+        fake_signed_tx = MagicMock()
+        fake_signed_tx.raw_transaction.to_0x_hex.return_value = "0xsigned"
+        fake_tx_hash = MagicMock()
+        fake_tx_hash.to_0x_hex.return_value = "0xhash"
+
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.create_async_engine",
+                return_value=fake_engine,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.AsyncSession", return_value=fake_session
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction_count",
+                AsyncMock(return_value=0),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.account.sign_transaction",
+                return_value=fake_signed_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.send_raw_transaction",
+                AsyncMock(return_value=fake_tx_hash),
+            ),
+        ):
+            rtn_tx_hash = await AsyncContractUtils.send_transaction_no_wait(
+                transaction={"from": self.test_account["address"]},
+                private_key=self.private_key,
+            )
+
+        assert rtn_tx_hash == "0xhash"
+        fake_session.scalars.assert_awaited_once()
+        fake_session.rollback.assert_awaited_once()
+        fake_session.close.assert_awaited_once()
+        fake_engine.dispose.assert_awaited_once()
 
     ###########################################################################
     # Error Case

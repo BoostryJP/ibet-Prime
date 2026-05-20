@@ -194,32 +194,28 @@ class ContractUtils:
             raise SendTransactionError("Transaction sender is required")
         tx_from = cast(str, tx_from_value)
 
-        # local database session
-        DB_URI = DATABASE_URL
         db_engine = create_engine(
-            DB_URI,
+            DATABASE_URL,
             connect_args={"options": "-c lock_timeout=10000"},
             echo=False,
             pool_pre_ping=True,
         )
         local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
 
-        # Exclusive control within transaction execution address
-        # 10-sec timeout
-        # Lock record
         try:
-            _tm = local_session.scalars(
-                select(TransactionLock)
-                .where(TransactionLock.tx_from == tx_from)
-                .limit(1)
-                .with_for_update()
-            ).first()
-        except (OperationalError, DBAPIError) as err:
-            local_session.rollback()
-            local_session.close()
-            raise SendTransactionError(err)
+            # Exclusive control within transaction execution address
+            # 10-sec timeout
+            # Lock record
+            try:
+                _tm = local_session.scalars(
+                    select(TransactionLock)
+                    .where(TransactionLock.tx_from == tx_from)
+                    .limit(1)
+                    .with_for_update()
+                ).first()
+            except (OperationalError, DBAPIError) as err:
+                raise SendTransactionError(err)
 
-        try:
             # Get nonce
             nonce = web3.eth.get_transaction_count(cast(Any, tx_from_value))
             transaction["nonce"] = nonce
@@ -242,6 +238,7 @@ class ContractUtils:
         finally:
             local_session.rollback()  # unlock record
             local_session.close()
+            db_engine.dispose()
 
         return tx_hash.to_0x_hex(), tx_receipt
 
@@ -486,10 +483,8 @@ class AsyncContractUtils:
             raise SendTransactionError("Transaction sender is required")
         tx_from = cast(str, tx_from_value)
 
-        # local database session
-        DB_URI = ASYNC_DATABASE_URL
         async_engine = create_async_engine(
-            DB_URI,
+            ASYNC_DATABASE_URL,
             connect_args={"server_settings": {"lock_timeout": "10000"}},
             echo=False,
             pool_pre_ping=True,
@@ -501,24 +496,22 @@ class AsyncContractUtils:
             bind=async_engine,
         )
 
-        # Exclusive control within transaction execution address
-        # 10-sec timeout
-        # Lock record
         try:
-            _tm = (
-                await local_session.scalars(
-                    select(TransactionLock)
-                    .where(TransactionLock.tx_from == tx_from)
-                    .limit(1)
-                    .with_for_update()
-                )
-            ).first()
-        except (OperationalError, DBAPIError) as err:
-            await local_session.rollback()
-            await local_session.close()
-            raise SendTransactionError(err)
+            # Exclusive control within transaction execution address
+            # 10-sec timeout
+            # Lock record
+            try:
+                _tm = (
+                    await local_session.scalars(
+                        select(TransactionLock)
+                        .where(TransactionLock.tx_from == tx_from)
+                        .limit(1)
+                        .with_for_update()
+                    )
+                ).first()
+            except (OperationalError, DBAPIError) as err:
+                raise SendTransactionError(err)
 
-        try:
             # Get nonce
             nonce = await async_web3.eth.get_transaction_count(cast(Any, tx_from_value))
             transaction["nonce"] = nonce
@@ -543,6 +536,7 @@ class AsyncContractUtils:
         finally:
             await local_session.rollback()  # unlock record
             await local_session.close()
+            await async_engine.dispose()
 
         return tx_hash.to_0x_hex(), tx_receipt
 
@@ -556,11 +550,9 @@ class AsyncContractUtils:
             raise SendTransactionError("Transaction sender is required")
         tx_from = cast(str, tx_from_value)
 
-        # local database session
-        DB_URI = DATABASE_URL
         db_engine = create_async_engine(
-            DB_URI,
-            connect_args={"options": "-c lock_timeout=10000"},
+            ASYNC_DATABASE_URL,
+            connect_args={"server_settings": {"lock_timeout": "10000"}},
             echo=False,
             pool_pre_ping=True,
         )
@@ -603,6 +595,7 @@ class AsyncContractUtils:
         finally:
             await local_session.rollback()  # unlock record
             await local_session.close()
+            await db_engine.dispose()
 
         return tx_hash.to_0x_hex()
 

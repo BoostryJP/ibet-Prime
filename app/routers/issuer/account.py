@@ -647,7 +647,7 @@ async def create_child_account(
                 .with_for_update(nowait=True)
             )
         ).first()
-    except (OperationalError, DBAPIError):
+    except OperationalError, DBAPIError:
         await db.rollback()
         await db.close()
         raise ServiceUnavailableError(
@@ -743,7 +743,7 @@ async def create_child_account_in_batch(
                 .with_for_update(nowait=True)
             )
         ).first()
-    except (OperationalError, DBAPIError):
+    except OperationalError, DBAPIError:
         await db.rollback()
         await db.close()
         raise ServiceUnavailableError(

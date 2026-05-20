@@ -238,7 +238,7 @@ class Processor:
                                 call_data = json.loads(bytes.fromhex(raw_call_data))
                                 if call_data.get("purpose") == "Reallocation":
                                     is_reallocation = True
-                            except (ValueError, json.JSONDecodeError):
+                            except ValueError, json.JSONDecodeError:
                                 pass
                         if is_reallocation:
                             await self.__sink_on_transfer(

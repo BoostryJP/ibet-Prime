@@ -132,7 +132,7 @@ class Processor:
                             "utf-8"
                         ),
                     )
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     LOG.exception("Failed to decode keyfile")
                     await self.__sink_on_notification(
                         db_session=db_session,
