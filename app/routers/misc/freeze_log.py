@@ -22,9 +22,7 @@ import secrets
 from typing import Annotated, Sequence
 
 import boto3
-from coincurve import PublicKey
 from eth_keyfile.keyfile import create_keyfile_json, decode_keyfile_json
-from eth_utils.address import to_checksum_address
 from eth_utils.crypto import keccak
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import select
@@ -51,6 +49,10 @@ from app.model.schema import (
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
+from app.utils.secp256k1_utils import (
+    private_key_to_public_key,
+    public_key_to_address,
+)
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -92,8 +94,9 @@ async def create_account(
         private_key = keccak(result.get("Plaintext"))
     else:
         private_key = keccak(secrets.token_bytes(32))
-    public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
-    addr = to_checksum_address(keccak(public_key)[-20:])
+    addr = public_key_to_address(
+        private_key_to_public_key(private_key, compressed=False)
+    )
     keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )

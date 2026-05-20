@@ -26,7 +26,6 @@ import logging
 import secrets
 
 import pytest
-from coincurve import PublicKey
 from eth_utils.address import to_checksum_address
 from eth_utils.crypto import keccak
 from sqlalchemy import select
@@ -41,6 +40,7 @@ from app.model.db import (
     PersonalInfoEventType,
     TmpChildAccountBatchCreate,
 )
+from app.utils.secp256k1_utils import combine_public_keys, private_key_to_public_key
 from batch.processor_batch_create_child_account import LOG, Processor
 
 
@@ -59,20 +59,20 @@ def processor(async_db: AsyncSession):
 
 class TestProcessor:
     sk_1 = secrets.token_bytes(32)
-    pk_1 = PublicKey.from_valid_secret(sk_1)
+    pk_1 = private_key_to_public_key(sk_1)
 
-    issuer_pub_key = pk_1.format().hex()
+    issuer_pub_key = pk_1.hex()
     issuer_address = to_checksum_address(
-        keccak(pk_1.format(compressed=False)[1:])[-20:]
+        keccak(private_key_to_public_key(sk_1, compressed=False)[1:])[-20:]
     )
 
     index = 1
     sk_2 = int(index).to_bytes(32)
-    pk_2 = PublicKey.from_valid_secret(sk_2)
+    pk_2 = private_key_to_public_key(sk_2)
 
-    child_1_pub_key = PublicKey.combine_keys([pk_1, pk_2])
+    child_1_pub_key = combine_public_keys([pk_1, pk_2])
     child_1_address = to_checksum_address(
-        keccak(child_1_pub_key.format(compressed=False)[1:])[-20:]
+        keccak(combine_public_keys([pk_1, pk_2], compressed=False)[1:])[-20:]
     )
 
     ###########################################################################
