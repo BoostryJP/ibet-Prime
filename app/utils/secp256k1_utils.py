@@ -30,6 +30,9 @@ _FIELD_PRIME = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2
 
 def private_key_to_public_key(private_key: bytes, *, compressed: bool = True) -> bytes:
     """Derive the public key from a private key."""
+    if len(private_key) != 32:
+        raise ValueError("private_key must be exactly 32 bytes")
+
     private_key_int = int.from_bytes(private_key, "big")
     public_key = ec.derive_private_key(private_key_int, _SECP256K1).public_key()
     return public_key.public_bytes(
