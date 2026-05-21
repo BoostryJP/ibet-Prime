@@ -67,22 +67,6 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
         async_test.add_marker(session_scope_marker, append=False)
 
 
-@pytest.fixture(scope="session", autouse=True)
-def anvil_transaction_sync_patch() -> Iterator[None]:
-    try:
-        client_version = web3.client_version
-    except Exception:
-        yield
-        return
-
-    if "anvil" not in client_version.lower():
-        yield
-        return
-
-    with install_anvil_transaction_sync_patch(web3):
-        yield
-
-
 #####################################################
 # Test Client
 #####################################################
@@ -149,6 +133,22 @@ async def async_db(async_db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession,
 #####################################################
 # ibet: Blockchain & Smart Contract
 #####################################################
+@pytest.fixture(scope="session", autouse=True)
+def anvil_transaction_sync_patch() -> Iterator[None]:
+    try:
+        client_version = web3.client_version
+    except Exception:
+        yield
+        return
+
+    if "anvil" not in client_version.lower():
+        yield
+        return
+
+    with install_anvil_transaction_sync_patch(web3):
+        yield
+
+
 @pytest.fixture(scope="function", autouse=True)
 def ibet_block_number(request: pytest.FixtureRequest) -> None:
     # save blockchain state before function starts
