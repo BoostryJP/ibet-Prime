@@ -23,6 +23,7 @@ import sys
 import threading
 from json import JSONDecodeError
 from typing import Any, TypeAlias, cast
+from weakref import WeakKeyDictionary
 
 from aiohttp import ClientError
 from eth_typing import URI, HexStr
@@ -58,6 +59,55 @@ LOG = log.get_logger()
 
 ContractArtifact: TypeAlias = dict[str, Any]
 EventArgumentFilters: TypeAlias = dict[str, Any] | None
+
+
+class _EthWeb3Context:
+    def __init__(self) -> None:
+        if "pytest" in sys.modules:
+            self._fail_over_mode = False
+        else:
+            self._fail_over_mode = True
+
+    def get_web3(self) -> AsyncWeb3[Any]:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is None:
+            # Preserve a per-thread fallback instance for code paths that touch
+            # EthWeb3 before entering an event loop.
+            try:
+                return cast(AsyncWeb3[Any], thread_local.eth_web3_without_loop)
+            except AttributeError:
+                async_web3 = self._create_web3()
+                thread_local.eth_web3_without_loop = async_web3
+                return async_web3
+
+        # AsyncWeb3 instances are isolated per event loop because the provider
+        # session must not be shared across loops.
+        try:
+            eth_web3_by_loop = cast(
+                WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncWeb3[Any]],
+                thread_local.eth_web3_by_loop,
+            )
+        except AttributeError:
+            eth_web3_by_loop: WeakKeyDictionary[
+                asyncio.AbstractEventLoop, AsyncWeb3[Any]
+            ] = WeakKeyDictionary()
+            thread_local.eth_web3_by_loop = eth_web3_by_loop
+
+        async_web3 = eth_web3_by_loop.get(loop)
+        if async_web3 is None:
+            async_web3 = self._create_web3()
+            eth_web3_by_loop[loop] = async_web3
+        return async_web3
+
+    def _create_web3(self) -> AsyncWeb3[Any]:
+        return AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=self._fail_over_mode))
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.get_web3(), name)
 
 
 class EthFailOverHTTPProvider(AsyncHTTPProvider):
@@ -134,14 +184,7 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
             await db_session.close()
 
 
-try:
-    EthWeb3 = thread_local.EthWeb3
-except AttributeError:
-    if "pytest" in sys.modules:  # For unit tests
-        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=False))
-    else:
-        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=True))
-    thread_local.EthWeb3 = EthWeb3
+EthWeb3 = _EthWeb3Context()
 
 
 class EthTxUtils:
@@ -201,7 +244,10 @@ class EthAsyncContractEventsView:
 
 
 class EthAsyncContractUtils:
-    factory_map: dict[str, type[AsyncContract]] = {}
+    # Contract factories are bound to the AsyncWeb3 that created them.
+    factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
+        WeakKeyDictionary()
+    )
 
     @staticmethod
     def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
@@ -283,15 +329,23 @@ class EthAsyncContractUtils:
         :param contract_address: contract address
         :return: Contract
         """
-        contract_factory = cls.factory_map.get(contract_name)
+        # Reuse factories only within the same AsyncWeb3 context so provider
+        # state and loop ownership stay consistent.
+        current_async_web3 = EthWeb3.get_web3()
+        contract_factory_map = cls.factory_map.get(current_async_web3)
+        if contract_factory_map is None:
+            contract_factory_map = {}
+            cls.factory_map[current_async_web3] = contract_factory_map
+
+        contract_factory = contract_factory_map.get(contract_name)
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/wst/{contract_name}.json"
         contract_json: ContractArtifact = json.load(open(contract_file, "r"))
 
-        contract_factory = EthWeb3.eth.contract(abi=contract_json["abi"])
-        cls.factory_map[contract_name] = contract_factory
+        contract_factory = current_async_web3.eth.contract(abi=contract_json["abi"])
+        contract_factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
     @staticmethod
