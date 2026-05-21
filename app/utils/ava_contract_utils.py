@@ -23,6 +23,7 @@ import sys
 import threading
 from json import JSONDecodeError
 from typing import Any, TypeAlias, cast
+from weakref import WeakKeyDictionary
 
 from aiohttp import ClientError
 from eth_typing import URI, HexStr
@@ -58,6 +59,51 @@ LOG = log.get_logger()
 
 ContractArtifact: TypeAlias = dict[str, Any]
 EventArgumentFilters: TypeAlias = dict[str, Any] | None
+
+
+class _AvaWeb3Context:
+    def __init__(self) -> None:
+        if "pytest" in sys.modules:
+            self._fail_over_mode = False
+        else:
+            self._fail_over_mode = True
+
+    def get_web3(self) -> AsyncWeb3[Any]:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is None:
+            try:
+                return cast(AsyncWeb3[Any], thread_local.ava_web3_without_loop)
+            except AttributeError:
+                async_web3 = self._create_web3()
+                thread_local.ava_web3_without_loop = async_web3
+                return async_web3
+
+        try:
+            ava_web3_by_loop = cast(
+                WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncWeb3[Any]],
+                thread_local.ava_web3_by_loop,
+            )
+        except AttributeError:
+            ava_web3_by_loop: WeakKeyDictionary[
+                asyncio.AbstractEventLoop, AsyncWeb3[Any]
+            ] = WeakKeyDictionary()
+            thread_local.ava_web3_by_loop = ava_web3_by_loop
+
+        async_web3 = ava_web3_by_loop.get(loop)
+        if async_web3 is None:
+            async_web3 = self._create_web3()
+            ava_web3_by_loop[loop] = async_web3
+        return async_web3
+
+    def _create_web3(self) -> AsyncWeb3[Any]:
+        return AsyncWeb3(AvaFailOverHTTPProvider(fail_over_mode=self._fail_over_mode))
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.get_web3(), name)
 
 
 class AvaFailOverHTTPProvider(AsyncHTTPProvider):
@@ -139,14 +185,7 @@ class AvaFailOverHTTPProvider(AsyncHTTPProvider):
             await db_session.close()
 
 
-try:
-    AvaWeb3 = thread_local.AvaWeb3
-except AttributeError:
-    if "pytest" in sys.modules:  # For unit tests
-        AvaWeb3 = AsyncWeb3(AvaFailOverHTTPProvider(fail_over_mode=False))
-    else:
-        AvaWeb3 = AsyncWeb3(AvaFailOverHTTPProvider(fail_over_mode=True))
-    thread_local.AvaWeb3 = AvaWeb3
+AvaWeb3 = _AvaWeb3Context()
 
 
 class AvaTxUtils:
@@ -210,7 +249,9 @@ class AvaAsyncContractEventsView:
 
 
 class AvaAsyncContractUtils:
-    factory_map: dict[str, type[AsyncContract]] = {}
+    factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
+        WeakKeyDictionary()
+    )
 
     @staticmethod
     def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
@@ -291,14 +332,20 @@ class AvaAsyncContractUtils:
         :param contract_address: contract address
         :return: Contract
         """
-        contract_factory = cls.factory_map.get(contract_name)
+        current_async_web3 = AvaWeb3.get_web3()
+        contract_factory_map = cls.factory_map.get(current_async_web3)
+        if contract_factory_map is None:
+            contract_factory_map = {}
+            cls.factory_map[current_async_web3] = contract_factory_map
+
+        contract_factory = contract_factory_map.get(contract_name)
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/wst/{contract_name}.json"
         contract_json: ContractArtifact = json.load(open(contract_file, "r"))
-        contract_factory = AvaWeb3.eth.contract(abi=contract_json["abi"])
-        cls.factory_map[contract_name] = contract_factory
+        contract_factory = current_async_web3.eth.contract(abi=contract_json["abi"])
+        contract_factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
     @staticmethod

@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 from typing import Any, TypeAlias, cast
+from weakref import WeakKeyDictionary
 
 from eth_typing import HexStr
 from eth_utils.address import to_checksum_address
@@ -27,6 +28,7 @@ from sqlalchemy import AsyncAdaptedQueuePool, create_engine, select
 from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
+from web3 import AsyncWeb3
 from web3.contract import AsyncContract, Contract
 from web3.contract.async_contract import AsyncContractEvents
 from web3.exceptions import (
@@ -347,7 +349,9 @@ class AsyncContractEventsView:
 
 
 class AsyncContractUtils:
-    factory_map: dict[str, type[AsyncContract]] = {}
+    factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
+        WeakKeyDictionary()
+    )
 
     @staticmethod
     def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
@@ -433,14 +437,20 @@ class AsyncContractUtils:
         :param contract_address: contract address
         :return: Contract
         """
-        contract_factory = cls.factory_map.get(contract_name)
+        current_async_web3 = async_web3.get_web3()
+        contract_factory_map = cls.factory_map.get(current_async_web3)
+        if contract_factory_map is None:
+            contract_factory_map = {}
+            cls.factory_map[current_async_web3] = contract_factory_map
+
+        contract_factory = contract_factory_map.get(contract_name)
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/ibet/{contract_name}.json"
         contract_json: ContractArtifact = json.load(open(contract_file, "r"))
-        contract_factory = async_web3.eth.contract(abi=contract_json["abi"])
-        cls.factory_map[contract_name] = contract_factory
+        contract_factory = current_async_web3.eth.contract(abi=contract_json["abi"])
+        contract_factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
     @staticmethod

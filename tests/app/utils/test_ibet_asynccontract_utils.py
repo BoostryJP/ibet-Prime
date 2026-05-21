@@ -17,21 +17,25 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import json
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aiohttp import ClientTimeout
 from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
+from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.exceptions import ContractLogicError, TimeExhausted, Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
+from app.utils import ibet_contract_utils as contract_module
 from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
 
@@ -41,6 +45,11 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
+async def _get_web3(wrapper: AsyncWeb3Wrapper) -> AsyncWeb3[AsyncHTTPProvider]:
+    return wrapper.get_web3()
+
+
+# Test for get_contract_code
 class TestGetContractCode:
     contract_list = [
         "IbetCoupon",
@@ -92,6 +101,7 @@ class TestGetContractCode:
             AsyncContractUtils.get_contract_code(contract_name="NO_EXISTS")
 
 
+# Test for deploy_contract
 class TestDeployContract:
     test_account = default_eth_account("user1")
     eoa_password = "password"
@@ -173,6 +183,7 @@ class TestDeployContract:
         assert str(ex_info.typename) == "SendTransactionError"
 
 
+# Test for deploy_contract
 class TestGetContract:
     test_account = default_eth_account("user1")
     eoa_password = "password"
@@ -210,6 +221,38 @@ class TestGetContract:
             assert contract.bytecode_runtime is None
             assert contract.address == test_address
 
+    # <Normal_2>
+    # Contract factory cache is scoped by AsyncWeb3 instance
+    @pytest.mark.asyncio
+    async def test_normal_2(self, monkeypatch: pytest.MonkeyPatch):
+        web3_1 = AsyncWeb3(AsyncHTTPProvider("http://127.0.0.1:8545"))
+        web3_2 = AsyncWeb3(AsyncHTTPProvider("http://127.0.0.1:8545"))
+
+        contract_module.AsyncContractUtils.factory_map.clear()
+
+        monkeypatch.setattr(contract_module.async_web3, "get_web3", lambda: web3_1)
+        contract_1 = AsyncContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address="0x0000000000000000000000000000000000000001",
+        )
+
+        monkeypatch.setattr(contract_module.async_web3, "get_web3", lambda: web3_2)
+        contract_2 = AsyncContractUtils.get_contract(
+            contract_name="IbetShare",
+            contract_address="0x0000000000000000000000000000000000000002",
+        )
+
+        assert cast(Any, contract_1).w3 is web3_1
+        assert cast(Any, contract_2).w3 is web3_2
+        assert len(contract_module.AsyncContractUtils.factory_map) == 2
+        assert len(contract_module.AsyncContractUtils.factory_map[web3_1]) == 1
+        assert len(contract_module.AsyncContractUtils.factory_map[web3_2]) == 1
+
+        contract_module.AsyncContractUtils.factory_map.clear()
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
     # <Error_1>
     # Contract address is not address
     @pytest.mark.asyncio
@@ -231,6 +274,45 @@ class TestGetContract:
             )
 
 
+# Test for AsyncWeb3 scope
+class TestAsyncWeb3Wrapper:
+    # <Normal_1>
+    # Request timeout is normalized to ClientTimeout
+    def test_normal_1(self):
+        loop = asyncio.new_event_loop()
+        wrapper = AsyncWeb3Wrapper(5)
+
+        try:
+            async_web3 = loop.run_until_complete(_get_web3(wrapper))
+        finally:
+            loop.close()
+
+        timeout = cast(Any, async_web3.provider)._request_kwargs["timeout"]
+        assert isinstance(timeout, ClientTimeout)
+        assert timeout.total == 5
+
+    # <Normal_2>
+    # AsyncWeb3 instance is scoped by event loop
+    def test_normal_2(self):
+        wrapper = AsyncWeb3Wrapper()
+        loops: list[asyncio.AbstractEventLoop] = []
+
+        def get_web3_for_new_loop() -> AsyncWeb3[AsyncHTTPProvider]:
+            loop = asyncio.new_event_loop()
+            loops.append(loop)
+            return loop.run_until_complete(_get_web3(wrapper))
+
+        async_web3_1 = get_web3_for_new_loop()
+        async_web3_2 = get_web3_for_new_loop()
+
+        try:
+            assert async_web3_1 is not async_web3_2
+        finally:
+            for loop in loops:
+                loop.close()
+
+
+# Test for send_transaction
 class TestSendTransaction:
     test_account = default_eth_account("user1")
     eoa_password = "password"
@@ -464,6 +546,7 @@ class TestSendTransaction:
         await async_db.rollback()
 
 
+# Test for send_transaction_no_wait and wait_for_transaction_receipt
 class TestSendTransactionNoWait:
     test_account = default_eth_account("user1")
     eoa_password = "password"
@@ -670,6 +753,7 @@ class TestSendTransactionNoWait:
                 await AsyncContractUtils.wait_for_transaction_receipt(rtn_tx_hash)
 
 
+# Test for get_block_by_transaction_hash
 class TestGetBlockByTransactionHash:
     test_account = default_eth_account("user1")
     eoa_password = "password"
@@ -737,7 +821,3 @@ class TestGetBlockByTransactionHash:
         assert block_number == tx_receipt["blockNumber"]
         assert block_timestamp is not None
         assert block_timestamp > 0
-
-    ###########################################################################
-    # Error Case
-    ###########################################################################
