@@ -349,6 +349,8 @@ class AsyncContractEventsView:
 
 
 class AsyncContractUtils:
+    # web3.py contract factories retain the AsyncWeb3 used to create them, so
+    # keep a separate factory map per AsyncWeb3 instance.
     factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
         WeakKeyDictionary()
     )
@@ -437,6 +439,8 @@ class AsyncContractUtils:
         :param contract_address: contract address
         :return: Contract
         """
+        # Resolve the current AsyncWeb3 first so the factory cache follows the
+        # actual runtime context selected by AsyncWeb3Wrapper.
         current_async_web3 = async_web3.get_web3()
         contract_factory_map = cls.factory_map.get(current_async_web3)
         if contract_factory_map is None:

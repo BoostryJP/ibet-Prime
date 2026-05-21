@@ -75,6 +75,8 @@ class _EthWeb3Context:
             loop = None
 
         if loop is None:
+            # Preserve a per-thread fallback instance for code paths that touch
+            # EthWeb3 before entering an event loop.
             try:
                 return cast(AsyncWeb3[Any], thread_local.eth_web3_without_loop)
             except AttributeError:
@@ -82,6 +84,8 @@ class _EthWeb3Context:
                 thread_local.eth_web3_without_loop = async_web3
                 return async_web3
 
+        # AsyncWeb3 instances are isolated per event loop because the provider
+        # session must not be shared across loops.
         try:
             eth_web3_by_loop = cast(
                 WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncWeb3[Any]],
@@ -240,6 +244,7 @@ class EthAsyncContractEventsView:
 
 
 class EthAsyncContractUtils:
+    # Contract factories are bound to the AsyncWeb3 that created them.
     factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
         WeakKeyDictionary()
     )
@@ -324,6 +329,8 @@ class EthAsyncContractUtils:
         :param contract_address: contract address
         :return: Contract
         """
+        # Reuse factories only within the same AsyncWeb3 context so provider
+        # state and loop ownership stay consistent.
         current_async_web3 = EthWeb3.get_web3()
         contract_factory_map = cls.factory_map.get(current_async_web3)
         if contract_factory_map is None:

@@ -45,6 +45,8 @@ from config import WEB3_HTTP_PROVIDER, WEB3_REQUEST_RETRY_COUNT, WEB3_REQUEST_WA
 
 thread_local = threading.local()
 
+# Cache AsyncWeb3 by timeout shape so wrappers with different timeout settings
+# do not accidentally share the same provider/session.
 AsyncWeb3TimeoutKey = tuple[Any, Any, Any, Any]
 AsyncWeb3CacheMap = dict[AsyncWeb3TimeoutKey, AsyncWeb3[Any]]
 
@@ -124,6 +126,8 @@ class AsyncWeb3Wrapper:
     @classmethod
     def _get_web3(cls, request_timeout: int | ClientTimeout) -> AsyncWeb3[Any]:
         timeout = cls._normalize_async_timeout(request_timeout)
+        # Use normalized timeout fields as the cache key because ClientTimeout
+        # itself is mutable-like and not suitable as a stable dict key here.
         timeout_key: AsyncWeb3TimeoutKey = (
             timeout.total,
             timeout.connect,
@@ -137,6 +141,8 @@ class AsyncWeb3Wrapper:
             loop = None
 
         if loop is None:
+            # Some call sites still resolve AsyncWeb3 outside a running loop.
+            # Keep a separate per-thread cache for that fallback path.
             try:
                 async_web3_map = cast(
                     AsyncWeb3CacheMap,
@@ -152,6 +158,8 @@ class AsyncWeb3Wrapper:
                 async_web3_map[timeout_key] = async_web3
             return async_web3
 
+        # AsyncHTTPProvider owns an aiohttp session, so reuse is limited to the
+        # event loop that created it.
         try:
             async_web3_by_loop = cast(
                 WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncWeb3CacheMap],
