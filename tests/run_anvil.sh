@@ -17,6 +17,7 @@ anvil \
   --chain-id "${CHAIN_ID}" \
   --hardfork "${ANVIL_HARDFORK}" \
   --slots-in-an-epoch "${ANVIL_SLOTS_IN_AN_EPOCH}" \
+  --prune-history \
   --gas-price 0 \
   --block-base-fee-per-gas 0 \
   --gas-limit "${BLOCK_GAS_LIMIT}" &
