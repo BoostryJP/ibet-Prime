@@ -30,6 +30,7 @@ from web3.exceptions import Web3Exception
 from app.exceptions import SendTransactionError
 from app.utils import eth_contract_utils as contract_module
 from app.utils.eth_contract_utils import EthAsyncContractUtils, EthTxUtils, EthWeb3
+from app.utils.web3_provider_utils import KeepAliveHTTPSessionManager
 from tests.account_config import default_eth_account
 
 
@@ -253,6 +254,19 @@ class TestEthWeb3Scope:
         finally:
             for loop in loops:
                 loop.close()
+
+    # <Normal_2>
+    # Async provider uses the shared keep-alive session manager
+    def test_normal_2(self):
+        loop = asyncio.new_event_loop()
+
+        try:
+            async_web3 = loop.run_until_complete(_get_eth_web3())
+        finally:
+            loop.close()
+
+        session_manager = cast(Any, async_web3.provider)._request_session_manager
+        assert isinstance(session_manager, KeepAliveHTTPSessionManager)
 
 
 # Test for call_function

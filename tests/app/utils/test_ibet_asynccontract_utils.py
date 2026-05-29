@@ -36,6 +36,7 @@ from app.model.db import TransactionLock
 from app.utils import ibet_contract_utils as contract_module
 from app.utils.ibet_contract_utils import AsyncContractUtils
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
+from app.utils.web3_provider_utils import KeepAliveHTTPSessionManager
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
 
@@ -310,6 +311,20 @@ class TestAsyncWeb3Wrapper:
         finally:
             for loop in loops:
                 loop.close()
+
+    # <Normal_3>
+    # Async provider uses the shared keep-alive session manager
+    def test_normal_3(self):
+        loop = asyncio.new_event_loop()
+        wrapper = AsyncWeb3Wrapper()
+
+        try:
+            async_web3 = loop.run_until_complete(_get_web3(wrapper))
+        finally:
+            loop.close()
+
+        session_manager = cast(Any, async_web3.provider)._request_session_manager
+        assert isinstance(session_manager, KeepAliveHTTPSessionManager)
 
 
 # Test for send_transaction
