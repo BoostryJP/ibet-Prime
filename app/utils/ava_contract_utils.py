@@ -47,6 +47,10 @@ from app.database import async_engine
 from app.exceptions import SendTransactionError, ServiceUnavailableError
 from app.model import EthereumAddress
 from app.model.db import AvalancheNode
+from app.utils.web3_provider_utils import (
+    KeepAliveHTTPSessionManager,
+    ResolvedEndpointCacheMixin,
+)
 from avalanche_config import (
     AVA_CHAIN_ID,
     AVA_WEB3_HTTP_PROVIDER,
@@ -104,17 +108,54 @@ class _AvaWeb3Context:
         return async_web3
 
     def _create_web3(self) -> AsyncWeb3[Any]:
-        return AsyncWeb3(AvaFailOverHTTPProvider(fail_over_mode=self._fail_over_mode))
+        return AsyncWeb3(
+            AvaFailOverHTTPProvider(
+                fail_over_mode=self._fail_over_mode,
+                session_manager=KeepAliveHTTPSessionManager(),
+            )
+        )
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.get_web3(), name)
 
 
-class AvaFailOverHTTPProvider(AsyncHTTPProvider):
-    def __init__(self, fail_over_mode: bool = False, *args: Any, **kwargs: Any) -> None:
+class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
+    def __init__(
+        self,
+        fail_over_mode: bool = False,
+        session_manager: KeepAliveHTTPSessionManager | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
+        self._init_resolved_endpoint_cache()
+        if session_manager is not None:
+            self._request_session_manager = session_manager
         self.fail_over_mode = fail_over_mode
         self.endpoint_uri: URI | None = None
+
+    def _get_cache_ttl(self) -> float:
+        return float(AVA_WEB3_REQUEST_WAIT_TIME)
+
+    async def _resolve_endpoint_uri(self, db_session: AsyncSession) -> URI | None:
+        cached_endpoint_uri = self._get_cached_endpoint_uri()
+        if cached_endpoint_uri is not None:
+            return cached_endpoint_uri
+
+        node: AvalancheNode | None = (
+            await db_session.scalars(
+                select(AvalancheNode)
+                .where(AvalancheNode.is_synced.is_(True))
+                .order_by(AvalancheNode.priority, AvalancheNode.id)
+                .limit(1)
+            )
+        ).first()
+        if node is None or node.endpoint_uri is None:
+            return None
+
+        endpoint_uri = URI(node.endpoint_uri)
+        self._set_cached_endpoint_uri(endpoint_uri)
+        return endpoint_uri
 
     async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         """Make an HTTP request to the Avalanche node."""
@@ -122,6 +163,17 @@ class AvaFailOverHTTPProvider(AsyncHTTPProvider):
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
             if self.fail_over_mode:
+                cached_endpoint_uri = self._get_cached_endpoint_uri()
+                if cached_endpoint_uri is not None:
+                    self.endpoint_uri = cached_endpoint_uri
+                    try:
+                        return await super().make_request(method, params)
+                    except ClientError, JSONDecodeError:
+                        self._clear_cached_endpoint_uri()
+                        LOG.info(
+                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        )
+
                 # If the block synchronization monitoring process has not started yet, connect to the primary node.
                 node = (
                     await db_session.scalars(select(AvalancheNode).limit(1))
@@ -132,16 +184,8 @@ class AvaFailOverHTTPProvider(AsyncHTTPProvider):
 
                 counter = 0
                 while counter <= AVA_WEB3_REQUEST_RETRY_COUNT:
-                    # Switch to an available node
-                    node: AvalancheNode | None = (
-                        await db_session.scalars(
-                            select(AvalancheNode)
-                            .where(AvalancheNode.is_synced.is_(True))
-                            .order_by(AvalancheNode.priority, AvalancheNode.id)
-                            .limit(1)
-                        )
-                    ).first()
-                    if node is None:
+                    endpoint_uri = await self._resolve_endpoint_uri(db_session)
+                    if endpoint_uri is None:
                         counter += 1
                         # If the number of retries is within the limit, retry.
                         if counter <= AVA_WEB3_REQUEST_RETRY_COUNT:
@@ -152,21 +196,13 @@ class AvaFailOverHTTPProvider(AsyncHTTPProvider):
                             "Cannot connect to any Avalanche node"
                         )
 
-                    if node.endpoint_uri is None:
-                        counter += 1
-                        if counter <= AVA_WEB3_REQUEST_RETRY_COUNT:
-                            await asyncio.sleep(AVA_WEB3_REQUEST_WAIT_TIME)
-                            continue
-                        raise ServiceUnavailableError(
-                            "Cannot connect to any Avalanche node"
-                        )
-
-                    self.endpoint_uri = URI(node.endpoint_uri)
+                    self.endpoint_uri = endpoint_uri
                     try:
                         # Send request
                         return await super().make_request(method, params)
                     except ClientError, JSONDecodeError:
                         # JSONDecodeError may occur when sending a request during geth shutdown, etc.
+                        self._clear_cached_endpoint_uri()
                         LOG.info(
                             f"Retry web3 request due to connection fail: method={method}, params={params}"
                         )
