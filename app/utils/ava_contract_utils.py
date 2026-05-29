@@ -134,6 +134,9 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
         self.fail_over_mode = fail_over_mode
         self.endpoint_uri: URI | None = None
 
+    def _get_cache_ttl(self) -> float:
+        return float(AVA_WEB3_REQUEST_WAIT_TIME)
+
     async def _resolve_endpoint_uri(self, db_session: AsyncSession) -> URI | None:
         cached_endpoint_uri = self._get_cached_endpoint_uri()
         if cached_endpoint_uri is not None:

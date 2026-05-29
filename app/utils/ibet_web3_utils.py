@@ -208,6 +208,9 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
         self._init_resolved_endpoint_cache()
         self.endpoint_uri: URI | None = None
 
+    def _get_cache_ttl(self) -> float:
+        return float(WEB3_REQUEST_WAIT_TIME)
+
     def _resolve_endpoint_uri(self, db_session: Session) -> URI | None:
         cached_endpoint_uri = self._get_cached_endpoint_uri()
         if cached_endpoint_uri is not None:
@@ -296,6 +299,9 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
         if session_manager is not None:
             self._request_session_manager = session_manager
         self.endpoint_uri: URI | None = None
+
+    def _get_cache_ttl(self) -> float:
+        return float(WEB3_REQUEST_WAIT_TIME)
 
     async def _resolve_endpoint_uri(self, db_session: AsyncSession) -> URI | None:
         cached_endpoint_uri = self._get_cached_endpoint_uri()
