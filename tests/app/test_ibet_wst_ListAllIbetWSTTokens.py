@@ -257,6 +257,94 @@ class TestListAllIbetWSTTokens:
             ],
         }
 
+    # <Normal_2_3>
+    # Legacy data with missing IbetWST name
+    # - This test case checks that tokens with a missing IbetWST name are excluded.
+    @pytest.mark.freeze_time("2025-01-31 12:34:56")
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
+    async def test_normal_2_3(
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        # Prepare data: Token
+        _token = Token()
+        _token.token_address = self.ibet_token_address_1
+        _token.issuer_address = self.issuer_address_1
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        _token.set_ibet_wst_deployed("ethereum", True)
+        _token.set_ibet_wst_address("ethereum", self.ibet_wst_address_1)
+        _token.ibet_wst_name = None
+        async_db.add(_token)
+        await async_db.commit()
+
+        # Mock
+        bond_1 = IbetStraightBondContract()
+        token_attr = {
+            "issuer_address": self.issuer_address_1,
+            "token_address": self.ibet_token_address_1,
+            "name": "テスト債券-test",
+            "symbol": "TEST-test",
+            "total_supply": 9999999,
+            "contact_information": "test1",
+            "privacy_policy": "test2",
+            "tradable_exchange_contract_address": "0x1234567890123456789012345678901234567890",
+            "status": False,
+            "personal_info_contract_address": "0x1234567890123456789012345678901234567891",
+            "require_personal_info_registered": True,
+            "transferable": True,
+            "is_offering": True,
+            "transfer_approval_required": True,
+            "face_value": 9999998,
+            "face_value_currency": "JPY",
+            "interest_rate": 99.999,
+            "interest_payment_date": [
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+                "99991231",
+            ],
+            "interest_payment_currency": "JPY",
+            "redemption_date": "99991231",
+            "redemption_value": 9999997,
+            "redemption_value_currency": "JPY",
+            "return_date": "99991230",
+            "return_amount": "return_amount-test",
+            "base_fx_rate": 123.456789,
+            "purpose": "purpose-test",
+            "memo": "memo-test",
+            "is_redeemed": True,
+        }
+        bond_1.__dict__ = token_attr
+        mock_IbetStraightBondContract_get.side_effect = [bond_1]
+
+        # Request target API
+        resp = await async_client.get(self.api_url)
+
+        # Assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": 0,
+                "offset": None,
+                "limit": None,
+                "total": 0,
+            },
+            "tokens": [],
+        }
+
     # <Normal_3>
     # Multiple records
     # - This test case checks that both IbetStraightBond and IbetShare tokens can be retrieved correctly.

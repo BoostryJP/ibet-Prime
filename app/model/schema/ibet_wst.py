@@ -102,7 +102,7 @@ class IbetWSTTrade(BaseModel):
     buyer_sc_account_address: str = Field(description="SC buyer account address")
     st_value: int = Field(description="Value of IbetWST to trade")
     sc_value: int = Field(description="Value of SC token to trade")
-    state: Literal["Pending", "Executed", "Cancelled"] = Field(
+    state: Literal["Pending", "Executed", "Cancelled", "Rejected"] = Field(
         description="Trade state"
     )
     memo: str = Field(description="Memo for the trade")
@@ -361,7 +361,7 @@ class ListIbetWSTTradesQuery(BasePaginationQuery):
     buyer_sc_account_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="SC buyer account address"
     )
-    state: Optional[Literal["Pending", "Executed", "Cancelled"]] = Field(
+    state: Optional[Literal["Pending", "Executed", "Cancelled", "Rejected"]] = Field(
         None, description="Trade state"
     )
 
