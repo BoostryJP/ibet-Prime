@@ -194,7 +194,9 @@ async def list_all_ibet_wst_tokens(
     # Load tokens and filter on application side to avoid direct dependency
     # on deprecated single-chain IbetWST columns.
     issued_tokens: list[Token] = []
-    all_tokens = (await db.scalars(select(Token))).all()
+    all_tokens = (
+        await db.scalars(select(Token).where(Token.ibet_wst_name.is_not(None)))
+    ).all()
     for token in all_tokens:
         wst_address = _get_wst_address(token, blockchain_platform)
         if not token.is_ibet_wst_deployed(blockchain_platform):

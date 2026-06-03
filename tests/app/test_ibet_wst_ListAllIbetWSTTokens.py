@@ -259,7 +259,7 @@ class TestListAllIbetWSTTokens:
 
     # <Normal_2_3>
     # Legacy data with missing IbetWST name
-    # - This test case checks that tokens with a missing IbetWST name are still returned.
+    # - This test case checks that tokens with a missing IbetWST name are excluded.
     @pytest.mark.freeze_time("2025-01-31 12:34:56")
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_2_3(
@@ -337,22 +337,12 @@ class TestListAllIbetWSTTokens:
         assert resp.status_code == 200
         assert resp.json() == {
             "result_set": {
-                "count": 1,
+                "count": 0,
                 "offset": None,
                 "limit": None,
-                "total": 1,
+                "total": 0,
             },
-            "tokens": [
-                {
-                    "issuer_address": self.issuer_address_1,
-                    "ibet_wst_address": self.ibet_wst_address_1,
-                    "ibet_wst_name": None,
-                    "ibet_token_address": self.ibet_token_address_1,
-                    "ibet_token_type": TokenType.IBET_STRAIGHT_BOND,
-                    "ibet_token_attributes": token_attr,
-                    "created": "2025-01-31T21:34:56+09:00",
-                }
-            ],
+            "tokens": [],
         }
 
     # <Normal_3>
