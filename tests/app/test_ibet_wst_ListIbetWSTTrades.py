@@ -237,6 +237,62 @@ class TestListIbetWSTTrades:
             ],
         }
 
+    # <Normal_1_3>
+    # Fetch rejected trades via the state filter.
+    async def test_normal_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
+        trade1 = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 1,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 1000,
+            "sc_value": 2000,
+            "state": "Rejected",
+            "memo": "test1",
+        }
+        trade2 = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 2,
+            "seller_st_account_address": self.user_address_2,
+            "buyer_st_account_address": self.user_address_1,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_2,
+            "buyer_sc_account_address": self.user_address_1,
+            "st_value": 3000,
+            "sc_value": 4000,
+            "state": "Pending",
+            "memo": "test2",
+        }
+        await self.insert_trade_eth(async_db, trade1)
+        await self.insert_trade_eth(async_db, trade2)
+
+        resp = await async_client.get(
+            self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1),
+            params={"state": "Rejected"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {"count": 1, "offset": None, "limit": None, "total": 2},
+            "trades": [
+                {
+                    "index": 1,
+                    "seller_st_account_address": self.user_address_1,
+                    "buyer_st_account_address": self.user_address_2,
+                    "sc_token_address": self.sc_token_address_1,
+                    "seller_sc_account_address": self.user_address_1,
+                    "buyer_sc_account_address": self.user_address_2,
+                    "st_value": 1000,
+                    "sc_value": 2000,
+                    "state": "Rejected",
+                    "memo": "test1",
+                }
+            ],
+        }
+
     # <Normal_2_1>
     # Search filtering: seller_st_account_address
     async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
@@ -811,9 +867,11 @@ class TestListIbetWSTTrades:
                 {
                     "type": "literal_error",
                     "loc": ["query", "state"],
-                    "msg": "Input should be 'Pending', 'Executed' or 'Cancelled'",
+                    "msg": "Input should be 'Pending', 'Executed', 'Cancelled' or 'Rejected'",
                     "input": "InvalidState",
-                    "ctx": {"expected": "'Pending', 'Executed' or 'Cancelled'"},
+                    "ctx": {
+                        "expected": "'Pending', 'Executed', 'Cancelled' or 'Rejected'"
+                    },
                 },
             ],
         }

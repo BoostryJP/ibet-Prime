@@ -161,6 +161,42 @@ class TestGetIbetWSTTrade:
             "memo": "test1",
         }
 
+    # <Normal_1_3>
+    # Test that rejected trades are returned without response validation errors.
+    async def test_normal_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
+        trade = {
+            "ibet_wst_address": self.ibet_wst_address_1,
+            "index": 3,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 5000,
+            "sc_value": 6000,
+            "state": "Rejected",
+            "memo": "test3",
+        }
+        await self.insert_trade_eth(async_db, trade)
+
+        resp = await async_client.get(
+            self.apiurl.format(ibet_wst_address=self.ibet_wst_address_1, index=3)
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "index": 3,
+            "seller_st_account_address": self.user_address_1,
+            "buyer_st_account_address": self.user_address_2,
+            "sc_token_address": self.sc_token_address_1,
+            "seller_sc_account_address": self.user_address_1,
+            "buyer_sc_account_address": self.user_address_2,
+            "st_value": 5000,
+            "sc_value": 6000,
+            "state": "Rejected",
+            "memo": "test3",
+        }
+
     # <Normal_2>
     # This test verifies that the API can handle and return maximum uint256 values correctly.
     # RESPONSE_VALIDATION_MODE is set False to allow the API to return large integers without validation errors.
