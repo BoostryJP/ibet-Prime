@@ -10722,6 +10722,7 @@ paths:
                   - Pending
                   - Executed
                   - Cancelled
+                  - Rejected
                 type: string
               - type: 'null'
             description: Trade state
@@ -16302,6 +16303,7 @@ components:
             - Pending
             - Executed
             - Cancelled
+            - Rejected
           title: State
           description: Trade state
         memo:
