@@ -24,7 +24,6 @@ SPDX-License-Identifier: Apache-2.0
 import secrets
 
 import pytest
-from coincurve import PublicKey
 from eth_utils.address import to_checksum_address
 from eth_utils.crypto import keccak
 from httpx import AsyncClient
@@ -36,16 +35,17 @@ from app.model.db import (
     ChildAccountIndex,
     TmpChildAccountBatchCreate,
 )
+from app.utils.secp256k1_utils import private_key_to_public_key
 from config import ASYNC_DATABASE_URL
 
 
 class TestCreateChildAccountInBatch:
     sk_1 = secrets.token_bytes(32)
-    pk_1 = PublicKey.from_valid_secret(sk_1)
+    pk_1 = private_key_to_public_key(sk_1)
 
-    issuer_pub_key = pk_1.format().hex()
+    issuer_pub_key = pk_1.hex()
     issuer_address = to_checksum_address(
-        keccak(pk_1.format(compressed=False)[1:])[-20:]
+        keccak(private_key_to_public_key(sk_1, compressed=False)[1:])[-20:]
     )
 
     # Target API endpoint

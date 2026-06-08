@@ -23,9 +23,6 @@ from asyncio import Event
 from typing import Sequence
 
 import uvloop
-from coincurve import PublicKey
-from eth_utils.address import to_checksum_address
-from eth_utils.crypto import keccak
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,6 +36,11 @@ from app.model.db import (
     PersonalInfoDataSource,
     PersonalInfoEventType,
     TmpChildAccountBatchCreate,
+)
+from app.utils.secp256k1_utils import (
+    combine_public_keys,
+    private_key_to_public_key,
+    public_key_to_address,
 )
 from batch import free_malloc
 from batch.utils import batch_log
@@ -85,16 +87,16 @@ class Processor:
                     await db.commit()
                     continue
 
-                issuer_pk = PublicKey(data=bytes.fromhex(_account.issuer_public_key))
+                issuer_pk = bytes.fromhex(_account.issuer_public_key)
 
                 # Derive the child address
                 index_sk = int(_tmp.child_account_index).to_bytes(32)
-                index_pk = PublicKey.from_valid_secret(index_sk)
+                index_pk = private_key_to_public_key(index_sk)
 
-                child_pk = PublicKey.combine_keys([issuer_pk, index_pk])
-                child_addr = to_checksum_address(
-                    keccak(child_pk.format(compressed=False)[1:])[-20:]
+                child_pk_uncompressed = combine_public_keys(
+                    [issuer_pk, index_pk], compressed=False
                 )
+                child_addr = public_key_to_address(child_pk_uncompressed)
 
                 # Insert child account record and update index
                 _child_account = ChildAccount()

@@ -402,7 +402,7 @@ class AvaWSTBridgeMonitoringProcessor:
                 try:
                     # Skip if the data is not a valid BridgeMessage
                     bridge_message_mint = BridgeMessageMint(**json.loads(args["data"]))
-                except (json.JSONDecodeError, ValidationError, TypeError):
+                except json.JSONDecodeError, ValidationError, TypeError:
                     continue
 
                 # Retrieve the issuer's private key

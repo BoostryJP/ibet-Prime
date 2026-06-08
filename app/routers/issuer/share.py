@@ -149,6 +149,7 @@ from app.model.schema import (
     IbetShareTransfer,
     IbetShareUpdate,
     IssueRedeemHistoryResponse,
+    IssueTokenResponse,
     ListAdditionalIssuanceHistoryQuery,
     ListAllAdditionalIssueUploadQuery,
     ListAllHoldersQuery,
@@ -179,7 +180,6 @@ from app.model.schema import (
     ScheduledEventIdListResponse,
     ScheduledEventIdResponse,
     ScheduledEventResponse,
-    TokenAddressResponse,
     TransferApprovalHistoryResponse,
     TransferApprovalsResponse,
     TransferApprovalTokenDetailResponse,
@@ -295,7 +295,7 @@ def _decode_private_key(
 @router.post(
     "/tokens",
     operation_id="IssueShareToken",
-    response_model=TokenAddressResponse,
+    response_model=IssueTokenResponse,
     responses=get_routers_responses(422, 401, AuthorizationError, SendTransactionError),
 )
 async def issue_share_token(
@@ -399,7 +399,7 @@ async def issue_share_token(
                 tx_sender=issuer_address,
                 tx_sender_key=private_key,
             )
-        except (SendTransactionError, ContractRevertError):
+        except SendTransactionError, ContractRevertError:
             raise SendTransactionError("failed to register token address token list")
 
         # Insert initial position data
@@ -492,7 +492,11 @@ async def issue_share_token(
     await db.commit()
 
     return json_response(
-        {"token_address": _token.token_address, "token_status": token_status}
+        {
+            "token_address": _token.token_address,
+            "token_status": token_status,
+            "contract_version": _token.version,
+        }
     )
 
 
@@ -742,7 +746,7 @@ async def update_share_token(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     # Activate IbetWST
@@ -1105,7 +1109,7 @@ async def issuer_additional_share(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     return
@@ -1541,7 +1545,7 @@ async def redeem_share(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     return
@@ -3003,7 +3007,7 @@ async def register_share_token_holder_personal_info(
                 data=input_personal_info,
                 default_value=None,
             )
-        except (SendTransactionError, ContractRevertError):
+        except SendTransactionError, ContractRevertError:
             raise SendTransactionError("failed to register personal information")
 
     return
@@ -3582,7 +3586,7 @@ async def transfer_share_token_ownership(
             tx_sender=issuer_address,
             tx_sender_key=private_key,
         )
-    except (SendTransactionError, ContractRevertError):
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     return

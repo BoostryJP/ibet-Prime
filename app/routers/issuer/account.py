@@ -26,10 +26,8 @@ from typing import Annotated, Any, List, Optional, Sequence, cast
 
 import boto3
 import pytz
-from coincurve import PublicKey
 from Crypto.PublicKey import RSA
 from eth_keyfile.keyfile import create_keyfile_json, decode_keyfile_json
-from eth_utils.address import to_checksum_address
 from eth_utils.crypto import keccak
 from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
@@ -94,6 +92,11 @@ from app.utils.check_utils import (
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
+from app.utils.secp256k1_utils import (
+    combine_public_keys,
+    private_key_to_public_key,
+    public_key_to_address,
+)
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -137,8 +140,8 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
         private_key = keccak(result.get("Plaintext"))
     else:
         private_key = keccak(secrets.token_bytes(32))
-    public_key = PublicKey.from_valid_secret(private_key)
-    addr = to_checksum_address(keccak(public_key.format(compressed=False)[1:])[-20:])
+    public_key = private_key_to_public_key(private_key)
+    addr = public_key_to_address(public_key)
     keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
@@ -146,7 +149,7 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
     # Register key data to the DB
     _account = Account()
     _account.issuer_address = addr
-    _account.issuer_public_key = public_key.format().hex()
+    _account.issuer_public_key = public_key.hex()
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
     _account.rsa_status = AccountRsaStatus.UNSET.value
@@ -632,7 +635,7 @@ async def create_child_account(
     if _account.issuer_public_key is None:
         raise OperationNotPermittedForOlderIssuers
 
-    issuer_pk = PublicKey(data=bytes.fromhex(_account.issuer_public_key))
+    issuer_pk = bytes.fromhex(_account.issuer_public_key)
 
     # Lock child account index table
     try:
@@ -644,7 +647,7 @@ async def create_child_account(
                 .with_for_update(nowait=True)
             )
         ).first()
-    except (OperationalError, DBAPIError):
+    except OperationalError, DBAPIError:
         await db.rollback()
         await db.close()
         raise ServiceUnavailableError(
@@ -654,13 +657,11 @@ async def create_child_account(
     assert _child_index is not None
     index = _child_index.next_index
     index_sk = int(index).to_bytes(32)
-    index_pk = PublicKey.from_valid_secret(index_sk)
+    index_pk = private_key_to_public_key(index_sk)
 
     # Derive the child address
-    child_pk = PublicKey.combine_keys([issuer_pk, index_pk])
-    child_addr = to_checksum_address(
-        keccak(child_pk.format(compressed=False)[1:])[-20:]
-    )
+    child_pk_uncompressed = combine_public_keys([issuer_pk, index_pk], compressed=False)
+    child_addr = public_key_to_address(child_pk_uncompressed)
 
     # Insert child account record and update index
     _child_account = ChildAccount()
@@ -742,7 +743,7 @@ async def create_child_account_in_batch(
                 .with_for_update(nowait=True)
             )
         ).first()
-    except (OperationalError, DBAPIError):
+    except OperationalError, DBAPIError:
         await db.rollback()
         await db.close()
         raise ServiceUnavailableError(

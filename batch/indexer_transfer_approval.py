@@ -653,7 +653,7 @@ class Processor:
                     transfer_approval.application_datetime = datetime.fromtimestamp(
                         float(optional_data_applicant), tz=UTC
                     ).replace(tzinfo=None)
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     transfer_approval.application_datetime = None
             transfer_approval.application_blocktimestamp = datetime.fromtimestamp(
                 float(block_timestamp), tz=UTC
@@ -678,7 +678,7 @@ class Processor:
                         transfer_approval.approval_datetime = datetime.fromtimestamp(
                             float(optional_data_approver), tz=UTC
                         ).replace(tzinfo=None)
-                    except (TypeError, ValueError):
+                    except TypeError, ValueError:
                         transfer_approval.approval_datetime = None
                 transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
                     float(block_timestamp), tz=UTC

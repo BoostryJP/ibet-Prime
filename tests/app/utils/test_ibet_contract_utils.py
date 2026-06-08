@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
@@ -399,6 +399,56 @@ class TestSendTransaction:
         assert ex_info.typename == "SendTransactionError"
 
         await async_db.rollback()
+
+    # <Normal_2>
+    # Engine is disposed after successful send
+    @pytest.mark.asyncio
+    async def test_normal_2(self):
+        fake_engine = MagicMock()
+        fake_engine.dispose = MagicMock()
+        fake_session = MagicMock()
+        fake_session.scalars.return_value.first.return_value = None
+        fake_session.rollback = MagicMock()
+        fake_session.close = MagicMock()
+        fake_signed_tx = MagicMock()
+        fake_signed_tx.raw_transaction.to_0x_hex.return_value = "0xsigned"
+        fake_tx_hash = MagicMock()
+        fake_tx_hash.to_0x_hex.return_value = "0xhash"
+        fake_receipt = {"status": 1, "transactionHash": fake_tx_hash}
+
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.create_engine",
+                return_value=fake_engine,
+            ),
+            patch("app.utils.ibet_contract_utils.Session", return_value=fake_session),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction_count",
+                return_value=0,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.account.sign_transaction",
+                return_value=fake_signed_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.send_raw_transaction",
+                return_value=fake_tx_hash,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.wait_for_transaction_receipt",
+                return_value=fake_receipt,
+            ),
+        ):
+            rtn_tx_hash, rtn_receipt = ContractUtils.send_transaction(
+                transaction={"from": self.test_account["address"]},
+                private_key=self.private_key,
+            )
+
+        assert rtn_tx_hash == "0xhash"
+        assert rtn_receipt == fake_receipt
+        fake_session.rollback.assert_called_once()
+        fake_session.close.assert_called_once()
+        fake_engine.dispose.assert_called_once()
 
 
 class TestGetBlockByTransactionHash:

@@ -23,6 +23,7 @@ import sys
 import threading
 from json import JSONDecodeError
 from typing import Any, TypeAlias, cast
+from weakref import WeakKeyDictionary
 
 from aiohttp import ClientError
 from eth_typing import URI, HexStr
@@ -46,6 +47,10 @@ from app.database import async_engine
 from app.exceptions import SendTransactionError, ServiceUnavailableError
 from app.model import EthereumAddress
 from app.model.db import EthereumNode
+from app.utils.web3_provider_utils import (
+    KeepAliveHTTPSessionManager,
+    ResolvedEndpointCacheMixin,
+)
 from eth_config import (
     ETH_CHAIN_ID,
     ETH_WEB3_HTTP_PROVIDER,
@@ -60,16 +65,97 @@ ContractArtifact: TypeAlias = dict[str, Any]
 EventArgumentFilters: TypeAlias = dict[str, Any] | None
 
 
-class EthFailOverHTTPProvider(AsyncHTTPProvider):
+class _EthWeb3Context:
+    def __init__(self) -> None:
+        if "pytest" in sys.modules:
+            self._fail_over_mode = False
+        else:
+            self._fail_over_mode = True
+
+    def get_web3(self) -> AsyncWeb3[Any]:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is None:
+            # Preserve a per-thread fallback instance for code paths that touch
+            # EthWeb3 before entering an event loop.
+            try:
+                return cast(AsyncWeb3[Any], thread_local.eth_web3_without_loop)
+            except AttributeError:
+                async_web3 = self._create_web3()
+                thread_local.eth_web3_without_loop = async_web3
+                return async_web3
+
+        # AsyncWeb3 instances are isolated per event loop because the provider
+        # session must not be shared across loops.
+        try:
+            eth_web3_by_loop = cast(
+                WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncWeb3[Any]],
+                thread_local.eth_web3_by_loop,
+            )
+        except AttributeError:
+            eth_web3_by_loop: WeakKeyDictionary[
+                asyncio.AbstractEventLoop, AsyncWeb3[Any]
+            ] = WeakKeyDictionary()
+            thread_local.eth_web3_by_loop = eth_web3_by_loop
+
+        async_web3 = eth_web3_by_loop.get(loop)
+        if async_web3 is None:
+            async_web3 = self._create_web3()
+            eth_web3_by_loop[loop] = async_web3
+        return async_web3
+
+    def _create_web3(self) -> AsyncWeb3[Any]:
+        return AsyncWeb3(
+            EthFailOverHTTPProvider(
+                fail_over_mode=self._fail_over_mode,
+                session_manager=KeepAliveHTTPSessionManager(),
+            )
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.get_web3(), name)
+
+
+class EthFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
     def __init__(
         self,
         fail_over_mode: bool = False,
+        session_manager: KeepAliveHTTPSessionManager | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
+        self._init_resolved_endpoint_cache()
+        if session_manager is not None:
+            self._request_session_manager = session_manager
         self.fail_over_mode = fail_over_mode
-        self.endpoint_uri = None
+        self.endpoint_uri: URI | None = None
+
+    def _get_cache_ttl(self) -> float:
+        return float(ETH_WEB3_REQUEST_WAIT_TIME)
+
+    async def _resolve_endpoint_uri(self, db_session: AsyncSession) -> URI | None:
+        cached_endpoint_uri = self._get_cached_endpoint_uri()
+        if cached_endpoint_uri is not None:
+            return cached_endpoint_uri
+
+        node: EthereumNode | None = (
+            await db_session.scalars(
+                select(EthereumNode)
+                .where(EthereumNode.is_synced.is_(True))
+                .order_by(EthereumNode.priority, EthereumNode.id)
+                .limit(1)
+            )
+        ).first()
+        if node is None or node.endpoint_uri is None:
+            return None
+
+        endpoint_uri = URI(node.endpoint_uri)
+        self._set_cached_endpoint_uri(endpoint_uri)
+        return endpoint_uri
 
     async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         """Make an HTTP request to the Ethereum node."""
@@ -77,6 +163,17 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
             if self.fail_over_mode:
+                cached_endpoint_uri = self._get_cached_endpoint_uri()
+                if cached_endpoint_uri is not None:
+                    self.endpoint_uri = cached_endpoint_uri
+                    try:
+                        return await super().make_request(method, params)
+                    except ClientError, JSONDecodeError:
+                        self._clear_cached_endpoint_uri()
+                        LOG.info(
+                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        )
+
                 # If the block synchronization monitoring process has not started yet, connect to the primary node.
                 node = (await db_session.scalars(select(EthereumNode).limit(1))).first()
                 if node is None:
@@ -85,16 +182,8 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
 
                 counter = 0
                 while counter <= ETH_WEB3_REQUEST_RETRY_COUNT:
-                    # Switch to an available node
-                    node: EthereumNode | None = (
-                        await db_session.scalars(
-                            select(EthereumNode)
-                            .where(EthereumNode.is_synced.is_(True))
-                            .order_by(EthereumNode.priority, EthereumNode.id)
-                            .limit(1)
-                        )
-                    ).first()
-                    if node is None:
+                    endpoint_uri = await self._resolve_endpoint_uri(db_session)
+                    if endpoint_uri is None:
                         counter += 1
                         # If the number of retries is within the limit, retry.
                         if counter <= ETH_WEB3_REQUEST_RETRY_COUNT:
@@ -105,13 +194,13 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                             "Cannot connect to any Ethereum node"
                         )
 
-                    assert node.endpoint_uri is not None
-                    self.endpoint_uri = URI(node.endpoint_uri)
+                    self.endpoint_uri = endpoint_uri
                     try:
                         # Send request
                         return await super().make_request(method, params)
-                    except (ClientError, JSONDecodeError):
+                    except ClientError, JSONDecodeError:
                         # JSONDecodeError may occur when sending a request during geth shutdown, etc.
+                        self._clear_cached_endpoint_uri()
                         LOG.info(
                             f"Retry web3 request due to connection fail: method={method}, params={params}"
                         )
@@ -134,14 +223,7 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
             await db_session.close()
 
 
-try:
-    EthWeb3 = thread_local.EthWeb3
-except AttributeError:
-    if "pytest" in sys.modules:  # For unit tests
-        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=False))
-    else:
-        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=True))
-    thread_local.EthWeb3 = EthWeb3
+EthWeb3 = _EthWeb3Context()
 
 
 class EthTxUtils:
@@ -201,7 +283,10 @@ class EthAsyncContractEventsView:
 
 
 class EthAsyncContractUtils:
-    factory_map: dict[str, type[AsyncContract]] = {}
+    # Contract factories are bound to the AsyncWeb3 that created them.
+    factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
+        WeakKeyDictionary()
+    )
 
     @staticmethod
     def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
@@ -283,15 +368,23 @@ class EthAsyncContractUtils:
         :param contract_address: contract address
         :return: Contract
         """
-        contract_factory = cls.factory_map.get(contract_name)
+        # Reuse factories only within the same AsyncWeb3 context so provider
+        # state and loop ownership stay consistent.
+        current_async_web3 = EthWeb3.get_web3()
+        contract_factory_map = cls.factory_map.get(current_async_web3)
+        if contract_factory_map is None:
+            contract_factory_map = {}
+            cls.factory_map[current_async_web3] = contract_factory_map
+
+        contract_factory = contract_factory_map.get(contract_name)
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/wst/{contract_name}.json"
         contract_json: ContractArtifact = json.load(open(contract_file, "r"))
 
-        contract_factory = EthWeb3.eth.contract(abi=contract_json["abi"])
-        cls.factory_map[contract_name] = contract_factory
+        contract_factory = current_async_web3.eth.contract(abi=contract_json["abi"])
+        contract_factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
     @staticmethod

@@ -19,6 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 import json
 from typing import Any, TypeAlias, cast
+from weakref import WeakKeyDictionary
 
 from eth_typing import HexStr
 from eth_utils.address import to_checksum_address
@@ -27,6 +28,7 @@ from sqlalchemy import AsyncAdaptedQueuePool, create_engine, select
 from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import Session
+from web3 import AsyncWeb3
 from web3.contract import AsyncContract, Contract
 from web3.contract.async_contract import AsyncContractEvents
 from web3.exceptions import (
@@ -194,32 +196,28 @@ class ContractUtils:
             raise SendTransactionError("Transaction sender is required")
         tx_from = cast(str, tx_from_value)
 
-        # local database session
-        DB_URI = DATABASE_URL
         db_engine = create_engine(
-            DB_URI,
+            DATABASE_URL,
             connect_args={"options": "-c lock_timeout=10000"},
             echo=False,
             pool_pre_ping=True,
         )
         local_session = Session(autocommit=False, autoflush=True, bind=db_engine)
 
-        # Exclusive control within transaction execution address
-        # 10-sec timeout
-        # Lock record
         try:
-            _tm = local_session.scalars(
-                select(TransactionLock)
-                .where(TransactionLock.tx_from == tx_from)
-                .limit(1)
-                .with_for_update()
-            ).first()
-        except (OperationalError, DBAPIError) as err:
-            local_session.rollback()
-            local_session.close()
-            raise SendTransactionError(err)
+            # Exclusive control within transaction execution address
+            # 10-sec timeout
+            # Lock record
+            try:
+                _tm = local_session.scalars(
+                    select(TransactionLock)
+                    .where(TransactionLock.tx_from == tx_from)
+                    .limit(1)
+                    .with_for_update()
+                ).first()
+            except (OperationalError, DBAPIError) as err:
+                raise SendTransactionError(err)
 
-        try:
             # Get nonce
             nonce = web3.eth.get_transaction_count(cast(Any, tx_from_value))
             transaction["nonce"] = nonce
@@ -242,6 +240,7 @@ class ContractUtils:
         finally:
             local_session.rollback()  # unlock record
             local_session.close()
+            db_engine.dispose()
 
         return tx_hash.to_0x_hex(), tx_receipt
 
@@ -350,7 +349,11 @@ class AsyncContractEventsView:
 
 
 class AsyncContractUtils:
-    factory_map: dict[str, type[AsyncContract]] = {}
+    # web3.py contract factories retain the AsyncWeb3 used to create them, so
+    # keep a separate factory map per AsyncWeb3 instance.
+    factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
+        WeakKeyDictionary()
+    )
 
     @staticmethod
     def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
@@ -436,14 +439,22 @@ class AsyncContractUtils:
         :param contract_address: contract address
         :return: Contract
         """
-        contract_factory = cls.factory_map.get(contract_name)
+        # Resolve the current AsyncWeb3 first so the factory cache follows the
+        # actual runtime context selected by AsyncWeb3Wrapper.
+        current_async_web3 = async_web3.get_web3()
+        contract_factory_map = cls.factory_map.get(current_async_web3)
+        if contract_factory_map is None:
+            contract_factory_map = {}
+            cls.factory_map[current_async_web3] = contract_factory_map
+
+        contract_factory = contract_factory_map.get(contract_name)
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
         contract_file = f"contracts/ibet/{contract_name}.json"
         contract_json: ContractArtifact = json.load(open(contract_file, "r"))
-        contract_factory = async_web3.eth.contract(abi=contract_json["abi"])
-        cls.factory_map[contract_name] = contract_factory
+        contract_factory = current_async_web3.eth.contract(abi=contract_json["abi"])
+        contract_factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
     @staticmethod
@@ -486,10 +497,8 @@ class AsyncContractUtils:
             raise SendTransactionError("Transaction sender is required")
         tx_from = cast(str, tx_from_value)
 
-        # local database session
-        DB_URI = ASYNC_DATABASE_URL
         async_engine = create_async_engine(
-            DB_URI,
+            ASYNC_DATABASE_URL,
             connect_args={"server_settings": {"lock_timeout": "10000"}},
             echo=False,
             pool_pre_ping=True,
@@ -501,24 +510,22 @@ class AsyncContractUtils:
             bind=async_engine,
         )
 
-        # Exclusive control within transaction execution address
-        # 10-sec timeout
-        # Lock record
         try:
-            _tm = (
-                await local_session.scalars(
-                    select(TransactionLock)
-                    .where(TransactionLock.tx_from == tx_from)
-                    .limit(1)
-                    .with_for_update()
-                )
-            ).first()
-        except (OperationalError, DBAPIError) as err:
-            await local_session.rollback()
-            await local_session.close()
-            raise SendTransactionError(err)
+            # Exclusive control within transaction execution address
+            # 10-sec timeout
+            # Lock record
+            try:
+                _tm = (
+                    await local_session.scalars(
+                        select(TransactionLock)
+                        .where(TransactionLock.tx_from == tx_from)
+                        .limit(1)
+                        .with_for_update()
+                    )
+                ).first()
+            except (OperationalError, DBAPIError) as err:
+                raise SendTransactionError(err)
 
-        try:
             # Get nonce
             nonce = await async_web3.eth.get_transaction_count(cast(Any, tx_from_value))
             transaction["nonce"] = nonce
@@ -543,6 +550,7 @@ class AsyncContractUtils:
         finally:
             await local_session.rollback()  # unlock record
             await local_session.close()
+            await async_engine.dispose()
 
         return tx_hash.to_0x_hex(), tx_receipt
 
@@ -556,11 +564,9 @@ class AsyncContractUtils:
             raise SendTransactionError("Transaction sender is required")
         tx_from = cast(str, tx_from_value)
 
-        # local database session
-        DB_URI = DATABASE_URL
         db_engine = create_async_engine(
-            DB_URI,
-            connect_args={"options": "-c lock_timeout=10000"},
+            ASYNC_DATABASE_URL,
+            connect_args={"server_settings": {"lock_timeout": "10000"}},
             echo=False,
             pool_pre_ping=True,
         )
@@ -603,6 +609,7 @@ class AsyncContractUtils:
         finally:
             await local_session.rollback()  # unlock record
             await local_session.close()
+            await db_engine.dispose()
 
         return tx_hash.to_0x_hex()
 

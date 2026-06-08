@@ -782,7 +782,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenAddressResponse'
+                $ref: '#/components/schemas/IssueTokenResponse'
         '422':
           description: Validation Error
           content:
@@ -5405,7 +5405,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenAddressResponse'
+                $ref: '#/components/schemas/IssueTokenResponse'
         '422':
           description: Validation Error
           content:
@@ -10808,6 +10808,7 @@ paths:
                   - Pending
                   - Executed
                   - Cancelled
+                  - Rejected
                 type: string
               - type: 'null'
             description: Trade state
@@ -16388,6 +16389,7 @@ components:
             - Pending
             - Executed
             - Cancelled
+            - Rejected
           title: State
           description: Trade state
         memo:
@@ -16668,6 +16670,25 @@ components:
         - amount
       title: IssueRedeemSortItem
       description: Issue/Redeem sort item
+    IssueTokenResponse:
+      properties:
+        token_address:
+          type: string
+          title: Token Address
+        token_status:
+          $ref: '#/components/schemas/TokenStatus'
+        contract_version:
+          anyOf:
+            - $ref: '#/components/schemas/IbetStraightBondContractVersion'
+            - $ref: '#/components/schemas/IbetShareContractVersion'
+          title: Contract Version
+      type: object
+      required:
+        - token_address
+        - token_status
+        - contract_version
+      title: IssueTokenResponse
+      description: Issue token response
     IssuedToken:
       properties:
         issuer_address:
@@ -19170,19 +19191,6 @@ components:
         - 1
       title: SortOrder
       description: 'Sort order (0: ASC, 1: DESC)'
-    TokenAddressResponse:
-      properties:
-        token_address:
-          type: string
-          title: Token Address
-        token_status:
-          $ref: '#/components/schemas/TokenStatus'
-      type: object
-      required:
-        - token_address
-        - token_status
-      title: TokenAddressResponse
-      description: token address
     TokenHolderBatchStatus:
       type: string
       enum:

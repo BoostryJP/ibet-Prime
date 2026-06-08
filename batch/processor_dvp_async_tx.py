@@ -110,7 +110,7 @@ class Processor:
                 issuer_pk = await self.__get_issuers_pk(
                     db_session, record.issuer_address
                 )
-            except (AccountNotFound, KeyfileDecodingError):
+            except AccountNotFound, KeyfileDecodingError:
                 LOG.warning("[SendStepTx] Failed to get issuer's private key")
                 LOG.info(f"[SendStepTx] End: record_id={record.id}")
                 continue
@@ -212,7 +212,7 @@ class Processor:
                     issuer_pk = await self.__get_issuers_pk(
                         db_session, record.issuer_address
                     )
-                except (AccountNotFound, KeyfileDecodingError):
+                except AccountNotFound, KeyfileDecodingError:
                     LOG.warning("[SyncStepTxResult] Failed to get issuer's private key")
                     LOG.info(f"[SyncStepTxResult] End: record_id={record.id}")
                     continue
@@ -307,7 +307,7 @@ class Processor:
                     issuer_pk = await self.__get_issuers_pk(
                         db_session, record.issuer_address
                     )
-                except (AccountNotFound, KeyfileDecodingError):
+                except AccountNotFound, KeyfileDecodingError:
                     LOG.warning(
                         "[SyncRevertTxResult] Failed to get issuer's private key"
                     )

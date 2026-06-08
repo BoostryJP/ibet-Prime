@@ -17,17 +17,25 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import json
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
 from hexbytes import HexBytes
-from web3 import Web3
+from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.exceptions import Web3Exception
 
 from app.exceptions import SendTransactionError
-from app.utils.ava_contract_utils import AvaAsyncContractUtils
+from app.utils import ava_contract_utils as contract_module
+from app.utils.ava_contract_utils import AvaAsyncContractUtils, AvaWeb3
+from app.utils.web3_provider_utils import KeepAliveHTTPSessionManager
 from tests.account_config import default_eth_account
+
+
+async def _get_ava_web3() -> AsyncWeb3[AsyncHTTPProvider]:
+    return AvaWeb3.get_web3()
 
 
 # Test for get_contract_code
@@ -167,6 +175,34 @@ class TestGetContract:
         assert contract is not None
         assert contract.address == Web3.to_checksum_address(contract_address)
 
+    # <Normal_2>
+    # Contract factory cache is scoped by AsyncWeb3 instance
+    async def test_normal_2(self, monkeypatch: pytest.MonkeyPatch):
+        web3_1 = AsyncWeb3(AsyncHTTPProvider("http://127.0.0.1:8545"))
+        web3_2 = AsyncWeb3(AsyncHTTPProvider("http://127.0.0.1:8545"))
+
+        contract_module.AvaAsyncContractUtils.factory_map.clear()
+
+        monkeypatch.setattr(contract_module.AvaWeb3, "get_web3", lambda: web3_1)
+        contract_1 = AvaAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address="0x0000000000000000000000000000000000000001",
+        )
+
+        monkeypatch.setattr(contract_module.AvaWeb3, "get_web3", lambda: web3_2)
+        contract_2 = AvaAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address="0x0000000000000000000000000000000000000002",
+        )
+
+        assert cast(Any, contract_1).w3 is web3_1
+        assert cast(Any, contract_2).w3 is web3_2
+        assert len(contract_module.AvaAsyncContractUtils.factory_map) == 2
+        assert len(contract_module.AvaAsyncContractUtils.factory_map[web3_1]) == 1
+        assert len(contract_module.AvaAsyncContractUtils.factory_map[web3_2]) == 1
+
+        contract_module.AvaAsyncContractUtils.factory_map.clear()
+
     ########################################################
     # Error
     ########################################################
@@ -196,6 +232,41 @@ class TestGetContract:
                 contract_name="NOT_EXIST_CONTRACT",
                 contract_address=contract_address,
             )
+
+
+# Test for AsyncWeb3 scope
+class TestAvaWeb3Scope:
+    # <Normal_1>
+    # AsyncWeb3 instance is scoped by event loop
+    def test_normal_1(self):
+        loops: list[asyncio.AbstractEventLoop] = []
+
+        def get_web3_for_new_loop() -> AsyncWeb3[AsyncHTTPProvider]:
+            loop = asyncio.new_event_loop()
+            loops.append(loop)
+            return loop.run_until_complete(_get_ava_web3())
+
+        async_web3_1 = get_web3_for_new_loop()
+        async_web3_2 = get_web3_for_new_loop()
+
+        try:
+            assert async_web3_1 is not async_web3_2
+        finally:
+            for loop in loops:
+                loop.close()
+
+    # <Normal_2>
+    # Async provider uses the shared keep-alive session manager
+    def test_normal_2(self):
+        loop = asyncio.new_event_loop()
+
+        try:
+            async_web3 = loop.run_until_complete(_get_ava_web3())
+        finally:
+            loop.close()
+
+        session_manager = cast(Any, async_web3.provider)._request_session_manager
+        assert isinstance(session_manager, KeepAliveHTTPSessionManager)
 
 
 # Test for call_function

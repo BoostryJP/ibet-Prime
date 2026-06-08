@@ -7,28 +7,28 @@ authors = [
 ]
 license = {text = "Apache License, Version 2.0"}
 readme = "README.md"
-requires-python = "==3.13.11"
+requires-python = "==3.14.2"
 dependencies = [
     "alembic<2.0.0,>=1.14.0",
-    "boto3~=1.42.21",
-    "coincurve~=21.0.0",
-    "eth-keyfile==0.9.1",
+    "boto3~=1.43.0",
+    "cryptography~=48.0.0",
+    "eth-keyfile==0.8.1",
     "eth-utils~=6.0.0",
-    "fastapi~=0.135.3",
-    "gunicorn~=25.3.0",
-    "psycopg[c]>=3.3.3,<4.0.0",
+    "fastapi~=0.136.1",
+    "gunicorn~=26.0.0",
+    "psycopg[c]>=3.3.4,<4.0.0",
     "pycryptodome~=3.23",
-    "pydantic~=2.12.5",
+    "pydantic~=2.13.4",
     "pytz~=2026.1",
     "shared-memory-dict~=0.7.2",
-    "web3==7.8.0",
+    "web3==7.16.0",
     "httpx<1.0.0,>=0.27.0",
     "sqlalchemy[asyncio]>=2.0.49,<3.0.0",
     "uvicorn[standard]~=0.44.0",
     "uvloop~=0.22.1",
     "memray>=1.19.3,<2.0.0",
     "py-spy>=0.4.0",
-    "typer~=0.24.1",
+    "typer~=0.25.1",
     "asyncpg~=0.31.0",
     "python-dotenv>=1.1.1",
 ]
@@ -64,7 +64,7 @@ dev = [
 [tool.ruff]
 line-length = 88
 indent-width = 4
-target-version = "py312"
+target-version = "py314"
 exclude = [".venv/*"]
 
 [tool.ruff.format]
