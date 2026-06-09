@@ -139,6 +139,7 @@ from .ledger import (
 from .node import AvalancheNode, EthereumNode, Node
 from .notification import Notification, NotificationType
 from .scheduled_events import ScheduledEvents, ScheduledEventStatus, ScheduledEventType
+from .sealed_tx import IbetWSTWhitelistKYCDelegatedEoa
 from .token import (
     IbetWSTBlockchain,
     Token,
