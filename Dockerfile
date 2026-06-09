@@ -1,7 +1,7 @@
 FROM ubuntu:24.04 AS builder
 
 ENV PYTHON_VERSION=3.14.2
-ENV UV_VERSION=0.11.3
+ENV UV_VERSION=0.11.19
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_INSTALL_DIR="/usr/local/bin"
@@ -76,7 +76,7 @@ COPY pyproject.toml /app/ibet-Prime/pyproject.toml
 COPY uv.lock /app/ibet-Prime/uv.lock
 RUN cd /app/ibet-Prime \
  && uv venv $UV_PROJECT_ENVIRONMENT \
- && uv sync --frozen --no-dev --no-install-project --all-extras \
+ && UV_MALWARE_CHECK=1 uv sync --frozen --no-dev --no-install-project --all-extras \
  && PYTHON_BIN="$(uv python find $PYTHON_VERSION)" \
  && PYTHON_ROOT="$(dirname "$(dirname "$PYTHON_BIN")")" \
  && rm -f "$PYTHON_ROOT"/bin/pip "$PYTHON_ROOT"/bin/pip3 "$PYTHON_ROOT"/bin/pip3.* \
