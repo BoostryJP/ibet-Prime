@@ -1,7 +1,7 @@
 .PHONY: format lint typecheck doc test test_migrations run
 
 install:
-	uv sync --frozen --no-install-project --all-extras
+	UV_MALWARE_CHECK=1 uv sync --frozen --no-install-project --all-extras
 	uv run pre-commit install
 
 update:

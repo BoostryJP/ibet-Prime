@@ -33,6 +33,8 @@ jobs:
             venv-${{ runner.os }}-
       - name: Install dependencies
         if: steps.cache-venv.outputs.cache-hit != 'true'
+        env:
+          UV_MALWARE_CHECK: "1"
         run: |
           uv sync --frozen --no-install-project
       - name: Run typecheck

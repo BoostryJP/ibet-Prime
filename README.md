@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-26.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-26.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -60,7 +60,7 @@ $ uv venv
 
 Install python packages with:
 ```bash
-$ uv sync --frozen --no-install-project --no-dev --all-extras
+$ make install
 ```
 
 ### Setting environment variables
@@ -74,14 +74,6 @@ See [migrations/README.md](migrations/README.md).
 
 
 ## Development Information
-
-### Install pre-commit hook
-
-We provide a pre-commit hook to check code quality before commits.
-
-```bash
-$ uv run pre-commit install
-```
 
 ### Setting environment variables
 
@@ -97,10 +89,10 @@ When running individual test cases, set up a local Python runtime environment an
 
 You can start the API server with:
 ```bash
-$ ./run.sh server (Press CTRL+C to quit)
+$ make run
 ```
 
-Open your browser at [http://0.0.0.0:5000](http://0.0.0.0:5000).
+Open your browser at [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 You will see the JSON response as:
 ```json
@@ -109,13 +101,13 @@ You will see the JSON response as:
 
 ### API docs
 
-Now go to [http://0.0.0.0:5000/docs](http://0.0.0.0:5000/docs).
+Now go to [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
 You will see the automatic interactive API documentation provided by Swagger UI:
 
 ![swagger](https://user-images.githubusercontent.com/963333/146362141-da0fc0d2-1518-4041-a274-be2b743966a1.png)
 
-And now, go to [http://0.0.0.0:5000/redoc](http://0.0.0.0:5000/redoc).
+And now, go to [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc).
 You will see the alternative automatic documentation provided by ReDoc.
 
 ## Branching model

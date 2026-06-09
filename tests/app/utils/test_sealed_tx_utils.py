@@ -22,7 +22,8 @@ import json
 import pytest
 from fastapi import Request
 from fastapi.responses import PlainTextResponse
-from fastapi.testclient import TestClient
+from httpx import Client
+from starlette.testclient import TestClient
 
 from app.main import app
 from app.utils.sealedtx_utils import (
@@ -38,7 +39,7 @@ class TestVerifySealedTxSignature:
     address = "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf"
 
     apiurl = "/test/TestVerifySignature"
-    cli: TestClient
+    cli: Client
 
     def setup_class(self) -> None:
         # Test API (POST）

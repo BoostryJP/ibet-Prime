@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-26.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-26.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -59,7 +59,7 @@ $ uv venv
 
 以下のコマンドで Python パッケージをインストールします。
 ```bash
-$ uv sync --frozen --no-install-project --no-dev --all-extras
+$ make install
 ```
 
 ### 環境変数の設定
@@ -75,35 +75,26 @@ $ uv sync --frozen --no-install-project --no-dev --all-extras
 
 API サーバーの起動は、以下を実行します。
 ```bash
-$ ./run.sh server (Press CTRL+C to quit)
+$ make run
 ```
 
-ブラウザで、[http://0.0.0.0:5000](http://0.0.0.0:5000) を開くと、以下のJSONのレスポンスを確認できるはずです。
+ブラウザで、[http://127.0.0.1:8000](http://127.0.0.1:8000) を開くと、以下のJSONのレスポンスを確認できるはずです。
 ```json
 {"server":"ibet-Prime"}
 ```
 
 ### API 仕様書
 
-サーバーを起動した状態で、[http://0.0.0.0:5000/docs](http://0.0.0.0:5000/docs) を開いてください。
+サーバーを起動した状態で、[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) を開いてください。
 
 Swagger UI 形式のドキュメントを参照することができるはずです。
 
 ![swagger](https://user-images.githubusercontent.com/963333/146362141-da0fc0d2-1518-4041-a274-be2b743966a1.png)
 
-同様に、[http://0.0.0.0:5000/redoc](http://0.0.0.0:5000/redoc) では、ReDoc 形式のドキュメントを参照することができます。
+同様に、[http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) では、ReDoc 形式のドキュメントを参照することができます。
 
 
 ## 開発環境に関する情報
-
-### pre-commit hookのインストール
-
-commit 前にコードの品質をチェックするための pre-commit hook を用意しています。
-以下のコマンドで pre-commit hook をインストールします。
-
-```bash
-$ uv run pre-commit install
-```
 
 ### 環境変数の設定
 
