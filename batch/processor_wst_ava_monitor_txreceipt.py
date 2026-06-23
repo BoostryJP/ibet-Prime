@@ -30,6 +30,7 @@ from web3.logs import DISCARD
 from web3.types import TxReceipt
 
 from app.database import BatchAsyncSessionLocal
+from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     AvaIbetWSTTx,
     IbetWSTBlockchain,
@@ -472,6 +473,8 @@ async def main():
     while True:
         try:
             await processor.run()
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:

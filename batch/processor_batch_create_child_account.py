@@ -28,6 +28,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
+from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     Account,
     ChildAccount,
@@ -142,6 +143,8 @@ async def main():
         while not is_shutdown.is_set():
             try:
                 await processor.process()
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

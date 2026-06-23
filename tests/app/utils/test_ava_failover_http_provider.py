@@ -17,11 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from json.decoder import JSONDecodeError
 from types import SimpleNamespace
 from unittest import mock
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from eth_typing import URI
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncWeb3
 from web3.types import RPCEndpoint
@@ -31,6 +33,11 @@ from app.model.db import AvalancheNode
 from app.utils.ava_contract_utils import AvaFailOverHTTPProvider
 from app.utils.web3_provider_utils import KeepAliveHTTPSessionManager
 from avalanche_config import AVA_WEB3_HTTP_PROVIDER
+
+
+class _AvaFailOverHTTPProviderForTest(AvaFailOverHTTPProvider):
+    def seed_cached_endpoint_uri(self, endpoint_uri: URI) -> None:
+        self._set_cached_endpoint_uri(endpoint_uri)
 
 
 @pytest.mark.asyncio
@@ -104,6 +111,52 @@ class TestAvaFailOverHTTPProvider:
         assert fake_session.scalars.await_count == 2
         assert make_request.await_count == 2
         assert fake_session.close.await_count == 2
+
+    # Normal_4
+    # - Test that cached primary endpoint failure falls back to the standby endpoint
+    async def test_normal_4(self):
+        provider = _AvaFailOverHTTPProviderForTest(
+            fail_over_mode=True,
+            session_manager=KeepAliveHTTPSessionManager(),
+        )
+        primary_endpoint = URI("http://primary.example:8545")
+        standby_endpoint = URI("http://standby.example:8545")
+        provider.seed_cached_endpoint_uri(primary_endpoint)
+        method = RPCEndpoint("eth_chainId")
+        fake_session = MagicMock()
+        fake_session.scalars = AsyncMock(
+            side_effect=[
+                MagicMock(first=MagicMock(return_value=object())),
+                MagicMock(
+                    first=MagicMock(
+                        return_value=SimpleNamespace(endpoint_uri=str(standby_endpoint))
+                    )
+                ),
+            ]
+        )
+        fake_session.close = AsyncMock()
+
+        with (
+            patch(
+                "app.utils.ava_contract_utils.AsyncSession", return_value=fake_session
+            ),
+            patch(
+                "web3.providers.rpc.async_rpc.AsyncHTTPProvider.make_request",
+                AsyncMock(
+                    side_effect=[
+                        JSONDecodeError("decode failed", "", 0),
+                        {"result": "ok"},
+                    ]
+                ),
+            ) as make_request,
+        ):
+            response = await provider.make_request(method, [])
+
+        assert response == {"result": "ok"}
+        assert provider.endpoint_uri == standby_endpoint
+        assert fake_session.scalars.await_count == 2
+        assert make_request.await_count == 2
+        assert fake_session.close.await_count == 1
 
     ########################################################
     # Error

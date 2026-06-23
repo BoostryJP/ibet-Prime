@@ -211,16 +211,22 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
     def _get_cache_ttl(self) -> float:
         return float(WEB3_REQUEST_WAIT_TIME)
 
-    def _resolve_endpoint_uri(self, db_session: Session) -> URI | None:
+    def _resolve_endpoint_uri(
+        self, db_session: Session, failed_endpoint_uris: set[URI] | None = None
+    ) -> URI | None:
         cached_endpoint_uri = self._get_cached_endpoint_uri()
-        if cached_endpoint_uri is not None:
+        if cached_endpoint_uri is not None and cached_endpoint_uri not in (
+            failed_endpoint_uris or set()
+        ):
             return cached_endpoint_uri
 
+        stmt = select(Node).where(Node.is_synced == True)
+        if failed_endpoint_uris:
+            stmt = stmt.where(
+                Node.endpoint_uri.not_in([str(uri) for uri in failed_endpoint_uris])
+            )
         node = db_session.scalars(
-            select(Node)
-            .where(Node.is_synced == True)
-            .order_by(Node.priority, Node.id)
-            .limit(1)
+            stmt.order_by(Node.priority, Node.id).limit(1)
         ).first()
         if node is None or node.endpoint_uri is None:
             return None
@@ -233,6 +239,7 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         try:
             if FailOverHTTPProvider.fail_over_mode is True:
+                failed_endpoint_uris: set[URI] = set()
                 # Try cached endpoint first to avoid unnecessary DB query,
                 # and fallback to resolving from DB if it fails.
                 cached_endpoint_uri = self._get_cached_endpoint_uri()
@@ -242,8 +249,9 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
                         return super().make_request(method, params)
                     except ConnectionError, JSONDecodeError, HTTPError:
                         self._clear_cached_endpoint_uri()
-                        LOG.info(
-                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        failed_endpoint_uris.add(cached_endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={cached_endpoint_uri}, method={method}, params={params}"
                         )
 
                 # If never running the block monitoring processor,
@@ -253,7 +261,9 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
                     return super().make_request(method, params)
                 counter = 0
                 while counter <= WEB3_REQUEST_RETRY_COUNT:
-                    endpoint_uri = self._resolve_endpoint_uri(db_session)
+                    endpoint_uri = self._resolve_endpoint_uri(
+                        db_session, failed_endpoint_uris
+                    )
                     if endpoint_uri is None:
                         counter += 1
                         if counter <= WEB3_REQUEST_RETRY_COUNT:
@@ -268,6 +278,10 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
                         #  JSONDecodeError will be raised if a request is sent
                         #  while Quorum is terminating.
                         self._clear_cached_endpoint_uri()
+                        failed_endpoint_uris.add(endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={endpoint_uri}, method={method}, params={params}"
+                        )
                         counter += 1
                         if counter <= WEB3_REQUEST_RETRY_COUNT:
                             time.sleep(WEB3_REQUEST_WAIT_TIME)
@@ -303,18 +317,22 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
     def _get_cache_ttl(self) -> float:
         return float(WEB3_REQUEST_WAIT_TIME)
 
-    async def _resolve_endpoint_uri(self, db_session: AsyncSession) -> URI | None:
+    async def _resolve_endpoint_uri(
+        self, db_session: AsyncSession, failed_endpoint_uris: set[URI] | None = None
+    ) -> URI | None:
         cached_endpoint_uri = self._get_cached_endpoint_uri()
-        if cached_endpoint_uri is not None:
+        if cached_endpoint_uri is not None and cached_endpoint_uri not in (
+            failed_endpoint_uris or set()
+        ):
             return cached_endpoint_uri
 
-        node = (
-            await db_session.scalars(
-                select(Node)
-                .where(Node.is_synced == True)
-                .order_by(Node.priority, Node.id)
-                .limit(1)
+        stmt = select(Node).where(Node.is_synced == True)
+        if failed_endpoint_uris:
+            stmt = stmt.where(
+                Node.endpoint_uri.not_in([str(uri) for uri in failed_endpoint_uris])
             )
+        node = (
+            await db_session.scalars(stmt.order_by(Node.priority, Node.id).limit(1))
         ).first()
         if node is None or node.endpoint_uri is None:
             return None
@@ -327,6 +345,7 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
             if AsyncFailOverHTTPProvider.fail_over_mode is True:
+                failed_endpoint_uris: set[URI] = set()
                 # Try cached endpoint first to avoid unnecessary DB query,
                 # and fallback to resolving from DB if it fails.
                 cached_endpoint_uri = self._get_cached_endpoint_uri()
@@ -336,8 +355,9 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                         return await super().make_request(method, params)
                     except ClientError, JSONDecodeError:
                         self._clear_cached_endpoint_uri()
-                        LOG.info(
-                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        failed_endpoint_uris.add(cached_endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={cached_endpoint_uri}, method={method}, params={params}"
                         )
 
                 # If never running the block monitoring processor,
@@ -347,7 +367,9 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                     return await super().make_request(method, params)
                 counter = 0
                 while counter <= WEB3_REQUEST_RETRY_COUNT:
-                    endpoint_uri = await self._resolve_endpoint_uri(db_session)
+                    endpoint_uri = await self._resolve_endpoint_uri(
+                        db_session, failed_endpoint_uris
+                    )
                     if endpoint_uri is None:
                         counter += 1
                         if counter <= WEB3_REQUEST_RETRY_COUNT:
@@ -362,6 +384,10 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                         #  JSONDecodeError will be raised if a request is sent
                         #  while Quorum is terminating.
                         self._clear_cached_endpoint_uri()
+                        failed_endpoint_uris.add(endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={endpoint_uri}, method={method}, params={params}"
+                        )
                         counter += 1
                         if counter <= WEB3_REQUEST_RETRY_COUNT:
                             await asyncio.sleep(WEB3_REQUEST_WAIT_TIME)

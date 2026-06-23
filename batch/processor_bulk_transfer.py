@@ -590,8 +590,8 @@ class Worker:
         while not self.is_shutdown.is_set():
             try:
                 await self.processor.process()
-            except ServiceUnavailableError:
-                LOG.warning("An external service was unavailable")
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"
