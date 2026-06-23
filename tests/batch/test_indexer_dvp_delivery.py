@@ -2546,7 +2546,7 @@ class TestProcessor:
             await main_func()
 
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.WARNING, "An external service was unavailable")
+            (LOG.name, logging.ERROR, "All blockchain nodes are unavailable: ")
         )
         caplog.clear()
 
