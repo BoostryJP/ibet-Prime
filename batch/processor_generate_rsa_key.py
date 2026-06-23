@@ -29,6 +29,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
+from app.exceptions import ServiceUnavailableError
 from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
 from app.utils.e2ee_utils import E2EEUtils
 from batch import free_malloc
@@ -140,6 +141,8 @@ async def main():
     while True:
         try:
             await processor.process()
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:

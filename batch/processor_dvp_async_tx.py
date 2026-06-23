@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
 
 from app.database import BatchAsyncSessionLocal
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ServiceUnavailableError
 from app.model.db import (
     Account,
     DVPAsyncProcess,
@@ -386,6 +386,8 @@ async def main():
         while not is_shutdown.is_set():
             try:
                 await processor.process()
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

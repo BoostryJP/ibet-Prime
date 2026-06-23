@@ -137,17 +137,25 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
     def _get_cache_ttl(self) -> float:
         return float(AVA_WEB3_REQUEST_WAIT_TIME)
 
-    async def _resolve_endpoint_uri(self, db_session: AsyncSession) -> URI | None:
+    async def _resolve_endpoint_uri(
+        self, db_session: AsyncSession, failed_endpoint_uris: set[URI] | None = None
+    ) -> URI | None:
         cached_endpoint_uri = self._get_cached_endpoint_uri()
-        if cached_endpoint_uri is not None:
+        if cached_endpoint_uri is not None and cached_endpoint_uri not in (
+            failed_endpoint_uris or set()
+        ):
             return cached_endpoint_uri
 
+        stmt = select(AvalancheNode).where(AvalancheNode.is_synced.is_(True))
+        if failed_endpoint_uris:
+            stmt = stmt.where(
+                AvalancheNode.endpoint_uri.not_in(
+                    [str(uri) for uri in failed_endpoint_uris]
+                )
+            )
         node: AvalancheNode | None = (
             await db_session.scalars(
-                select(AvalancheNode)
-                .where(AvalancheNode.is_synced.is_(True))
-                .order_by(AvalancheNode.priority, AvalancheNode.id)
-                .limit(1)
+                stmt.order_by(AvalancheNode.priority, AvalancheNode.id).limit(1)
             )
         ).first()
         if node is None or node.endpoint_uri is None:
@@ -163,6 +171,7 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
             if self.fail_over_mode:
+                failed_endpoint_uris: set[URI] = set()
                 cached_endpoint_uri = self._get_cached_endpoint_uri()
                 if cached_endpoint_uri is not None:
                     self.endpoint_uri = cached_endpoint_uri
@@ -170,8 +179,9 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                         return await super().make_request(method, params)
                     except ClientError, JSONDecodeError:
                         self._clear_cached_endpoint_uri()
-                        LOG.info(
-                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        failed_endpoint_uris.add(cached_endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={cached_endpoint_uri}, method={method}, params={params}"
                         )
 
                 # If the block synchronization monitoring process has not started yet, connect to the primary node.
@@ -184,7 +194,9 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
 
                 counter = 0
                 while counter <= AVA_WEB3_REQUEST_RETRY_COUNT:
-                    endpoint_uri = await self._resolve_endpoint_uri(db_session)
+                    endpoint_uri = await self._resolve_endpoint_uri(
+                        db_session, failed_endpoint_uris
+                    )
                     if endpoint_uri is None:
                         counter += 1
                         # If the number of retries is within the limit, retry.
@@ -203,8 +215,9 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                     except ClientError, JSONDecodeError:
                         # JSONDecodeError may occur when sending a request during geth shutdown, etc.
                         self._clear_cached_endpoint_uri()
-                        LOG.info(
-                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        failed_endpoint_uris.add(endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={endpoint_uri}, method={method}, params={params}"
                         )
                         counter += 1
                         # If the number of retries is within the limit, retry.

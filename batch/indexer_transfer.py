@@ -449,8 +449,8 @@ async def main():
     while True:
         try:
             await processor.sync_new_logs()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception:
