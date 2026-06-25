@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-26.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-26.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -23,11 +23,11 @@
 
 ## 依存
 
-- [Python3](https://www.python.org/downloads/release/python-3811/) - バージョン 3.13
+- [Python3](https://www.python.org/downloads/release/python-3142/) - バージョン 3.14
 - [PostgreSQL](https://www.postgresql.org/) - バージョン 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - [ibet-Network](https://github.com/BoostryJP/ibet-Network) の公式の GoQuorum をサポートしています。
-  - 最新の [hardhat network](https://hardhat.org/hardhat-network/) をローカル開発およびユニットテストで利用しています。
+  - ローカル開発およびユニットテストでは [Anvil](https://www.getfoundry.sh/anvil) を利用しています。
 
 ## コントラクトのバージョン
 
@@ -45,9 +45,10 @@
     - パスワード: issuerapipass
     - DB: issuerapidb
     - テスト用 DB: issuerapidb_test
-- ibet-SmartContract の以下のコントラクトを事前にデプロイする必要があります。
-  - TokenList
-  - E2EMessaging
+- ibet Node を構築し、接続できる状態にしてください。
+  - ibet-SmartContract プロジェクトの TokenList および E2EMessaging コントラクトを事前にデプロイしてください。
+- （任意）ethereum Node を構築し、接続できる状態にしてください。
+- （任意）Avalanche Node を構築し、接続できる状態にしてください。
 
 ### パッケージインストール
 
@@ -58,123 +59,13 @@ $ uv venv
 
 以下のコマンドで Python パッケージをインストールします。
 ```bash
-$ uv sync --frozen --no-install-project --no-dev --all-extras
-```
-
-### pre-commit hookのインストール
-```bash
-$ uv run pre-commit install
-```
-
-### hardhatのインストール
-```bash
-$ npm install
+$ make install
 ```
 
 ### 環境変数の設定
 
-主要な環境変数は以下の通りです。
-
-<table style="border-collapse: collapse" id="env-table">
-    <tr bgcolor="#000000">
-        <th style="width: 25%">環境変数名</th>
-        <th style="width: 10%">必須</th>
-        <th style="width: 30%">詳細</th>
-        <th>設定例</th>
-    </tr>
-    <tr>
-        <td>DATABASE_URL</td>
-        <td>False</td>
-        <td nowrap>データベース URL</td>
-        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
-    </tr>
-    <tr>
-        <td>TEST_DATABASE_URL</td>
-        <td>False</td>
-        <td nowrap>テスト用データベース URL</td>
-        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
-    </tr>
-    <tr>
-        <td>DATABASE_SCHEMA</td>
-        <td>False</td>
-        <td nowrap>データベースのスキーマ</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>WEB3_HTTP_PROVIDER</td>
-        <td>False</td>
-        <td nowrap>ibet ネットワーク用 Web3 プロバイダー</td>
-        <td>http://localhost:8545</td>
-    </tr>
-    <tr>
-        <td>CHAIN_ID</td>
-        <td>False</td>
-        <td nowrap>ブロックチェーンネットワーク ID</td>
-        <td>1010032</td>
-    </tr>
-    <tr>
-        <td>TOKEN_LIST_CONTRACT_ADDRESS</td>
-        <td>True</td>
-        <td nowrap>TokenList コントラクトアドレス</td>
-        <td>0x0000000000000000000000000000000000000000</td>
-    </tr>
-    <tr>
-        <td>E2E_MESSAGING_CONTRACT_ADDRESS</td>
-        <td>True</td>
-        <td nowrap>E2EMessaging コントラクトアドレス</td>
-        <td>0x0000000000000000000000000000000000000000</td>
-    </tr>
-    <tr>
-        <td>TZ</td>
-        <td>False</td>
-        <td nowrap>タイムゾーン</td>
-        <td>Asia/Tokyo</td>
-    </tr>
-    <tr>
-        <td>ETH_WEB3_HTTP_PROVIDER</td>
-        <td>False</td>
-        <td nowrap>Ethereum ネットワーク用 Web3 プロバイダー</td>
-        <td>http://localhost:8545</td>
-    </tr>
-    <tr>
-        <td>DEDICATED_OFFCHAIN_TX_MODE</td>
-        <td>False</td>
-        <td nowrap>OffchainTx 専用サーバーの起動モード</td>
-        <td>0(利用しない) / 1(利用する)</td>
-    </tr>
-    <tr>
-        <td>DEDICATED_DVP_AGENT_MODE</td>
-        <td>False</td>
-        <td nowrap>DVPエージェント専用サーバーの起動モード</td>
-        <td>0(利用しない) / 1(利用する)</td>
-    </tr>
-    <tr>
-        <td>IBET_WST_FEATURE_ENABLED</td>
-        <td>False</td>
-        <td nowrap>IbetWST関連機能の利用有無</td>
-        <td>0（利用しない） / 1（利用する）</td>
-    </tr>
-    <tr>
-        <td>DVP_AGENT_FEATURE_ENABLED</td>
-        <td>False</td>
-        <td nowrap>DVPエージェント関連機能の利用有無</td>
-        <td>0（利用しない） / 1（利用する）</td>
-    </tr>
-    <tr>
-        <td>BC_EXPLORER_ENABLED</td>
-        <td>False</td>
-        <td nowrap>BCエクスプローラの機能を利用有無</td>
-        <td>0（利用しない） / 1（利用する）</td>
-    </tr>
-    <tr>
-        <td>FREEZE_LOG_FEATURE_ENABLED</td>
-        <td>False</td>
-        <td nowrap>FreezeLog関連機能の利用有無</td>
-        <td>0（利用しない） / 1（利用する）</td>
-    </tr>
-</table>
-
-その他の環境変数の設定は、`config.py` で確認することができます。
+環境変数の一覧は [docs/environment_variables_ja.md](docs/environment_variables_ja.md) を参照してください。
+各ユースケースに応じて、必要な環境変数を設定してください。
 
 ### DB マイグレーション
 
@@ -184,33 +75,35 @@ $ npm install
 
 API サーバーの起動は、以下を実行します。
 ```bash
-$ ./run.sh server (Press CTRL+C to quit)
+$ make run
 ```
 
-ブラウザで、[http://0.0.0.0:5000](http://0.0.0.0:5000) を開くと、以下のJSONのレスポンスを確認できるはずです。
+ブラウザで、[http://127.0.0.1:8000](http://127.0.0.1:8000) を開くと、以下のJSONのレスポンスを確認できるはずです。
 ```json
 {"server":"ibet-Prime"}
 ```
 
 ### API 仕様書
 
-#### Swagger UI
-
-サーバーを起動した状態で、[http://0.0.0.0:5000/docs](http://0.0.0.0:5000/docs) を開いてください。
+サーバーを起動した状態で、[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) を開いてください。
 
 Swagger UI 形式のドキュメントを参照することができるはずです。
 
 ![swagger](https://user-images.githubusercontent.com/963333/146362141-da0fc0d2-1518-4041-a274-be2b743966a1.png)
 
+同様に、[http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) では、ReDoc 形式のドキュメントを参照することができます。
 
-#### ReDoc
 
-同様に、[http://0.0.0.0:5000/redoc](http://0.0.0.0:5000/redoc) を開いてください。
+## 開発環境に関する情報
 
-ReDoc 形式のドキュメントを参照することができるはずです。
+### 環境変数の設定
 
-![redoc](https://user-images.githubusercontent.com/963333/146362775-c1ec56fa-f0b0-48a4-8926-75c2b7159c90.png)
+ローカル環境の環境変数は、`.env` ファイルを作成し、定義することが可能です。
 
+### テスト実行
+
+テスト用コンテナの起動に関しては、`docker-compose.yml` を参照してください。
+個別にテストケースを実行する場合は、ローカルに Python 実行環境を構築し、環境変数を設定した上で、テストケースを実行してください。
 
 ## ブランチ作成方針
 

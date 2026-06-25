@@ -21,7 +21,9 @@ import time
 from datetime import UTC, datetime
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 
@@ -37,10 +39,14 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # <Normal_1>
     # RSA key is None
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # prepare data
         _account = E2EMessagingAccount()
         _account.account_address = "0x1234567890123456789012345678900000000000"
+        _account.keyfile = {}
+        _account.eoa_password = "password"
         _account.rsa_key_generate_interval = 1
         _account.rsa_generation = 2
         async_db.add(_account)
@@ -48,6 +54,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_1"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
@@ -55,6 +64,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_2"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
@@ -62,6 +74,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = "0x1234567890123456789012345678900000000000"
         _rsa_key.rsa_public_key = "rsa_public_key_1_3"
+        _rsa_key.transaction_hash = "transaction_hash"
+        _rsa_key.rsa_private_key = "rsa_private_key"
+        _rsa_key.rsa_passphrase = "password"
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
         time.sleep(1)
@@ -87,6 +102,7 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
         _account = (
             await async_db.scalars(select(E2EMessagingAccount).limit(1))
         ).first()
+        assert _account is not None
         assert _account.is_deleted is True
         _rsa_key_list = (
             await async_db.scalars(select(E2EMessagingAccountRsaKey))
@@ -100,7 +116,9 @@ class TestAppRoutersE2EMessagingAccountsAccountAddressPOST:
     # <Error_1>
     # no data
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         resp = await async_client.delete(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"

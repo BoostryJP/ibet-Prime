@@ -17,12 +17,24 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import TypedDict, cast
+
 import pytest
+from httpx import AsyncClient
+
+
+class OpenAPIInfo(TypedDict):
+    title: str
+
+
+class OpenAPIDocResponse(TypedDict):
+    openapi: str
+    info: OpenAPIInfo
 
 
 class TestOpenAPIDoc:
     # テスト対象API
-    apiurl_base = "/openapi.json"
+    apiurl_base: str = "/openapi.json"
 
     ###########################################################################
     # Normal
@@ -30,10 +42,11 @@ class TestOpenAPIDoc:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client):
+    async def test_normal_1(self, async_client: AsyncClient) -> None:
         apiurl = self.apiurl_base
         resp = await async_client.get(apiurl)
+        body = cast(OpenAPIDocResponse, resp.json())
 
         assert resp.status_code == 200
-        assert resp.json()["openapi"] == "3.1.0"
-        assert resp.json()["info"]["title"] == "ibet Prime"
+        assert body["openapi"] == "3.1.0"
+        assert body["info"]["title"] == "ibet Prime"

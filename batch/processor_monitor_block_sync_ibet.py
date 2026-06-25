@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import sys
 import time
+from typing import TypedDict
 
 import uvloop
 from sqlalchemy import delete, select
@@ -53,32 +54,44 @@ process_name = "PROCESSOR-Monitor-Block-Sync-ibet"
 LOG = batch_log.get_logger(process_name=process_name)
 
 
-class RingBuffer:
-    def __init__(self, size, default=None):
-        self._next = 0
-        self._buffer = [default] * size
+class HistoryData(TypedDict):
+    time: float
+    block_number: int
 
-    def append(self, data):
+
+class RingBuffer:
+    def __init__(self, size: int, default: HistoryData):
+        self._next = 0
+        self._buffer: list[HistoryData] = [default] * size
+
+    def append(self, data: HistoryData) -> None:
         self._buffer[self._next] = data
         self._next = (self._next + 1) % len(self._buffer)
 
-    def peek_oldest(self):
+    def peek_oldest(self) -> HistoryData:
         return self._buffer[self._next]
+
+
+class NodeInfo(TypedDict):
+    priority: int
+    web3: Web3
+    history: RingBuffer
 
 
 class Processor:
     def __init__(self):
-        self.node_info = {}
-        self.main_web3_provider = None
-        self.standby_web3_provider_list = []
-        self.valid_endpoint_uri_list = []
+        self.node_info: dict[str, NodeInfo] = {}
+        self.main_web3_provider: str = ""
+        self.standby_web3_provider_list: list[str] = []
+        self.valid_endpoint_uri_list: list[str] = []
 
     async def initial_setup(self):
         self.main_web3_provider = WEB3_HTTP_PROVIDER
         self.standby_web3_provider_list = WEB3_HTTP_PROVIDER_STANDBY
-        self.valid_endpoint_uri_list = (
-            list(WEB3_HTTP_PROVIDER) + WEB3_HTTP_PROVIDER_STANDBY
-        )
+        self.valid_endpoint_uri_list = [
+            WEB3_HTTP_PROVIDER,
+            *WEB3_HTTP_PROVIDER_STANDBY,
+        ]
         db_session = self.__get_db_session()
         try:
             # Delete old node data
@@ -117,8 +130,6 @@ class Processor:
     async def __set_node_info(
         self, db_session: AsyncSession, endpoint_uri: str, priority: int
     ):
-        self.node_info[endpoint_uri] = {"priority": priority}
-
         web3 = Web3(
             HTTPProvider(
                 endpoint_uri,
@@ -127,43 +138,60 @@ class Processor:
             )
         )
         web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-        self.node_info[endpoint_uri]["web3"] = web3
+        self.node_info[endpoint_uri] = {
+            "priority": priority,
+            "web3": web3,
+            "history": RingBuffer(
+                BLOCK_SYNC_STATUS_CALC_PERIOD,
+                {"time": time.time(), "block_number": 0},
+            ),
+        }
 
         # Get block number
         try:
             # NOTE: Immediately after the processing, the monitoring data is not retained,
             #       so the past block number is acquired.
+            latest_block_number = int(web3.eth.block_number)
             block = web3.eth.get_block(
-                max(web3.eth.block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0)
+                max(latest_block_number - BLOCK_SYNC_STATUS_CALC_PERIOD, 0)
             )
         except Exception:
             await self.__web3_errors(db_session=db_session, endpoint_uri=endpoint_uri)
             LOG.error(f"Node connection failed: {endpoint_uri}")
-            block = {"timestamp": time.time(), "number": 0}
+            timestamp = time.time()
+            block_number = 0
+        else:
+            timestamp = float(block.get("timestamp", time.time()))
+            block_number = int(block.get("number", 0))
 
-        data = {"time": block["timestamp"], "block_number": block["number"]}
+        data: HistoryData = {"time": timestamp, "block_number": block_number}
         history = RingBuffer(BLOCK_SYNC_STATUS_CALC_PERIOD, data)
         self.node_info[endpoint_uri]["history"] = history
 
     async def __process(self, db_session: AsyncSession, endpoint_uri: str):
         is_synced = True
-        errors = []
-        priority: int = self.node_info[endpoint_uri]["priority"]
-        web3: Web3 = self.node_info[endpoint_uri]["web3"]
-        history: RingBuffer = self.node_info[endpoint_uri]["history"]
+        errors: list[str] = []
+        priority = self.node_info[endpoint_uri]["priority"]
+        web3 = self.node_info[endpoint_uri]["web3"]
+        history = self.node_info[endpoint_uri]["history"]
 
         # Check sync to other node
         syncing = web3.eth.syncing
-        if syncing:
-            remaining_blocks = syncing["highestBlock"] - syncing["currentBlock"]
+        if isinstance(syncing, dict):
+            remaining_blocks = int(syncing.get("highestBlock", 0)) - int(
+                syncing.get("currentBlock", 0)
+            )
             if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
                 is_synced = False
                 errors.append(
-                    f"highestBlock={syncing['highestBlock']}, currentBlock={syncing['currentBlock']}"
+                    f"highestBlock={syncing.get('highestBlock')}, currentBlock={syncing.get('currentBlock')}"
                 )
 
         # Check increased block number
-        data = {"time": time.time(), "block_number": web3.eth.block_number}
+        data: HistoryData = {
+            "time": time.time(),
+            "block_number": int(web3.eth.block_number),
+        }
         old_data = history.peek_oldest()
         elapsed_time = data["time"] - old_data["time"]
         generated_block_count = data["block_number"] - old_data["block_number"]

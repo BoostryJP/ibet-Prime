@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,20 +20,30 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+from collections.abc import Awaitable, Callable, Generator
 from datetime import UTC, datetime
 from unittest import mock
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from _pytest.logging import LogCaptureFixture
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ServiceUnavailableError
-from app.model.db import Account, Token, TokenCache, TokenType, TokenVersion
+from app.model.db import (
+    Account,
+    Token,
+    TokenCache,
+    TokenStatus,
+    TokenType,
+    TokenVersion,
+)
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from app.model.ibet.tx_params.ibet_share import (
     UpdateParams as IbetShareUpdateParams,
@@ -50,7 +62,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def main_func():
+def main_func() -> Generator[Callable[[], Awaitable[None]], None, None]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -61,7 +73,9 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession, caplog: LogCaptureFixture
+) -> Generator[Processor, None, None]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -72,13 +86,13 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
-    arguments = [
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
+    arguments: list[str | int] = [
         "token.name",
         "token.symbol",
         100,
@@ -108,13 +122,13 @@ async def deploy_bond_token_contract(
 
 
 async def deploy_share_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
-    arguments = [
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
+    arguments: list[str | int] = [
         "token.name",
         "token.symbol",
         20,
@@ -150,7 +164,12 @@ class TestProcessor:
     # Single Token
     # not issue token
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
@@ -161,7 +180,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = {}
         token_1.tx_hash = "tx_hash"
-        token_1.token_status = 0
+        token_1.token_status = TokenStatus.PENDING
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
@@ -187,15 +206,22 @@ class TestProcessor:
     # Multi Token
     # issued token
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
+        issuer_private_key: bytes = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -236,7 +262,7 @@ class TestProcessor:
         token_3.issuer_address = issuer_address
         token_3.abi = {}
         token_3.tx_hash = "tx_hash"
-        token_3.token_status = 0
+        token_3.token_status = TokenStatus.PENDING
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
@@ -261,6 +287,8 @@ class TestProcessor:
         assert len(_cache_list) == 2
 
         assert _cache_list[0].token_address == token_contract_1.address
+        assert _cache_list[0].cached_datetime is not None
+        assert _cache_list[0].expiration_datetime is not None
         assert _cache_list[0].cached_datetime >= before_cache_time
         assert _cache_list[0].expiration_datetime >= before_cache_time
         assert _cache_list[0].attributes == {
@@ -296,6 +324,8 @@ class TestProcessor:
         }
 
         assert _cache_list[1].token_address == token_contract_2.address
+        assert _cache_list[1].cached_datetime is not None
+        assert _cache_list[1].expiration_datetime is not None
         assert _cache_list[1].cached_datetime >= before_cache_time
         assert _cache_list[1].expiration_datetime >= before_cache_time
         assert _cache_list[1].attributes == {
@@ -333,19 +363,21 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(
         self,
-        main_func,
-        async_db,
-        ibet_personal_info_contract,
-        caplog: pytest.LogCaptureFixture,
-    ):
+        main_func: Callable[[], Awaitable[None]],
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        caplog: LogCaptureFixture,
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
+        issuer_private_key: bytes = decode_keyfile_json(
             raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
         )
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -383,7 +415,7 @@ class TestProcessor:
         ):
             await main_func()
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.WARNING, "An external service was unavailable")
+            (LOG.name, logging.ERROR, "All blockchain nodes are unavailable: ")
         )
         caplog.clear()
 

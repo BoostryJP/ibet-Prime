@@ -18,11 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+from collections.abc import Generator
+from typing import Sequence
 from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +35,7 @@ from web3.types import RPCEndpoint
 from app.exceptions import ServiceUnavailableError
 from app.model.db import IDXBlockData, IDXBlockDataBlockNumber, IDXTxData
 from batch import indexer_block_tx_data
-from batch.indexer_block_tx_data import LOG
+from batch.indexer_block_tx_data import LOG, Processor
 from config import CHAIN_ID, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import default_eth_account
 from tests.contract_utils import IbetStandardTokenUtils
@@ -43,7 +45,9 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> Generator[indexer_block_tx_data.Processor, None, None]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -55,7 +59,7 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 class TestProcessor:
     @staticmethod
-    async def set_block_number(async_db, block_number):
+    async def set_block_number(async_db: AsyncSession, block_number: int) -> None:
         indexed_block_number = IDXBlockDataBlockNumber()
         indexed_block_number.chain_id = str(CHAIN_ID)
         indexed_block_number.latest_block_number = block_number
@@ -69,7 +73,12 @@ class TestProcessor:
     # Normal_1
     # Skip process: from_block > latest_block
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db, caplog):
+    async def test_normal_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         before_block_number = web3.eth.block_number
         await self.set_block_number(async_db, before_block_number)
 
@@ -84,6 +93,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert indexed_block is not None
         assert indexed_block.latest_block_number == before_block_number
 
         block_data = (await async_db.scalars(select(IDXBlockData))).all()
@@ -99,7 +109,12 @@ class TestProcessor:
     # Normal_2
     # BlockData: Empty block is generated
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, async_db, caplog):
+    async def test_normal_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         before_block_number = web3.eth.block_number
         await self.set_block_number(async_db, before_block_number)
 
@@ -119,9 +134,10 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert indexed_block is not None
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = (
+        block_data: Sequence[IDXBlockData] = (
             await async_db.scalars(select(IDXBlockData))
         ).all()
         assert len(block_data) == 1
@@ -145,7 +161,12 @@ class TestProcessor:
     # Normal_3_1
     # TxData: Contract deployment
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, processor, async_db, caplog):
+    async def test_normal_3_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         deployer = default_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
@@ -182,27 +203,36 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert indexed_block is not None
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = (
+        block_data: Sequence[IDXBlockData] = (
             await async_db.scalars(select(IDXBlockData))
         ).all()
         assert len(block_data) == 1
-        assert block_data[0].number == before_block_number + 1
-        assert len(block_data[0].transactions) == 1
+        block_data_0 = block_data[0]
+        assert block_data_0.number == before_block_number + 1
+        assert block_data_0.transactions is not None
+        assert len(block_data_0.transactions) == 1
 
-        tx_data: list[IDXTxData] = (await async_db.scalars(select(IDXTxData))).all()
+        tx_data: Sequence[IDXTxData] = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 1
-        assert tx_data[0].block_hash == block_data[0].hash
-        assert tx_data[0].block_number == before_block_number + 1
-        assert tx_data[0].transaction_index == 0
-        assert tx_data[0].from_address == deployer["address"]
-        assert tx_data[0].to_address is None
+        tx_data_0 = tx_data[0]
+        assert tx_data_0.block_hash == block_data_0.hash
+        assert tx_data_0.block_number == before_block_number + 1
+        assert tx_data_0.transaction_index == 0
+        assert tx_data_0.from_address == deployer["address"]
+        assert tx_data_0.to_address is None
 
     # Normal_3_2
     # TxData: Transaction
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, processor, async_db, caplog):
+    async def test_normal_3_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         deployer = default_eth_account("user1")
         deployer_pk = decode_keyfile_json(
             raw_keyfile_json=deployer["keyfile_json"],
@@ -246,20 +276,23 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert indexed_block is not None
         assert indexed_block.latest_block_number == after_block_number
 
-        block_data: list[IDXBlockData] = (
+        block_data: Sequence[IDXBlockData] = (
             await async_db.scalars(select(IDXBlockData).order_by(IDXBlockData.number))
         ).all()
         assert len(block_data) == 2
 
         assert block_data[0].number == before_block_number + 1
+        assert block_data[0].transactions is not None
         assert len(block_data[0].transactions) == 1
 
         assert block_data[1].number == before_block_number + 2
+        assert block_data[1].transactions is not None
         assert len(block_data[1].transactions) == 1
 
-        tx_data: list[IDXTxData] = (await async_db.scalars(select(IDXTxData))).all()
+        tx_data: Sequence[IDXTxData] = (await async_db.scalars(select(IDXTxData))).all()
         assert len(tx_data) == 2
 
         assert tx_data[0].block_hash == block_data[0].hash
@@ -281,7 +314,7 @@ class TestProcessor:
 
     # Error_1: ServiceUnavailable
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, async_db):
+    async def test_error_1(self, processor: Processor, async_db: AsyncSession):
         before_block_number = web3.eth.block_number
         await self.set_block_number(async_db, before_block_number)
 
@@ -304,6 +337,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert indexed_block is not None
         assert indexed_block.latest_block_number == before_block_number
 
         block_data = (await async_db.scalars(select(IDXBlockData))).all()
@@ -314,7 +348,7 @@ class TestProcessor:
 
     # Error_2: SQLAlchemyError
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db):
+    async def test_error_2(self, processor: Processor, async_db: AsyncSession):
         before_block_number = web3.eth.block_number
         await self.set_block_number(async_db, before_block_number)
 
@@ -337,6 +371,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert indexed_block is not None
         assert indexed_block.latest_block_number == before_block_number
 
         block_data = (await async_db.scalars(select(IDXBlockData))).all()

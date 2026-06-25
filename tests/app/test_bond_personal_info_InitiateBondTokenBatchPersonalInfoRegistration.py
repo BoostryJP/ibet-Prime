@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,11 +20,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
-from typing import Optional
+from typing import Optional, Sequence
 from unittest.mock import ANY
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -31,6 +35,7 @@ from app.model.db import (
     BatchRegisterPersonalInfoUpload,
     BatchRegisterPersonalInfoUploadStatus,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -49,7 +54,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # <Normal_1>
     # Authorization by eoa-password
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -61,6 +66,8 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -110,11 +117,12 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
         _upload: Optional[BatchRegisterPersonalInfoUpload] = (
             await async_db.scalars(select(BatchRegisterPersonalInfoUpload).limit(1))
         ).first()
+        assert _upload is not None
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING
         assert _upload.issuer_address == _issuer_address
         assert _upload.token_address == _token_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = (
+        _register_list: Sequence[BatchRegisterPersonalInfo] = (
             await async_db.scalars(select(BatchRegisterPersonalInfo))
         ).all()
         assert len(_register_list) == 10
@@ -122,7 +130,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # <Normal_2>
     # Authorization by auth-token
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -134,6 +142,8 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -189,11 +199,12 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
         _upload: Optional[BatchRegisterPersonalInfoUpload] = (
             await async_db.scalars(select(BatchRegisterPersonalInfoUpload).limit(1))
         ).first()
+        assert _upload is not None
         assert _upload.status == BatchRegisterPersonalInfoUploadStatus.PENDING
         assert _upload.issuer_address == _issuer_address
         assert _upload.token_address == _token_address
 
-        _register_list: list[BatchRegisterPersonalInfo] = (
+        _register_list: Sequence[BatchRegisterPersonalInfo] = (
             await async_db.scalars(select(BatchRegisterPersonalInfo))
         ).all()
         assert len(_register_list) == 10
@@ -206,7 +217,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # RequestValidationError
     # headers and body required
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -243,7 +254,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # RequestValidationError
     # personal_info
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -275,7 +286,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
             },
         )
 
-        details = []
+        details: list[dict[str, object]] = []
         for i in range(0, 10):
             details.append(
                 {
@@ -363,7 +374,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # RequestValidationError
     # personal_info.account_address is invalid
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -477,7 +488,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # RequestValidationError
     # issuer_address
     @pytest.mark.asyncio
-    async def test_error_1_4(self, async_client, async_db):
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _test_account = default_eth_account("user2")
         _test_account_address = _test_account["address"]
 
@@ -524,7 +535,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # RequestValidationError
     # eoa-password not encrypted
     @pytest.mark.asyncio
-    async def test_error_1_5(self, async_client, async_db):
+    async def test_error_1_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -575,7 +586,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # AuthorizationError
     # issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -619,7 +630,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # AuthorizationError
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -631,6 +642,8 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -672,7 +685,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # HTTPException 404
     # token not found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -684,6 +697,8 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -725,7 +740,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # InvalidParameterError
     # processing token
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_client, async_db):
+    async def test_error_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -737,6 +752,8 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -748,7 +765,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -788,7 +805,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # InvalidParameterError
     # personal info list is empty
     @pytest.mark.asyncio
-    async def test_error_4_2(self, async_client, async_db):
+    async def test_error_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -800,6 +817,8 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -811,14 +830,14 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 1
+        token.token_status = TokenStatus.SUCCEEDED
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
         await async_db.commit()
 
         # request target API
-        req_param = []
+        req_param: list[object] = []
         resp = await async_client.post(
             self.test_url.format(_token_address),
             json=req_param,
@@ -838,7 +857,7 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
     # <Error_5>
     # BatchPersonalInfoRegistrationValidationError
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -853,6 +872,8 @@ class TestInitiateBondTokenBatchPersonalInfoRegistration:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

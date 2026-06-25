@@ -17,9 +17,12 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import IDXBlockData, IDXBlockDataBlockNumber
 from config import CHAIN_ID
@@ -30,7 +33,7 @@ class TestListBlockData:
     apiurl = "/blockchain_explorer/block_data"
 
     # Test data
-    block_0 = {
+    block_0: dict[str, Any] = {
         "number": 0,
         "difficulty": 1,
         "proof_of_authority_data": "0x0000000000000000000000000000000000000000000000000000000000000000f89af8549447a847fbdf801154253593851ac9a2e7753235349403ee8c85944b16dfa517cb0ddefe123c7341a5349435d56a7515e824be4122f033d60063d035573a0c94c25d04978fd86ee604feb88f3c635d555eb6d42db8410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0",
@@ -50,7 +53,7 @@ class TestListBlockData:
         "transactions": [],
         "transactions_root": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
     }
-    block_1 = {
+    block_1: dict[str, Any] = {
         "number": 1,
         "difficulty": 1,
         "proof_of_authority_data": "0xd983010907846765746889676f312e31332e3135856c696e7578000000000000f90164f8549403ee8c85944b16dfa517cb0ddefe123c7341a5349435d56a7515e824be4122f033d60063d035573a0c9447a847fbdf801154253593851ac9a2e77532353494c25d04978fd86ee604feb88f3c635d555eb6d42db841d6b123b02f015f4f0b0d47648e22c043dca3f803e6498084522c07ccbea58f8c39e498f6c8c604abb406dc323246c30525cc0dd01c39bcadbb608733bdf3f08300f8c9b84186503892a4b314f2b8aba73b1a7434c69bd95695ac285d5db6d15f879b5dbbf83471502e13eb1d0fce4d2e7ea41be91e8ecf744f0eeb8c808fb2e4a7833377f901b84141f6e74ea7f1365fa01ab90318c066f05b65fe82a2fd856203407653aa242c5875bd016f68d169951aec61958f4ad9654ecc1c8edc686e55c601e3db45f4cc8a01b8414e3259ec82771a0c83d0b5db72c0199549efa80736e6e1f892c50504d187eb505f784cb8623ce475195fe1287ceb85bccf703fca919da23940ce29e4f9f1a7ba01",
@@ -70,7 +73,7 @@ class TestListBlockData:
         "transactions": [],
         "transactions_root": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
     }
-    block_2 = {
+    block_2: dict[str, Any] = {
         "number": 2,
         "difficulty": 1,
         "proof_of_authority_data": "0xd983010907846765746889676f312e31332e3135856c696e7578000000000000f90164f8549403ee8c85944b16dfa517cb0ddefe123c7341a5349435d56a7515e824be4122f033d60063d035573a0c9447a847fbdf801154253593851ac9a2e77532353494c25d04978fd86ee604feb88f3c635d555eb6d42db8416ac645ecda42d11985f8d00d25664e336e8588d3bf595a88eb78ef200e5aa0f732a4822141420fba7ccf33248ed5a45038334c5e50561779e427a4fe4b04b08a00f8c9b8415568d4c4a3edcafaed146a43dc7046d9fcd31d5f6d64f8dcf581ba473b868f5145129066188ffef9b8a9e9065d13fa96a81f1196bad98393a70f6461245c097a01b841ea249f9f16bc3c5a13de6df4be7b6933b4908395d1517f7099cc7718ec438a8744aaa356584a3929d1dec2d596268ddbd29d476954d2080b94f82b07b223492300b841804f0f78afa930c7249a81cc3a7a2810098803c6f6cb4c2ed3778c1a0c35962e57c8a1328f670362cfbe3f30e58cac7d78f9059e379bd9c195afecb27b907faf01",
@@ -92,7 +95,7 @@ class TestListBlockData:
     }
 
     @staticmethod
-    def filter_response_item(block_data):
+    def filter_response_item(block_data: dict[str, Any]) -> dict[str, Any]:
         return {
             "number": block_data.get("number"),
             "hash": block_data.get("hash"),
@@ -104,9 +107,11 @@ class TestListBlockData:
         }
 
     @staticmethod
-    async def insert_block_data(async_db, block_data):
+    async def insert_block_data(
+        async_db: AsyncSession, block_data: dict[str, Any]
+    ) -> None:
         block_model = IDXBlockData()
-        block_model.number = block_data.get("number")
+        block_model.number = block_data.get("number", 0)
         block_model.parent_hash = block_data.get("parent_hash")
         block_model.sha3_uncles = block_data.get("sha3_uncles")
         block_model.miner = block_data.get("miner")
@@ -121,14 +126,16 @@ class TestListBlockData:
         block_model.proof_of_authority_data = block_data.get("proof_of_authority_data")
         block_model.mix_hash = block_data.get("mix_hash")
         block_model.nonce = block_data.get("nonce")
-        block_model.hash = block_data.get("hash")
+        block_model.hash = block_data.get("hash", "")
         block_model.size = block_data.get("size")
         block_model.transactions = block_data.get("transactions")
         async_db.add(block_model)
         await async_db.commit()
 
     @staticmethod
-    async def insert_block_data_block_number(session, latest_block_number: int):
+    async def insert_block_data_block_number(
+        session: AsyncSession, latest_block_number: int
+    ) -> None:
         idx_block_data_block_number = IDXBlockDataBlockNumber()
         idx_block_data_block_number.chain_id = str(CHAIN_ID)
         idx_block_data_block_number.latest_block_number = latest_block_number
@@ -142,7 +149,7 @@ class TestListBlockData:
     # Normal_1_1
     # IDXBlockDataBlockNumber is None
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = await async_client.get(self.apiurl)
@@ -161,7 +168,7 @@ class TestListBlockData:
 
     # Normal_1_2
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_block_data(async_db, self.block_0)
         await self.insert_block_data(async_db, self.block_1)
         await self.insert_block_data(async_db, self.block_2)
@@ -191,7 +198,7 @@ class TestListBlockData:
     # Normal_2_1
     # Query parameter: from_block_number
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_block_data(async_db, self.block_0)
         await self.insert_block_data(async_db, self.block_1)
         await self.insert_block_data(async_db, self.block_2)
@@ -221,7 +228,7 @@ class TestListBlockData:
     # Normal_2_2
     # Query parameter: to_block_number
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_block_data(async_db, self.block_0)
         await self.insert_block_data(async_db, self.block_1)
         await self.insert_block_data(async_db, self.block_2)
@@ -251,7 +258,7 @@ class TestListBlockData:
     # Normal_3_1
     # Pagination: offset
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_block_data(async_db, self.block_0)
         await self.insert_block_data(async_db, self.block_1)
         await self.insert_block_data(async_db, self.block_2)
@@ -281,7 +288,7 @@ class TestListBlockData:
     # Normal_3_2
     # Pagination: limit
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_block_data(async_db, self.block_0)
         await self.insert_block_data(async_db, self.block_1)
         await self.insert_block_data(async_db, self.block_2)
@@ -308,7 +315,7 @@ class TestListBlockData:
     # Normal_4
     # sort_order
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_block_data(async_db, self.block_0)
         await self.insert_block_data(async_db, self.block_1)
         await self.insert_block_data(async_db, self.block_2)
@@ -339,7 +346,7 @@ class TestListBlockData:
     # Normal_5
     # has_transactions filter
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare: three blocks, only block_1 has txs
         b0 = dict(self.block_0)
         b1 = dict(self.block_1)
@@ -378,7 +385,7 @@ class TestListBlockData:
     # Error_1
     # BC_EXPLORER_ENABLED = False (default)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
             resp = await async_client.get(self.apiurl)
@@ -393,7 +400,7 @@ class TestListBlockData:
     # Error_2
     # Invalid Parameter
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             params = {
@@ -443,7 +450,7 @@ class TestListBlockData:
     # Error_3
     # ResponseLimitExceededError
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_block_data(async_db, self.block_0)
         await self.insert_block_data(async_db, self.block_1)
         await self.insert_block_data(async_db, self.block_2)

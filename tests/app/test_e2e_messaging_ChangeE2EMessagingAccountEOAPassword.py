@@ -18,8 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.model.db import E2EMessagingAccount
 from app.model.ibet import IbetStraightBondContract
@@ -38,7 +41,12 @@ class TestChangeE2EMessagingAccountEOAPassword:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -68,12 +76,14 @@ class TestChangeE2EMessagingAccountEOAPassword:
         _account = (
             await async_db.scalars(select(E2EMessagingAccount).limit(1))
         ).first()
+        assert _account is not None
         assert _account.keyfile != user_keyfile_1
-        assert E2EEUtils.decrypt(_account.eoa_password) == new_password
+        assert E2EEUtils.decrypt(_account.eoa_password) == new_password  # type: ignore
 
         # test new keyfile
         private_key = decode_keyfile_json(
-            raw_keyfile_json=_account.keyfile, password=new_password.encode("utf-8")
+            raw_keyfile_json=_account.keyfile,  # type: ignore
+            password=new_password.encode("utf-8"),
         )
         arguments = [
             "name_test",
@@ -100,7 +110,9 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # Parameter Error
     # no body
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
@@ -125,13 +137,15 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # Parameter Error
     # no required field
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         req_param = {}
         resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
-            json=req_param,
+            json=req_param,  # type: ignore
         )
 
         # assertion
@@ -158,7 +172,9 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # Parameter Error
     # not decrypt
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         old_password = "password"
         new_password = "passwordnew"
         req_param = {
@@ -199,7 +215,9 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_2>
     # No data
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         old_password = "password"
         new_password = "passwordnew"
         req_param = {
@@ -223,7 +241,12 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_3>
     # old password mismatch
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_error_3(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -257,7 +280,12 @@ class TestChangeE2EMessagingAccountEOAPassword:
     # <Error_4>
     # Passphrase Policy Violation
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_error_4(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]

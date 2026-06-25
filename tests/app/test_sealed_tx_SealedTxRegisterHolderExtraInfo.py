@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import TokenHolderExtraInfo
 from tests.app.utils.generate_signature import generate_sealed_tx_signature
@@ -31,7 +33,7 @@ class TestSealedTxRegisterHolderExtraInfo:
     test_account_pk = "0000000000000000000000000000000000000000000000000000000000000001"
 
     # Target API endpoint
-    url = "/sealed_tx/holder_extra_info"
+    url: str = "/sealed_tx/holder_extra_info"
 
     ###########################################################################
     # Normal Case
@@ -40,7 +42,9 @@ class TestSealedTxRegisterHolderExtraInfo:
     # <Normal_1>
     # Register token holder's extra information
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # Derive a signature
         _params = {
             "token_address": self.test_token_address,
@@ -75,6 +79,7 @@ class TestSealedTxRegisterHolderExtraInfo:
         extra_info = (
             await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
         ).first()
+        assert extra_info is not None
         assert extra_info.json() == {
             "token_address": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "account_address": "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
@@ -89,7 +94,9 @@ class TestSealedTxRegisterHolderExtraInfo:
     # <Normal_2>
     # Optional input parameters
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # Derive a signature
         _params = {
             "token_address": self.test_token_address,
@@ -118,6 +125,7 @@ class TestSealedTxRegisterHolderExtraInfo:
         extra_info = (
             await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
         ).first()
+        assert extra_info is not None
         assert extra_info.json() == {
             "token_address": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "account_address": "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
@@ -132,7 +140,9 @@ class TestSealedTxRegisterHolderExtraInfo:
     # <Normal_3>
     # Overwrite the already registered data
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         extra_info_bf = TokenHolderExtraInfo()
         extra_info_bf.token_address = self.test_token_address
         extra_info_bf.account_address = self.test_account_address
@@ -179,6 +189,7 @@ class TestSealedTxRegisterHolderExtraInfo:
         extra_info = (
             await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
         ).first()
+        assert extra_info is not None
         assert extra_info.json() == {
             "token_address": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
             "account_address": "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf",
@@ -198,7 +209,9 @@ class TestSealedTxRegisterHolderExtraInfo:
     # RequestValidationError
     # - Missing X-SealedTx-Signature header
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         _params = {
             "token_address": self.test_token_address,
             "external_id1_type": "test_id_type_1",
@@ -236,7 +249,9 @@ class TestSealedTxRegisterHolderExtraInfo:
     # RequestValidationError
     # - Missing required field: token_address
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # Derive a signature
         _params = {
             "external_id1_type": "test_id_type_1",
@@ -288,7 +303,9 @@ class TestSealedTxRegisterHolderExtraInfo:
     # RequestValidationError
     # - external_id: string_too_long
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # Derive a signature
         _params = {
             "token_address": self.test_token_address,

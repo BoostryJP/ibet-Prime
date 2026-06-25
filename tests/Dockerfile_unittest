@@ -1,7 +1,7 @@
 FROM ubuntu:24.04 AS builder
 
-ENV PYTHON_VERSION=3.13.11
-ENV UV_VERSION=0.9.16
+ENV PYTHON_VERSION=3.14.2
+ENV UV_VERSION=0.11.19
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_INSTALL_DIR="/usr/local/bin"
@@ -62,7 +62,7 @@ RUN mkdir -p /app/ibet-Prime/contracts/
 COPY --chown=apl:apl contracts/ /app/ibet-Prime/contracts/
 RUN mkdir -p /app/ibet-Prime/conf/
 COPY --chown=apl:apl conf/ /app/ibet-Prime/conf/
-COPY --chown=apl:apl config.py eth_config.py run.py server.py alembic.ini /app/ibet-Prime/
+COPY --chown=apl:apl config.py eth_config.py avalanche_config.py run.py server.py alembic.ini /app/ibet-Prime/
 RUN mkdir -p /app/ibet-Prime/migrations/
 COPY --chown=apl:apl migrations/ /app/ibet-Prime/migrations/
 RUN mkdir -p /app/ibet-Prime/batch/
@@ -76,7 +76,7 @@ COPY pyproject.toml /app/ibet-Prime/pyproject.toml
 COPY uv.lock /app/ibet-Prime/uv.lock
 RUN cd /app/ibet-Prime \
  && uv venv $UV_PROJECT_ENVIRONMENT \
- && uv sync --frozen --no-install-project \
+ && UV_MALWARE_CHECK=1 uv sync --frozen --no-install-project \
  && PYTHON_BIN="$(uv python find $PYTHON_VERSION)" \
  && PYTHON_ROOT="$(dirname "$(dirname "$PYTHON_BIN")")" \
  && rm -f "$PYTHON_ROOT"/bin/pip "$PYTHON_ROOT"/bin/pip3 "$PYTHON_ROOT"/bin/pip3.* \
@@ -114,6 +114,8 @@ RUN apt-get update -q \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/apl/.cache/ms-playwright
+
 # copy test cases
 USER apl
 RUN mkdir -p /app/ibet-Prime/tests/
@@ -130,6 +132,13 @@ COPY --from=builder --chown=apl:apl /home/apl/.venv/ /home/apl/.venv/
 COPY --from=builder --chown=apl:apl /app/ibet-Prime/ /app/ibet-Prime/
 COPY --from=builder --chown=apl:apl /usr/local/bin/uv /usr/local/bin/uv
 COPY --from=builder --chown=apl:apl /usr/local/bin/uvx /usr/local/bin/uvx
+
+USER root
+RUN mkdir -p /home/apl/.cache/ms-playwright \
+  && /home/apl/.venv/bin/python -m playwright install --with-deps chromium \
+  && chown -R apl:apl /home/apl/.cache
+
+USER apl
 
 ENV LANG=ja_JP.utf8
 ENV UV_PROJECT_ENVIRONMENT="/home/apl/.venv"

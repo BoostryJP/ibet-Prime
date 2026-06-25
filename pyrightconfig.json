@@ -1,0 +1,23 @@
+{
+    "include": [
+        "config.py",
+        "eth_config.py",
+        "avalanche_config.py",
+        "app/",
+        "batch/",
+        "tests/",
+        "server.py"
+    ],
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "**/.*",
+        ".venv",
+        "__pycache__/",
+        "cmd/",
+        "docs/",
+        "migrations/",
+        "run.py",
+    ],
+    "typeCheckingMode": "strict"
+}

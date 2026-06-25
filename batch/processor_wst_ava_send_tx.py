@@ -1,0 +1,488 @@
+"""
+Copyright BOOSTRY Co., Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+See the License for the specific language governing permissions and
+limitations under the License.
+
+SPDX-License-Identifier: Apache-2.0
+"""
+
+import asyncio
+import sys
+from typing import Sequence, cast
+
+import uvloop
+from eth_keyfile.keyfile import decode_keyfile_json
+from pydantic import BaseModel
+from sqlalchemy import and_, select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.types import Nonce
+
+from app.database import BatchAsyncSessionLocal
+from app.exceptions import ServiceUnavailableError
+from app.model.db import (
+    Account,
+    AvaIbetWSTTx,
+    IbetWSTAuthorization as IbetWSTAuthorizationDict,
+    IbetWSTTxParamsAcceptTrade,
+    IbetWSTTxParamsAddAccountWhiteList,
+    IbetWSTTxParamsBurn,
+    IbetWSTTxParamsCancelTrade,
+    IbetWSTTxParamsDeleteAccountWhiteList,
+    IbetWSTTxParamsDeploy,
+    IbetWSTTxParamsForceBurn,
+    IbetWSTTxParamsMint,
+    IbetWSTTxParamsRejectTrade,
+    IbetWSTTxParamsRequestTrade,
+    IbetWSTTxParamsTransfer,
+    IbetWSTTxStatus,
+    IbetWSTTxType,
+)
+from app.model.wst import AvalancheIbetWST, IbetWSTAuthorization
+from app.utils.ava_contract_utils import AvaAsyncContractUtils
+from app.utils.e2ee_utils import E2EEUtils
+from avalanche_config import AVA_MASTER_ACCOUNT_ADDRESS, AVA_MASTER_PRIVATE_KEY
+from batch import free_malloc
+from batch.utils import batch_log
+
+"""
+[PROCESSOR-AVA-WST-SendTx]
+
+This processor is responsible for sending transactions related to IbetWST on Avalanche.
+"""
+
+process_name = "PROCESSOR-AVA-WST-SendTx"
+LOG = batch_log.get_logger(process_name=process_name)
+
+
+def build_authorization(
+    authorization: IbetWSTAuthorizationDict | None,
+) -> IbetWSTAuthorization:
+    assert authorization is not None
+    return IbetWSTAuthorization(
+        nonce=bytes.fromhex(authorization["nonce"]),
+        v=authorization["v"],
+        r=bytes.fromhex(authorization["r"]),
+        s=bytes.fromhex(authorization["s"]),
+    )
+
+
+class ProcessorAvaWSTSendTx:
+    """
+    Processor for sending transactions related to IbetWST on Avalanche.
+    """
+
+    async def run(self):
+        """
+        Run the processor to send transactions.
+        """
+        db_session: AsyncSession = BatchAsyncSessionLocal()
+        try:
+            # Extract unprocessed transactions
+            wst_tx_list: Sequence[AvaIbetWSTTx] = (
+                await db_session.scalars(
+                    select(AvaIbetWSTTx).where(
+                        and_(
+                            AvaIbetWSTTx.status == IbetWSTTxStatus.PENDING,
+                            AvaIbetWSTTx.tx_hash.is_(None),
+                        )
+                    )
+                )
+            ).all()
+            for wst_tx in wst_tx_list:
+                LOG.info(
+                    f"Processing transaction: id={wst_tx.tx_id}, type={wst_tx.tx_type}"
+                )
+
+                # Get account information
+                tx_sender_account = await get_tx_sender_account(
+                    db_session=db_session,
+                    tx_sender=wst_tx.tx_sender,
+                )
+                if not tx_sender_account:
+                    # If the account is not found, output an error log and set the status to FAILED
+                    LOG.error(
+                        f"Account not found for transaction sender: {wst_tx.tx_sender}"
+                    )
+                    wst_tx.status = IbetWSTTxStatus.FAILED
+                    await db_session.merge(wst_tx)
+                    await db_session.commit()
+                    continue
+
+                try:
+                    # Branch processing by transaction type
+                    if wst_tx.tx_type == IbetWSTTxType.DEPLOY:
+                        # Send deployment transaction
+                        tx_hash, nonce = await send_deploy_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.ADD_WHITELIST:
+                        # Send add whitelist transaction
+                        tx_hash, nonce = await send_add_whitelist_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.DELETE_WHITELIST:
+                        # Send delete whitelist transaction
+                        tx_hash, nonce = await send_delete_whitelist_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.TRANSFER:
+                        # Send transfer transaction
+                        tx_hash, nonce = await send_transfer_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.MINT:
+                        # Send mint transaction
+                        tx_hash, nonce = await send_mint_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.BURN:
+                        # Send burn transaction
+                        tx_hash, nonce = await send_burn_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.FORCE_BURN:
+                        # Send force burn transaction
+                        tx_hash, nonce = await send_force_burn_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.REQUEST_TRADE:
+                        # Send request trade transaction
+                        tx_hash, nonce = await send_request_trade_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.CANCEL_TRADE:
+                        # Send cancel trade transaction
+                        tx_hash, nonce = await cancel_trade_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.ACCEPT_TRADE:
+                        # Send accept trade transaction
+                        tx_hash, nonce = await accept_trade_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    elif wst_tx.tx_type == IbetWSTTxType.REJECT_TRADE:
+                        # Send reject trade transaction
+                        tx_hash, nonce = await reject_trade_transaction(
+                            wst_tx, tx_sender_account
+                        )
+                    else:
+                        continue
+
+                    # If successful, update the status
+                    wst_tx.status = IbetWSTTxStatus.SENT
+                    wst_tx.tx_nonce = nonce
+                    wst_tx.tx_hash = tx_hash
+                    await db_session.merge(wst_tx)
+                    await db_session.commit()
+                    LOG.info(f"Transaction sent successfully: id={wst_tx.tx_id}")
+                except Exception:
+                    # If sending fails, output an error log and skip processing
+                    LOG.exception(f"Failed to send transaction: id={wst_tx.tx_id}")
+                    continue
+        finally:
+            # Close the session
+            await db_session.close()
+
+
+class TxSenderAccount(BaseModel):
+    address: str
+    private_key: bytes
+
+
+async def get_tx_sender_account(
+    db_session: AsyncSession,
+    tx_sender: str,
+) -> TxSenderAccount | None:
+    """
+    Get the account information of the transaction sender.
+    """
+
+    if tx_sender == AVA_MASTER_ACCOUNT_ADDRESS:
+        # If the transaction sender is the master account, return the master account information
+        assert AVA_MASTER_ACCOUNT_ADDRESS is not None
+        assert AVA_MASTER_PRIVATE_KEY is not None
+        return TxSenderAccount(
+            address=AVA_MASTER_ACCOUNT_ADDRESS,
+            private_key=bytes.fromhex(AVA_MASTER_PRIVATE_KEY),
+        )
+    else:
+        # If the transaction sender is not the master account, retrieve the account information from the database
+        tx_sender_account = (
+            await db_session.scalars(
+                select(Account).where(Account.issuer_address == tx_sender).limit(1)
+            )
+        ).first()
+        if tx_sender_account is not None:
+            private_key = decode_keyfile_json(
+                raw_keyfile_json=tx_sender_account.keyfile,
+                password=E2EEUtils.decrypt(tx_sender_account.eoa_password).encode(
+                    "utf-8"
+                ),
+            )
+            return TxSenderAccount(
+                address=tx_sender_account.issuer_address,
+                private_key=private_key,
+            )
+        else:
+            return None
+
+
+async def send_deploy_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a deployment transaction for the IbetWST contract.
+    """
+    tx_params = cast(IbetWSTTxParamsDeploy, wst_tx.tx_params)
+    tx_hash, nonce = await AvaAsyncContractUtils.deploy_contract(
+        contract_name="AuthIbetWST",
+        args=[
+            tx_params["name"],
+            tx_params["initial_owner"],
+        ],
+        deployer=tx_sender_account.address,
+        private_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def send_add_whitelist_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to add an account to the IbetWST whitelist.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsAddAccountWhiteList, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.add_account_white_list_with_authorization(
+        st_account=tx_params["st_account"],
+        sc_account_in=tx_params["sc_account_in"],
+        sc_account_out=tx_params["sc_account_out"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def send_delete_whitelist_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to delete an account from the IbetWST whitelist.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsDeleteAccountWhiteList, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.delete_account_white_list_with_authorization(
+        st_account=tx_params["st_account"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def send_transfer_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to transfer IbetWST tokens.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsTransfer, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.transfer_with_authorization(
+        from_address=tx_params["from_address"],
+        to_address=tx_params["to_address"],
+        value=tx_params["value"],
+        valid_after=tx_params["valid_after"],
+        valid_before=tx_params["valid_before"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def send_mint_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to mint IbetWST tokens.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsMint, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.mint_with_authorization(
+        to_address=tx_params["to_address"],
+        value=tx_params["value"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def send_burn_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to burn IbetWST tokens.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsBurn, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.burn_with_authorization(
+        from_address=tx_params["from_address"],
+        value=tx_params["value"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def send_force_burn_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to force burn IbetWST tokens.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsForceBurn, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.force_burn_from_with_authorization(
+        account_address=tx_params["account"],
+        value=tx_params["value"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def send_request_trade_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to request a trade for the IbetWST.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsRequestTrade, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.request_trade_with_authorization(
+        seller_st_account=tx_params["seller_st_account"],
+        buyer_st_account=tx_params["buyer_st_account"],
+        sc_token_address=tx_params["sc_token_address"],
+        st_value=tx_params["st_value"],
+        sc_value=tx_params["sc_value"],
+        memo=tx_params["memo"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def cancel_trade_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to cancel a trade for the IbetWST.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsCancelTrade, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.cancel_trade_with_authorization(
+        index=tx_params["index"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def accept_trade_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to accept a trade for the IbetWST.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsAcceptTrade, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.accept_trade_with_authorization(
+        index=tx_params["index"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def reject_trade_transaction(
+    wst_tx: AvaIbetWSTTx,
+    tx_sender_account: TxSenderAccount,
+) -> tuple[str, Nonce]:
+    """
+    Send a transaction to reject a trade for the IbetWST.
+    """
+    assert wst_tx.ibet_wst_address is not None
+    wst_contract = AvalancheIbetWST(wst_tx.ibet_wst_address)
+    tx_params = cast(IbetWSTTxParamsRejectTrade, wst_tx.tx_params)
+    tx_hash, nonce = await wst_contract.reject_trade_with_authorization(
+        index=tx_params["index"],
+        authorization=build_authorization(wst_tx.authorization),
+        tx_sender=tx_sender_account.address,
+        tx_sender_key=tx_sender_account.private_key,
+    )
+    return tx_hash, nonce
+
+
+async def main():
+    LOG.info("Service started successfully")
+    processor = ProcessorAvaWSTSendTx()
+
+    while True:
+        try:
+            await processor.run()
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
+        except SQLAlchemyError as sa_err:
+            LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
+        except Exception as ex:
+            LOG.exception(ex)
+
+        await asyncio.sleep(10)
+        free_malloc()
+
+
+if __name__ == "__main__":
+    try:
+        uvloop.run(main())
+    except KeyboardInterrupt:
+        sys.exit(1)

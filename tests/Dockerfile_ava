@@ -1,0 +1,9 @@
+FROM ghcr.io/foundry-rs/foundry:latest
+
+COPY tests/run_anvil.sh /app/ibet-Prime/tests/run_anvil.sh
+COPY tests/run_anvil_ava.sh /app/ibet-Prime/tests/run_anvil_ava.sh
+
+WORKDIR /app/ibet-Prime
+
+# Run anvil node
+ENTRYPOINT ["bash", "/app/ibet-Prime/tests/run_anvil_ava.sh"]

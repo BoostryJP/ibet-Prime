@@ -21,13 +21,16 @@ import asyncio
 import sys
 import uuid
 from datetime import UTC, datetime
-from typing import Optional, Sequence
+from typing import Any, Literal, Optional, Sequence, TypedDict, cast
 
 import uvloop
+from eth_typing import HexStr
+from eth_utils.address import to_checksum_address
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import AsyncContract
+from web3.types import BlockData, TxData
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -53,6 +56,16 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = AsyncWeb3Wrapper()
 
+type TransferApprovalNoticeCode = Literal[0, 1, 2, 3]
+
+
+class TransferApprovalNotificationEvent(TypedDict):
+    transaction_hash: str
+    token_address: str
+    exchange_address: str
+    application_id: int
+    notice_code: TransferApprovalNoticeCode
+
 
 """
 Batch process for indexing security token transfer approval events
@@ -76,7 +89,7 @@ class Processor:
         self.token_list: dict[str, AsyncContractEventsView] = {}
         self.exchange_list: list[AsyncContract] = []
         self.token_type_map: dict[str, TokenType] = {}
-        self.notification_events: list[dict] = []
+        self.notification_events: list[TransferApprovalNotificationEvent] = []
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -173,7 +186,8 @@ class Processor:
         ).all()
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=load_required_token.token_address, abi=load_required_token.abi
+                address=to_checksum_address(load_required_token.token_address),
+                abi=load_required_token.abi,
             )
             self.token_list[load_required_token.token_address] = (
                 AsyncContractEventsView(token_contract.address, token_contract.events)
@@ -182,12 +196,12 @@ class Processor:
                 load_required_token.type
             )
 
-        _exchange_list_tmp = []
+        _exchange_list_tmp: list[str] = []
         for token_contract in self.token_list.values():
             tradable_exchange_address = ZERO_ADDRESS
             if (
                 self.token_type_map.get(token_contract.address)
-                == TokenType.IBET_STRAIGHT_BOND.value
+                == TokenType.IBET_STRAIGHT_BOND
             ):
                 bond_token = IbetStraightBondContract(token_contract.address)
                 await bond_token.get()
@@ -195,8 +209,7 @@ class Processor:
                     bond_token.tradable_exchange_contract_address
                 )
             elif (
-                self.token_type_map.get(token_contract.address)
-                == TokenType.IBET_SHARE.value
+                self.token_type_map.get(token_contract.address) == TokenType.IBET_SHARE
             ):
                 share_token = IbetShareContract(token_contract.address)
                 await share_token.get()
@@ -216,7 +229,7 @@ class Processor:
             self.exchange_list.append(exchange_contract)
 
     @staticmethod
-    async def __get_idx_transfer_approval_block_number(db_session: AsyncSession):
+    async def __get_idx_transfer_approval_block_number(db_session: AsyncSession) -> int:
         _idx_transfer_approval_block_number: IDXTransferApprovalBlockNumber | None = (
             await db_session.scalars(select(IDXTransferApprovalBlockNumber).limit(1))
         ).first()
@@ -251,7 +264,7 @@ class Processor:
         await self.__sync_exchange_approve_transfer(db_session, block_from, block_to)
 
     async def __sync_token_apply_for_transfer(
-        self, db_session: AsyncSession, block_from, block_to
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync ApplyForTransfer Events of Tokens
 
@@ -275,24 +288,27 @@ class Processor:
                         pass
                     else:
                         block_timestamp = await self.__get_block_timestamp(event=event)
+                        application_id = args.get("index", 0)
                         await self.__sink_on_transfer_approval(
                             db_session=db_session,
                             event_type="ApplyFor",
                             token_address=token.address,
                             exchange_address=ZERO_ADDRESS,
-                            application_id=args.get("index"),
+                            application_id=application_id,
                             from_address=args.get("from", ZERO_ADDRESS),
                             to_address=args.get("to", ZERO_ADDRESS),
-                            amount=args.get("value"),
+                            amount=value,
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp,
                         )
                         self.notification_events.append(
                             {
-                                "transaction_hash": event["transactionHash"],
+                                "transaction_hash": event[
+                                    "transactionHash"
+                                ].to_0x_hex(),
                                 "token_address": token.address,
                                 "exchange_address": ZERO_ADDRESS,
-                                "application_id": args.get("index"),
+                                "application_id": application_id,
                                 "notice_code": 0,
                             }
                         )
@@ -300,7 +316,7 @@ class Processor:
                 raise
 
     async def __sync_token_cancel_transfer(
-        self, db_session: AsyncSession, block_from, block_to
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync CancelTransfer Events of Tokens
 
@@ -320,22 +336,23 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
+                    application_id = args.get("index", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Cancel",
                         token_address=token.address,
                         exchange_address=ZERO_ADDRESS,
-                        application_id=args.get("index"),
+                        application_id=application_id,
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
                         block_timestamp=block_timestamp,
                     )
                     self.notification_events.append(
                         {
-                            "transaction_hash": event["transactionHash"],
+                            "transaction_hash": event["transactionHash"].to_0x_hex(),
                             "token_address": token.address,
                             "exchange_address": ZERO_ADDRESS,
-                            "application_id": args.get("index"),
+                            "application_id": application_id,
                             "notice_code": 1,
                         }
                     )
@@ -343,7 +360,7 @@ class Processor:
                 raise
 
     async def __sync_token_approve_transfer(
-        self, db_session: AsyncSession, block_from, block_to
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync ApproveTransfer Events of Tokens
 
@@ -363,12 +380,13 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
+                    application_id = args.get("index", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Approve",
                         token_address=token.address,
                         exchange_address=ZERO_ADDRESS,
-                        application_id=args.get("index"),
+                        application_id=application_id,
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
                         optional_data_approver=args.get("data"),
@@ -376,10 +394,10 @@ class Processor:
                     )
                     self.notification_events.append(
                         {
-                            "transaction_hash": event["transactionHash"],
+                            "transaction_hash": event["transactionHash"].to_0x_hex(),
                             "token_address": token.address,
                             "exchange_address": ZERO_ADDRESS,
-                            "application_id": args.get("index"),
+                            "application_id": application_id,
                             "notice_code": 2,
                         }
                     )
@@ -387,7 +405,7 @@ class Processor:
                 raise
 
     async def __sync_exchange_apply_for_transfer(
-        self, db_session: AsyncSession, block_from, block_to
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync ApplyForTransfer events of exchanges
 
@@ -411,24 +429,27 @@ class Processor:
                         pass
                     else:
                         block_timestamp = await self.__get_block_timestamp(event=event)
+                        application_id = args.get("escrowId", 0)
                         await self.__sink_on_transfer_approval(
                             db_session=db_session,
                             event_type="ApplyFor",
                             token_address=args.get("token", ZERO_ADDRESS),
                             exchange_address=exchange.address,
-                            application_id=args.get("escrowId"),
+                            application_id=application_id,
                             from_address=args.get("from", ZERO_ADDRESS),
                             to_address=args.get("to", ZERO_ADDRESS),
-                            amount=args.get("value"),
+                            amount=value,
                             optional_data_applicant=args.get("data"),
                             block_timestamp=block_timestamp,
                         )
                         self.notification_events.append(
                             {
-                                "transaction_hash": event["transactionHash"],
+                                "transaction_hash": event[
+                                    "transactionHash"
+                                ].to_0x_hex(),
                                 "token_address": args.get("token", ZERO_ADDRESS),
                                 "exchange_address": exchange.address,
-                                "application_id": args.get("escrowId"),
+                                "application_id": application_id,
                                 "notice_code": 0,
                             }
                         )
@@ -436,7 +457,7 @@ class Processor:
                 raise
 
     async def __sync_exchange_cancel_transfer(
-        self, db_session: AsyncSession, block_from, block_to
+        self, db_session: AsyncSession, block_from: int, block_to: int
     ):
         """Sync CancelTransfer events of exchanges
 
@@ -456,22 +477,23 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
+                    application_id = args.get("escrowId", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Cancel",
                         token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
+                        application_id=application_id,
                         from_address=args.get("from", ZERO_ADDRESS),
                         to_address=args.get("to", ZERO_ADDRESS),
                         block_timestamp=block_timestamp,
                     )
                     self.notification_events.append(
                         {
-                            "transaction_hash": event["transactionHash"],
+                            "transaction_hash": event["transactionHash"].to_0x_hex(),
                             "token_address": args.get("token", ZERO_ADDRESS),
                             "exchange_address": exchange.address,
-                            "application_id": args.get("escrowId"),
+                            "application_id": application_id,
                             "notice_code": 1,
                         }
                     )
@@ -499,21 +521,22 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
+                    application_id = args.get("escrowId", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="EscrowFinish",
                         token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
+                        application_id=application_id,
                         from_address=args.get("sender", ZERO_ADDRESS),
                         to_address=args.get("recipient", ZERO_ADDRESS),
                     )
                     self.notification_events.append(
                         {
-                            "transaction_hash": event["transactionHash"],
+                            "transaction_hash": event["transactionHash"].to_0x_hex(),
                             "token_address": args.get("token", ZERO_ADDRESS),
                             "exchange_address": exchange.address,
-                            "application_id": args.get("escrowId"),
+                            "application_id": application_id,
                             "notice_code": 3,
                         }
                     )
@@ -541,21 +564,22 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     block_timestamp = await self.__get_block_timestamp(event=event)
+                    application_id = args.get("escrowId", 0)
                     await self.__sink_on_transfer_approval(
                         db_session=db_session,
                         event_type="Approve",
                         token_address=args.get("token", ZERO_ADDRESS),
                         exchange_address=exchange.address,
-                        application_id=args.get("escrowId"),
+                        application_id=application_id,
                         optional_data_approver=args.get("data"),
                         block_timestamp=block_timestamp,
                     )
                     self.notification_events.append(
                         {
-                            "transaction_hash": event["transactionHash"],
+                            "transaction_hash": event["transactionHash"].to_0x_hex(),
                             "token_address": args.get("token", ZERO_ADDRESS),
                             "exchange_address": exchange.address,
-                            "application_id": args.get("escrowId"),
+                            "application_id": application_id,
                             "notice_code": 2,
                         }
                     )
@@ -563,16 +587,19 @@ class Processor:
                 raise
 
     @staticmethod
-    async def __get_block_timestamp(event) -> int:
-        block_timestamp = (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-        return block_timestamp
+    async def __get_block_timestamp(event: dict[str, Any]) -> int:
+        block_number = cast(int, event.get("blockNumber"))
+        block: BlockData = await web3.eth.get_block(block_number)
+        block_timestamp = block.get("timestamp")
+        assert block_timestamp is not None
+        return int(block_timestamp)
 
     @staticmethod
     async def __sink_on_transfer_approval(
         db_session: AsyncSession,
         event_type: str,
         token_address: str,
-        exchange_address: Optional[str],
+        exchange_address: str,
         application_id: int,
         from_address: Optional[str] = None,
         to_address: Optional[str] = None,
@@ -610,6 +637,7 @@ class Processor:
             )
         ).first()
         if event_type == "ApplyFor":
+            assert block_timestamp is not None
             if transfer_approval is None:
                 transfer_approval = IDXTransferApproval()
                 transfer_approval.token_address = token_address
@@ -618,19 +646,23 @@ class Processor:
                 transfer_approval.from_address = from_address
                 transfer_approval.to_address = to_address
             transfer_approval.amount = amount
-            try:
-                transfer_approval.application_datetime = datetime.fromtimestamp(
-                    float(optional_data_applicant), tz=UTC
-                ).replace(tzinfo=None)
-            except ValueError:
+            if optional_data_applicant is None:
                 transfer_approval.application_datetime = None
+            else:
+                try:
+                    transfer_approval.application_datetime = datetime.fromtimestamp(
+                        float(optional_data_applicant), tz=UTC
+                    ).replace(tzinfo=None)
+                except TypeError, ValueError:
+                    transfer_approval.application_datetime = None
             transfer_approval.application_blocktimestamp = datetime.fromtimestamp(
-                block_timestamp, tz=UTC
+                float(block_timestamp), tz=UTC
             ).replace(tzinfo=None)
         elif event_type == "Cancel":
             if transfer_approval is not None:
+                assert block_timestamp is not None
                 transfer_approval.cancellation_blocktimestamp = datetime.fromtimestamp(
-                    block_timestamp, tz=UTC
+                    float(block_timestamp), tz=UTC
                 ).replace(tzinfo=None)
                 transfer_approval.cancelled = True
         elif event_type == "EscrowFinish":
@@ -638,17 +670,22 @@ class Processor:
                 transfer_approval.escrow_finished = True
         elif event_type == "Approve":
             if transfer_approval is not None:
-                try:
-                    transfer_approval.approval_datetime = datetime.fromtimestamp(
-                        float(optional_data_approver), tz=UTC
-                    ).replace(tzinfo=None)
-                except ValueError:
+                assert block_timestamp is not None
+                if optional_data_approver is None:
                     transfer_approval.approval_datetime = None
+                else:
+                    try:
+                        transfer_approval.approval_datetime = datetime.fromtimestamp(
+                            float(optional_data_approver), tz=UTC
+                        ).replace(tzinfo=None)
+                    except TypeError, ValueError:
+                        transfer_approval.approval_datetime = None
                 transfer_approval.approval_blocktimestamp = datetime.fromtimestamp(
-                    block_timestamp, tz=UTC
+                    float(block_timestamp), tz=UTC
                 ).replace(tzinfo=None)
                 transfer_approval.transfer_approved = True
-        await db_session.merge(transfer_approval)
+        if transfer_approval is not None:
+            await db_session.merge(transfer_approval)
 
     @staticmethod
     async def __sink_on_info_notification(
@@ -689,11 +726,11 @@ class Processor:
     async def __register_notification(
         self,
         db_session: AsyncSession,
-        transaction_hash,
-        token_address,
-        exchange_address,
-        application_id,
-        notice_code,
+        transaction_hash: str,
+        token_address: str,
+        exchange_address: str,
+        application_id: int,
+        notice_code: TransferApprovalNoticeCode,
     ):
         transfer_approval: IDXTransferApproval | None = (
             await db_session.scalars(
@@ -715,7 +752,9 @@ class Processor:
                     select(Token).where(Token.token_address == token_address).limit(1)
                 )
             ).first()
-            sender = (await web3.eth.get_transaction(transaction_hash))["from"]
+            tx: TxData = await web3.eth.get_transaction(HexStr(transaction_hash))
+            sender = tx.get("from")
+            assert sender is not None
             if token is not None:
                 if (
                     token.issuer_address != sender
@@ -759,8 +798,8 @@ async def main():
     while True:
         try:
             await processor.sync_new_logs()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:

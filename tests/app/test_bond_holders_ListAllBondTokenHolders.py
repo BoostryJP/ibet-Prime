@@ -1,3 +1,6 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,6 +23,8 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -29,6 +34,7 @@ from app.model.db import (
     PersonalInfoDataSource,
     Token,
     TokenHolderExtraInfo,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -46,13 +52,17 @@ class TestListAllBondTokenHolders:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -84,7 +94,7 @@ class TestListAllBondTokenHolders:
     # 1 record
     # - Holder's extra info is not set
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -92,6 +102,10 @@ class TestListAllBondTokenHolders:
 
         # prepare data: Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -212,7 +226,7 @@ class TestListAllBondTokenHolders:
     # 1 record
     # - Holder's extra info is set
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -220,6 +234,10 @@ class TestListAllBondTokenHolders:
 
         # prepare data: Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -351,7 +369,7 @@ class TestListAllBondTokenHolders:
     # <Normal_3_1>
     # Multi record
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -360,6 +378,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -620,7 +642,7 @@ class TestListAllBondTokenHolders:
     # Multi record
     # Base query: key_manager_type
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -629,6 +651,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -742,7 +768,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_1_1>
     # Search filter: including_former_holder=None
     @pytest.mark.asyncio
-    async def test_normal_4_1_1(self, async_client, async_db):
+    async def test_normal_4_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -751,6 +779,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -893,7 +925,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_1_2>
     # Search filter: including_former_holder=True
     @pytest.mark.asyncio
-    async def test_normal_4_1_2(self, async_client, async_db):
+    async def test_normal_4_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -903,6 +937,10 @@ class TestListAllBondTokenHolders:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1078,7 +1116,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_2_1>
     # Search filter: balance & "="
     @pytest.mark.asyncio
-    async def test_normal_4_2_1(self, async_client, async_db):
+    async def test_normal_4_2_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1087,6 +1127,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1281,7 +1325,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_2_2>
     # Search filter: balance & ">="
     @pytest.mark.asyncio
-    async def test_normal_4_2_2(self, async_client, async_db):
+    async def test_normal_4_2_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1290,6 +1336,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1511,7 +1561,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_2_3>
     # Search filter: balance & "<="
     @pytest.mark.asyncio
-    async def test_normal_4_2_3(self, async_client, async_db):
+    async def test_normal_4_2_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1520,6 +1572,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1741,7 +1797,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_3_1>
     # Search filter: pending_transfer & "="
     @pytest.mark.asyncio
-    async def test_normal_4_3_1(self, async_client, async_db):
+    async def test_normal_4_3_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1750,6 +1808,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -1944,7 +2006,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_3_2>
     # Search filter: pending_transfer & ">="
     @pytest.mark.asyncio
-    async def test_normal_4_3_2(self, async_client, async_db):
+    async def test_normal_4_3_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -1953,6 +2017,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2174,7 +2242,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_3_3>
     # Search filter: pending_transfer & "<="
     @pytest.mark.asyncio
-    async def test_normal_4_3_3(self, async_client, async_db):
+    async def test_normal_4_3_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -2183,6 +2253,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2404,7 +2478,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_4_1>
     # Search filter: locked & "="
     @pytest.mark.asyncio
-    async def test_normal_4_4_1(self, async_client, async_db):
+    async def test_normal_4_4_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -2413,6 +2489,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2607,7 +2687,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_4_2>
     # Search filter: locked & ">="
     @pytest.mark.asyncio
-    async def test_normal_4_4_2(self, async_client, async_db):
+    async def test_normal_4_4_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -2616,6 +2698,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -2837,7 +2923,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_4_3>
     # Search filter: locked & "<="
     @pytest.mark.asyncio
-    async def test_normal_4_4_3(self, async_client, async_db):
+    async def test_normal_4_4_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -2847,6 +2935,10 @@ class TestListAllBondTokenHolders:
         _account_address_4 = "0x1CBd3b2770909D4e10f157cABC84C7264073C9Ec"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3114,7 +3206,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_5_1>
     # Search filter: balance + pending_transfer & "="
     @pytest.mark.asyncio
-    async def test_normal_4_5_1(self, async_client, async_db):
+    async def test_normal_4_5_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -3123,6 +3217,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3320,7 +3418,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_5_2>
     # Search filter: balance + pending_transfer & ">="
     @pytest.mark.asyncio
-    async def test_normal_4_5_2(self, async_client, async_db):
+    async def test_normal_4_5_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -3329,6 +3429,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3553,7 +3657,9 @@ class TestListAllBondTokenHolders:
     # <Normal_4_5_3>
     # Search filter: balance + pending_transfer & "<="
     @pytest.mark.asyncio
-    async def test_normal_4_5_3(self, async_client, async_db):
+    async def test_normal_4_5_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -3562,6 +3668,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3759,7 +3869,7 @@ class TestListAllBondTokenHolders:
     # <Normal_4_6>
     # Search filter: holder_name
     @pytest.mark.asyncio
-    async def test_normal_4_6(self, async_client, async_db):
+    async def test_normal_4_6(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -3768,6 +3878,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -3962,7 +4076,7 @@ class TestListAllBondTokenHolders:
     # <Normal_4_7>
     # Search filter: key_manager
     @pytest.mark.asyncio
-    async def test_normal_4_7(self, async_client, async_db):
+    async def test_normal_4_7(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -3971,6 +4085,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4192,7 +4310,7 @@ class TestListAllBondTokenHolders:
     # <Normal_4_8>
     # Search filter: account_address
     @pytest.mark.asyncio
-    async def test_normal_4_8(self, async_client, async_db):
+    async def test_normal_4_8(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -4201,6 +4319,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4395,7 +4517,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_1>
     # Sort Item: created
     @pytest.mark.asyncio
-    async def test_normal_5_1(self, async_client, async_db):
+    async def test_normal_5_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -4404,6 +4526,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4655,7 +4781,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_2>
     # Sort Item: account_address
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, async_client, async_db):
+    async def test_normal_5_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -4664,6 +4790,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -4915,7 +5045,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_3>
     # Sort Item: balance
     @pytest.mark.asyncio
-    async def test_normal_5_3(self, async_client, async_db):
+    async def test_normal_5_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -4924,6 +5054,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -5175,7 +5309,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_4>
     # Sort Item: pending_transfer
     @pytest.mark.asyncio
-    async def test_normal_5_4(self, async_client, async_db):
+    async def test_normal_5_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -5184,6 +5318,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -5435,7 +5573,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_5>
     # Sort Item: locked
     @pytest.mark.asyncio
-    async def test_normal_5_5(self, async_client, async_db):
+    async def test_normal_5_5(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -5444,6 +5582,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -5695,7 +5837,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_6>
     # Sort Item: balance + pending_transfer
     @pytest.mark.asyncio
-    async def test_normal_5_6(self, async_client, async_db):
+    async def test_normal_5_6(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -5704,6 +5846,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -5955,7 +6101,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_7>
     # Sort Item: holder_name
     @pytest.mark.asyncio
-    async def test_normal_5_7(self, async_client, async_db):
+    async def test_normal_5_7(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -5965,6 +6111,10 @@ class TestListAllBondTokenHolders:
         _account_address_4 = "0x917eFFaC072dcda308e2337636f562D0A96F42eA"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6255,7 +6405,7 @@ class TestListAllBondTokenHolders:
     # <Normal_5_8>
     # Sort Item: key_manager
     @pytest.mark.asyncio
-    async def test_normal_5_8(self, async_client, async_db):
+    async def test_normal_5_8(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -6265,6 +6415,10 @@ class TestListAllBondTokenHolders:
         _account_address_4 = "0x917eFFaC072dcda308e2337636f562D0A96F42eA"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6555,7 +6709,7 @@ class TestListAllBondTokenHolders:
     # <Normal_6_1>
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_6_1(self, async_client, async_db):
+    async def test_normal_6_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -6564,6 +6718,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6785,7 +6943,7 @@ class TestListAllBondTokenHolders:
     # <Normal_6_2>
     # Pagination (over offset)
     @pytest.mark.asyncio
-    async def test_normal_6_2(self, async_client, async_db):
+    async def test_normal_6_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -6794,6 +6952,10 @@ class TestListAllBondTokenHolders:
         _account_address_3 = "0x8277D905F37F8a9717F5718d0daC21495dFE74bf"
 
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -6964,7 +7126,7 @@ class TestListAllBondTokenHolders:
     # <Error_1>
     # RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # request target API
@@ -6989,7 +7151,7 @@ class TestListAllBondTokenHolders:
     # <Error_2>
     # InvalidParameterError: issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
@@ -7010,13 +7172,17 @@ class TestListAllBondTokenHolders:
     # <Error_3>
     # HTTPException 404: token not found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -7038,13 +7204,17 @@ class TestListAllBondTokenHolders:
     # <Error_4>
     # InvalidParameterError: processing token
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user = default_eth_account("user1")
         _issuer_address = user["address"]
         _token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         async_db.add(account)
 
@@ -7054,7 +7224,7 @@ class TestListAllBondTokenHolders:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 

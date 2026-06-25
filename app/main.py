@@ -18,13 +18,14 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import ctypes
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from ctypes.util import find_library
 from datetime import UTC, datetime
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
-from fastapi.exceptions import RequestValidationError
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from pydantic_core import ArgsKwargs, ErrorDetails
@@ -65,6 +66,7 @@ from app.utils import o11y_utils
 from app.utils.cache_control import CacheControlMiddleware
 from app.utils.docs_utils import custom_openapi
 from config import (
+    APP_ENV,
     BC_EXPLORER_ENABLED,
     DEDICATED_DVP_AGENT_MODE,
     DEDICATED_OFFCHAIN_TX_MODE,
@@ -72,6 +74,7 @@ from config import (
     FREEZE_LOG_FEATURE_ENABLED,
     IBET_WST_FEATURE_ENABLED,
     PROFILING_MODE,
+    RESPONSE_VALIDATION_MODE,
     SERVER_NAME,
 )
 
@@ -141,7 +144,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
-    version="26.3",
+    version="26.6",
     contact={"email": "dev@boostry.co.jp"},
     license_info={
         "name": "Apache 2.0",
@@ -154,7 +157,9 @@ app.add_middleware(CacheControlMiddleware)
 
 
 @app.middleware("http")
-async def api_call_handler(request: Request, call_next):
+async def api_call_handler(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     request_start_time = datetime.now(UTC).replace(tzinfo=None)
     response = await call_next(request)
     output_access_log(request, response, request_start_time)
@@ -239,6 +244,36 @@ async def internal_server_error_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=jsonable_encoder({"meta": meta}),
+    )
+
+
+@app.exception_handler(ResponseValidationError)
+async def response_validation_exception_handler(
+    request: Request, exc: ResponseValidationError
+):
+    """
+    Handle response validation errors.
+
+    - If RESPONSE_VALIDATION_MODE is enabled, return 500 Internal Server Error with error details in the response body.
+    - If RESPONSE_VALIDATION_MODE is disabled, log a warning and return the original response without validation error details.
+    """
+    if RESPONSE_VALIDATION_MODE:
+        return await internal_server_error_handler(request, exc)
+
+    if APP_ENV == "live":
+        LOG.info(
+            f"Invalid response: path={request.url.path}, method={request.method}, detail={exc.errors()}"
+        )
+    else:
+        LOG.warning(
+            f"Invalid response: path={request.url.path}, method={request.method}, detail={exc.errors()}"
+        )
+
+    route = request.scope.get("route")
+    status_code = getattr(route, "status_code", None) or status.HTTP_200_OK
+    return JSONResponse(
+        status_code=status_code,
+        content=jsonable_encoder(exc.body),
     )
 
 

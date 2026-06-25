@@ -23,14 +23,19 @@ from decimal import Decimal
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTAuthorization,
     IbetWSTEventLogMint,
     IbetWSTEventLogTradeRequested,
+    IbetWSTEventLogTransfer,
     IbetWSTTxParamsMint,
     IbetWSTTxParamsRequestTrade,
+    IbetWSTTxParamsTransfer,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
@@ -60,7 +65,7 @@ class TestGetIbetWSTTransaction:
 
     # <Normal_1_1>
     # Return transaction details
-    async def test_normal_1_1(self, async_db, async_client):
+    async def test_normal_1_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id = str(uuid.uuid4())
         tx = EthIbetWSTTx()
@@ -115,7 +120,7 @@ class TestGetIbetWSTTransaction:
     # <Normal_1_2>
     # Return transaction details
     # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
-    async def test_normal_1_2(self, async_db, async_client):
+    async def test_normal_1_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id = str(uuid.uuid4())
         tx = EthIbetWSTTx()
@@ -198,7 +203,7 @@ class TestGetIbetWSTTransaction:
     # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
     # - Test with sc_value set to uint256 max value to confirm that
     #   display_sc_value can handle large values without overflow or precision loss
-    async def test_normal_1_3(self, async_db, async_client):
+    async def test_normal_1_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id = str(uuid.uuid4())
         tx = EthIbetWSTTx()
@@ -243,7 +248,7 @@ class TestGetIbetWSTTransaction:
         await async_db.commit()
 
         # Send request
-        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+        with mock.patch("app.main.RESPONSE_VALIDATION_MODE", False):
             resp = await async_client.get(self.api_url.format(tx_id=tx_id))
 
         # Check response
@@ -265,13 +270,56 @@ class TestGetIbetWSTTransaction:
             expected_display_str
         )
 
+    # <Normal_2>
+    # Return avalanche transaction details
+    async def test_normal_2(self, async_db: AsyncSession, async_client: AsyncClient):
+        tx_id = str(uuid.uuid4())
+        tx = AvaIbetWSTTx()
+        tx.tx_id = tx_id
+        tx.tx_type = IbetWSTTxType.TRANSFER
+        tx.version = IbetWSTVersion.V_1
+        tx.status = IbetWSTTxStatus.SUCCEEDED
+        tx.ibet_wst_address = "0x1234567890abcdef1234567890abcdef12345678"
+        tx.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.tx_sender["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx.tx_sender = self.tx_sender["address"]
+        tx.authorizer = self.authorizer["address"]
+        tx.authorization = self.dummy_authorization
+        tx.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx.block_number = 12345678
+        tx.finalized = True
+        tx.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.tx_sender["address"],
+            value=1000,
+        )
+        tx.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
+        async_db.add(tx)
+        await async_db.commit()
+
+        resp = await async_client.get(
+            self.api_url.format(tx_id=tx_id),
+            params={"blockchain_platform": "avalanche"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["tx_id"] == tx_id
+        assert resp.json()["tx_type"] == IbetWSTTxType.TRANSFER
+
     ###########################################################################
     # Error
     ###########################################################################
 
     # <Error_1>
     # Transaction not found
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request with non-existent transaction ID
         resp = await async_client.get(self.api_url.format(tx_id=str(uuid.uuid4())))
 

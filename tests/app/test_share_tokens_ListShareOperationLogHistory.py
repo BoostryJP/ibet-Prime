@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,16 +20,19 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from typing import Any
 from unittest import mock
 from unittest.mock import ANY
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import TxParams
 
 import config
 from app.model.db import (
@@ -49,15 +54,15 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 async def deploy_share_token_contract(
-    session,
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=config.ZERO_ADDRESS,
-    transfer_approval_required=True,
+    session: AsyncSession,
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str = config.ZERO_ADDRESS,
+    transfer_approval_required: bool = True,
     created: datetime | None = None,
-) -> (Contract, dict):
-    arguments = [
+) -> tuple[Contract, dict[str, Any]]:
+    arguments: list[Any] = [
         "token.name",
         "token.symbol",
         20,
@@ -72,7 +77,7 @@ async def deploy_share_token_contract(
     token_address, _, _ = await share_contract.create(arguments, address, private_key)
 
     contract = ContractUtils.get_contract("IbetShare", token_address)
-    token_create_param = IbetShareCreate(
+    token_create_param: dict[str, Any] = IbetShareCreate(
         name="token.name",
         symbol="token.symbol",
         issue_price=20,
@@ -92,10 +97,7 @@ async def deploy_share_token_contract(
         privacy_policy="privacy policy test",  # update
         transfer_approval_required=transfer_approval_required,  # update
         is_canceled=True,  # update
-    ).__dict__
-
-    token_create_param.pop("activate_ibet_wst")
-    token_create_param.pop("ibet_wst_name")
+    ).model_dump(exclude={"activate_ibet_wst", "ibet_wst_name"})
 
     token_update_operation_log = TokenUpdateOperationLog()
     token_update_operation_log.issuer_address = address
@@ -111,11 +113,11 @@ async def deploy_share_token_contract(
 
     await session.commit()
 
-    build_tx_param = {
+    build_tx_param: TxParams = {
         "chainId": config.CHAIN_ID,
         "from": address,
         "gas": config.TX_GAS_LIMIT,
-        "gasPrice": 0,
+        "gasPrice": Web3.to_wei(0, "wei"),
     }
     tx = contract.functions.setTransferable(
         token_create_param["transferable"]
@@ -167,7 +169,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     @staticmethod
     async def create_history_by_api(
         async_client: AsyncClient, token_address: str, issuer_address: str
-    ):
+    ) -> None:
         await async_client.post(
             f"/share/tokens/{token_address}",
             json={
@@ -200,15 +202,17 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
     @staticmethod
     def expected_original_after_issue(
-        create_token_param: dict, issuer_address: str, token_address: str
-    ):
-        return {
+        create_token_param: dict[str, Any], issuer_address: str, token_address: str
+    ) -> dict[str, Any]:
+        expected_original: dict[str, Any] = {
             **create_token_param,
             "contract_name": "IbetShare",
             "issuer_address": issuer_address,
             "memo": "",
             "token_address": token_address,
         }
+        expected_original.pop("ibet_wst_blockchains", None)
+        return expected_original
 
     ###########################################################################
     # Normal Case
@@ -217,13 +221,20 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_personal_info_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
 
         # prepare data: Token
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -260,7 +271,12 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # <Normal_2>
     # Multiple record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, ibet_personal_info_contract):
+    async def test_normal_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -280,6 +296,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -367,7 +385,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Search filter: trigger
     @pytest.mark.asyncio
     async def test_normal_3_1(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -388,6 +409,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -473,7 +496,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Search filter: modified_contents
     @pytest.mark.asyncio
     async def test_normal_3_2(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -494,6 +520,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -562,7 +590,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Search filter: created_from
     @pytest.mark.asyncio
     async def test_normal_3_3(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -584,6 +615,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -631,7 +664,6 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_3.type = TokenType.IBET_SHARE
         _operation_log_3.arguments = {"memo": "20230504"}
         _operation_log_3.original_contents = {}
-        _operation_log_3.status = 1
         _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE
         async_db.add(_operation_log_3)
 
@@ -674,7 +706,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Search filter: created_to
     @pytest.mark.asyncio
     async def test_normal_3_4(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -696,6 +731,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -719,7 +756,6 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_1.type = TokenType.IBET_SHARE
         _operation_log_1.arguments = {"memo": "20230502"}
         _operation_log_1.original_contents = {}
-        _operation_log_1.status = 1
         _operation_log_1.operation_category = TokenUpdateOperationCategory.UPDATE
         async_db.add(_operation_log_1)
 
@@ -732,7 +768,6 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_2.type = TokenType.IBET_SHARE
         _operation_log_2.arguments = {"memo": "20230503"}
         _operation_log_2.original_contents = {}
-        _operation_log_2.status = 1
         _operation_log_2.operation_category = TokenUpdateOperationCategory.UPDATE
         async_db.add(_operation_log_2)
 
@@ -745,7 +780,6 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
         _operation_log_3.type = TokenType.IBET_SHARE
         _operation_log_3.arguments = {"memo": "20230504"}
         _operation_log_3.original_contents = {}
-        _operation_log_3.status = 1
         _operation_log_3.operation_category = TokenUpdateOperationCategory.UPDATE
         async_db.add(_operation_log_3)
 
@@ -782,7 +816,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Sort Order
     @pytest.mark.asyncio
     async def test_normal_4_1(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -803,6 +840,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -894,7 +933,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Sort Item
     @pytest.mark.asyncio
     async def test_normal_4_2(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -915,6 +957,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1007,7 +1051,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Pagination
     @pytest.mark.asyncio
     async def test_normal_5_1(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -1028,6 +1075,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1100,7 +1149,10 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # Pagination (over offset)
     @pytest.mark.asyncio
     async def test_normal_5_2(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -1121,6 +1173,8 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1169,7 +1223,7 @@ class TestAppRoutersShareTokensTokenAddressHistoryGET:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         token_address = "0x0123456789012345678901234567890123456789"
 
         # request target api

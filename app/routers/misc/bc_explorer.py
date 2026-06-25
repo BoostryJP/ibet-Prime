@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import sys
 from typing import Annotated, Any, Dict, Sequence, Tuple
 
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import desc, func, select
 from web3.contract.contract import ContractFunction
@@ -123,7 +123,7 @@ async def service_list_block_data(
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     block_data_tmp: Sequence[IDXBlockData] = (await db.scalars(stmt)).all()
-    block_data = []
+    block_data: list[dict[str, Any]] = []
     for bd in block_data_tmp:
         block_data.append(
             {
@@ -212,11 +212,11 @@ async def service_list_tx_data(
     if get_query.offset is not None:
         stmt = stmt.offset(get_query.offset)
 
-    if min(total, get_query.limit or sys.maxsize) > TX_RESPONSE_LIMIT:
+    if min(total or 0, get_query.limit or sys.maxsize) > TX_RESPONSE_LIMIT:
         raise ResponseLimitExceededError("Search results exceed the limit")
 
     tx_data_tmp: Sequence[IDXTxData] = (await db.scalars(stmt)).all()
-    tx_data = []
+    tx_data: list[dict[str, Any]] = []
     for txd in tx_data_tmp:
         tx_data.append(
             {
@@ -249,7 +249,7 @@ async def service_get_tx_data(db: DBAsyncSession, hash: str) -> Dict[str, Any]:
 
     contract_name: str | None = None
     contract_function: str | None = None
-    contract_parameters: dict | None = None
+    contract_parameters: dict[str, Any] | None = None
     token_contract = (
         await db.scalars(
             select(Token).where(Token.token_address == tx_data.to_address).limit(1)
@@ -257,7 +257,8 @@ async def service_get_tx_data(db: DBAsyncSession, hash: str) -> Dict[str, Any]:
     ).first()
     if token_contract is not None:
         contract_name = token_contract.type
-        contract = AsyncContractUtils.get_contract(
+        assert tx_data.to_address is not None
+        contract: Any = AsyncContractUtils.get_contract(
             contract_name=contract_name, contract_address=tx_data.to_address
         )
         decoded_input: Tuple["ContractFunction", Dict[str, Any]] = (

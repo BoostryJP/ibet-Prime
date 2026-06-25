@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import UploadFile
 
@@ -35,7 +37,7 @@ class TestDeleteFile:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ
@@ -82,7 +84,7 @@ abc def"""
     # Required
     # Header
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.delete(
             self.base_url.format(file_id="file_id_1"),
@@ -106,7 +108,7 @@ abc def"""
     # Parameter Error
     # Invalid
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.delete(
             self.base_url.format(file_id="file_id_1"),
@@ -132,7 +134,7 @@ abc def"""
     # <Error_3>
     # Not Found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         file_content = """test data
 12345 67890
   あいうえお　かきくけこ

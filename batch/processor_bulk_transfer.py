@@ -21,10 +21,10 @@ import asyncio
 import sys
 import uuid
 from asyncio import Event
-from typing import List, Sequence
+from typing import Generator, List, Sequence, TypeVar
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,13 +69,14 @@ process_name = "PROCESSOR-Bulk-Transfer"
 LOG = batch_log.get_logger(process_name=process_name)
 
 web3 = AsyncWeb3Wrapper()
+TransferListItem = TypeVar("TransferListItem")
 
 
 class Processor:
     worker_num: int
     is_shutdown: Event
 
-    def __init__(self, worker_num, is_shutdown: Event):
+    def __init__(self, worker_num: int, is_shutdown: Event):
         self.worker_num: int = worker_num
         self.is_shutdown = is_shutdown
 
@@ -185,6 +186,9 @@ class Processor:
                                 )
                                 for _transfer in _transfer_list
                             ]
+                            assert (
+                                _upload.token_address is not None
+                            )  # For V_24_09 and later, token_address is not None
                             await self.__bulk_forced_transfer(
                                 token_address=_upload.token_address,
                                 token_type=_upload.token_type,
@@ -305,7 +309,7 @@ class Processor:
 
     async def __get_uploads(
         self, db_session: AsyncSession
-    ) -> list[tuple[BulkTransferUpload, TokenVersion]]:
+    ) -> list[tuple[BulkTransferUpload, TokenVersion | None]]:
         # NOTE:
         # - Only one issuer can be processed in the same thread.
         # - The maximum number of uploads that can be processed in one batch cycle is the number defined by BULK_TRANSFER_WORKER_LOT_SIZE.
@@ -313,8 +317,8 @@ class Processor:
         # - Exclusion control is performed to eliminate duplication of data to be acquired.
 
         async with lock:  # Exclusion control
-            locked_update_id = []
-            exclude_issuer = []
+            locked_update_id: list[str] = []
+            exclude_issuer: list[str] = []
             for threads_processing in processing_issuer.values():
                 for upload_id, issuer_address in threads_processing.items():
                     locked_update_id.append(upload_id)
@@ -345,7 +349,9 @@ class Processor:
                                 BulkTransferUpload.token_address != None,
                             )
                         )
-                        .order_by(BulkTransferUpload.created)
+                        .order_by(
+                            BulkTransferUpload.created, BulkTransferUpload.upload_id
+                        )
                         .limit(1)
                     )
                 )
@@ -376,7 +382,10 @@ class Processor:
                                     BulkTransferUpload.token_address != None,
                                 )
                             )
-                            .order_by(BulkTransferUpload.created)
+                            .order_by(
+                                BulkTransferUpload.created,
+                                BulkTransferUpload.upload_id,
+                            )
                             .limit(1)
                         )
                     )
@@ -408,14 +417,18 @@ class Processor:
                                         BulkTransferUpload.upload_id.notin_(
                                             locked_update_id
                                         ),
+                                        BulkTransferUpload.upload_id
+                                        != upload_1[0].upload_id,
                                         BulkTransferUpload.status == 0,
                                         BulkTransferUpload.issuer_address
                                         == upload_1[0].issuer_address,
                                         BulkTransferUpload.token_address != None,
                                     )
                                 )
-                                .order_by(BulkTransferUpload.created)
-                                .offset(1)
+                                .order_by(
+                                    BulkTransferUpload.created,
+                                    BulkTransferUpload.upload_id,
+                                )
                                 .limit(BULK_TRANSFER_WORKER_LOT_SIZE - 1)
                             )
                         )
@@ -433,7 +446,7 @@ class Processor:
     @staticmethod
     async def __get_transfer_data(
         db_session: AsyncSession, upload_id: str, status: int
-    ):
+    ) -> Sequence[BulkTransfer]:
         transfer_list: Sequence[BulkTransfer] = (
             await db_session.scalars(
                 select(BulkTransfer).where(
@@ -447,12 +460,14 @@ class Processor:
         return transfer_list
 
     @staticmethod
-    def __split_list(raw_list: list, size: int):
+    def __split_list(
+        raw_list: list[TransferListItem], size: int
+    ) -> Generator[list[TransferListItem], None, None]:
         """Split a list into sub-lists"""
         for idx in range(0, len(raw_list), size):
             yield raw_list[idx : idx + size]
 
-    async def __release_processing_issuer(self, upload_id):
+    async def __release_processing_issuer(self, upload_id: str) -> None:
         """Pop from the list of processing issuers"""
         async with lock:
             processing_issuer[self.worker_num].pop(upload_id, None)
@@ -521,8 +536,8 @@ class Processor:
         db_session: AsyncSession,
         record_id: int,
         status: int,
-        transaction_error_code: int = None,
-        transaction_error_message: str = None,
+        transaction_error_code: int | None = None,
+        transaction_error_message: str | None = None,
     ):
         await db_session.execute(
             update(BulkTransfer)
@@ -562,7 +577,7 @@ class Processor:
 # Lock object for exclusion control
 lock = asyncio.Lock()
 # Issuer being processed in workers
-processing_issuer = {}
+processing_issuer: dict[int, dict[str, str]] = {}
 
 
 class Worker:
@@ -575,8 +590,8 @@ class Worker:
         while not self.is_shutdown.is_set():
             try:
                 await self.processor.process()
-            except ServiceUnavailableError:
-                LOG.warning("An external service was unavailable")
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

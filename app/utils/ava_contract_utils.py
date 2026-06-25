@@ -1,0 +1,540 @@
+"""
+Copyright BOOSTRY Co., Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+See the License for the specific language governing permissions and
+limitations under the License.
+
+SPDX-License-Identifier: Apache-2.0
+"""
+
+import asyncio
+import json
+import sys
+import threading
+from json import JSONDecodeError
+from typing import Any, TypeAlias, cast
+from weakref import WeakKeyDictionary
+
+from aiohttp import ClientError
+from eth_typing import URI, HexStr
+from eth_utils.address import to_checksum_address
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3 import AsyncHTTPProvider, AsyncWeb3
+from web3.contract import AsyncContract
+from web3.contract.async_contract import AsyncContractEvents
+from web3.exceptions import (
+    ABIEventNotFound,
+    ABIFunctionNotFound,
+    BadFunctionCallOutput,
+    ContractLogicError,
+    TimeExhausted,
+)
+from web3.types import Nonce, RPCEndpoint, RPCResponse, TxParams, TxReceipt
+
+from app import log
+from app.database import async_engine
+from app.exceptions import SendTransactionError, ServiceUnavailableError
+from app.model import EthereumAddress
+from app.model.db import AvalancheNode
+from app.utils.web3_provider_utils import (
+    KeepAliveHTTPSessionManager,
+    ResolvedEndpointCacheMixin,
+)
+from avalanche_config import (
+    AVA_CHAIN_ID,
+    AVA_WEB3_HTTP_PROVIDER,
+    AVA_WEB3_REQUEST_RETRY_COUNT,
+    AVA_WEB3_REQUEST_WAIT_TIME,
+)
+
+thread_local = threading.local()
+LOG = log.get_logger()
+
+ContractArtifact: TypeAlias = dict[str, Any]
+EventArgumentFilters: TypeAlias = dict[str, Any] | None
+
+
+class _AvaWeb3Context:
+    def __init__(self) -> None:
+        if "pytest" in sys.modules:
+            self._fail_over_mode = False
+        else:
+            self._fail_over_mode = True
+
+    def get_web3(self) -> AsyncWeb3[Any]:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is None:
+            # Preserve a per-thread fallback instance for code paths that touch
+            # AvaWeb3 before entering an event loop.
+            try:
+                return cast(AsyncWeb3[Any], thread_local.ava_web3_without_loop)
+            except AttributeError:
+                async_web3 = self._create_web3()
+                thread_local.ava_web3_without_loop = async_web3
+                return async_web3
+
+        # AsyncWeb3 instances are isolated per event loop because the provider
+        # session must not be shared across loops.
+        try:
+            ava_web3_by_loop = cast(
+                WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncWeb3[Any]],
+                thread_local.ava_web3_by_loop,
+            )
+        except AttributeError:
+            ava_web3_by_loop: WeakKeyDictionary[
+                asyncio.AbstractEventLoop, AsyncWeb3[Any]
+            ] = WeakKeyDictionary()
+            thread_local.ava_web3_by_loop = ava_web3_by_loop
+
+        async_web3 = ava_web3_by_loop.get(loop)
+        if async_web3 is None:
+            async_web3 = self._create_web3()
+            ava_web3_by_loop[loop] = async_web3
+        return async_web3
+
+    def _create_web3(self) -> AsyncWeb3[Any]:
+        return AsyncWeb3(
+            AvaFailOverHTTPProvider(
+                fail_over_mode=self._fail_over_mode,
+                session_manager=KeepAliveHTTPSessionManager(),
+            )
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.get_web3(), name)
+
+
+class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
+    def __init__(
+        self,
+        fail_over_mode: bool = False,
+        session_manager: KeepAliveHTTPSessionManager | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._init_resolved_endpoint_cache()
+        if session_manager is not None:
+            self._request_session_manager = session_manager
+        self.fail_over_mode = fail_over_mode
+        self.endpoint_uri: URI | None = None
+
+    def _get_cache_ttl(self) -> float:
+        return float(AVA_WEB3_REQUEST_WAIT_TIME)
+
+    async def _resolve_endpoint_uri(
+        self, db_session: AsyncSession, failed_endpoint_uris: set[URI] | None = None
+    ) -> URI | None:
+        cached_endpoint_uri = self._get_cached_endpoint_uri()
+        if cached_endpoint_uri is not None and cached_endpoint_uri not in (
+            failed_endpoint_uris or set()
+        ):
+            return cached_endpoint_uri
+
+        stmt = select(AvalancheNode).where(AvalancheNode.is_synced.is_(True))
+        if failed_endpoint_uris:
+            stmt = stmt.where(
+                AvalancheNode.endpoint_uri.not_in(
+                    [str(uri) for uri in failed_endpoint_uris]
+                )
+            )
+        node: AvalancheNode | None = (
+            await db_session.scalars(
+                stmt.order_by(AvalancheNode.priority, AvalancheNode.id).limit(1)
+            )
+        ).first()
+        if node is None or node.endpoint_uri is None:
+            return None
+
+        endpoint_uri = URI(node.endpoint_uri)
+        self._set_cached_endpoint_uri(endpoint_uri)
+        return endpoint_uri
+
+    async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
+        """Make an HTTP request to the Avalanche node."""
+
+        db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
+        try:
+            if self.fail_over_mode:
+                failed_endpoint_uris: set[URI] = set()
+                cached_endpoint_uri = self._get_cached_endpoint_uri()
+                if cached_endpoint_uri is not None:
+                    self.endpoint_uri = cached_endpoint_uri
+                    try:
+                        return await super().make_request(method, params)
+                    except ClientError, JSONDecodeError:
+                        self._clear_cached_endpoint_uri()
+                        failed_endpoint_uris.add(cached_endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={cached_endpoint_uri}, method={method}, params={params}"
+                        )
+
+                # If the block synchronization monitoring process has not started yet, connect to the primary node.
+                node = (
+                    await db_session.scalars(select(AvalancheNode).limit(1))
+                ).first()
+                if node is None:
+                    self.endpoint_uri = URI(AVA_WEB3_HTTP_PROVIDER)
+                    return await super().make_request(method, params)
+
+                counter = 0
+                while counter <= AVA_WEB3_REQUEST_RETRY_COUNT:
+                    endpoint_uri = await self._resolve_endpoint_uri(
+                        db_session, failed_endpoint_uris
+                    )
+                    if endpoint_uri is None:
+                        counter += 1
+                        # If the number of retries is within the limit, retry.
+                        if counter <= AVA_WEB3_REQUEST_RETRY_COUNT:
+                            await asyncio.sleep(AVA_WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        # If no available node is found within the retry limit, raise an exception.
+                        raise ServiceUnavailableError(
+                            "Cannot connect to any Avalanche node"
+                        )
+
+                    self.endpoint_uri = endpoint_uri
+                    try:
+                        # Send request
+                        return await super().make_request(method, params)
+                    except ClientError, JSONDecodeError:
+                        # JSONDecodeError may occur when sending a request during geth shutdown, etc.
+                        self._clear_cached_endpoint_uri()
+                        failed_endpoint_uris.add(endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={endpoint_uri}, method={method}, params={params}"
+                        )
+                        counter += 1
+                        # If the number of retries is within the limit, retry.
+                        if counter <= AVA_WEB3_REQUEST_RETRY_COUNT:
+                            await asyncio.sleep(AVA_WEB3_REQUEST_WAIT_TIME)
+                            continue
+                        # If connection cannot be established within the retry limit, raise an exception.
+                        raise ServiceUnavailableError(
+                            "Cannot connect to any Avalanche node"
+                        )
+            else:
+                # If fail_over_mode is False, connect to the primary node.
+                self.endpoint_uri = URI(AVA_WEB3_HTTP_PROVIDER)
+                return await super().make_request(method, params)
+
+            raise ServiceUnavailableError("Cannot connect to any Avalanche node")
+        finally:
+            await db_session.close()
+
+
+AvaWeb3 = _AvaWeb3Context()
+
+
+class AvaTxUtils:
+    @staticmethod
+    async def suggest_fees(reward_percentile: int = 50) -> dict[str, int]:
+        """
+        A function that returns recommended maxFeePerGas and maxPriorityFeePerGas for EIP-1559.
+
+        :param reward_percentile: Percentile of priority fee to consider from past blocks (0-100)
+        :return: Dictionary with maxFeePerGas, maxPriorityFeePerGas, and baseFee (all in wei)
+        """
+
+        latest_block = await AvaWeb3.eth.get_block("latest")
+        # NOTE:
+        # - Avalanche C-Chain uses EVM units for RPC responses.
+        # - web3.py returns gas fee values in wei.
+        # - 1 nAVAX = 1 gwei = 10^9 wei.
+        base_fee = latest_block.get("baseFeePerGas")  # wei
+        if base_fee is None:
+            raise ValueError("baseFeePerGas is not available in latest block")
+
+        # Get fee history
+        fee_history = await AvaWeb3.eth.fee_history(5, "latest", [reward_percentile])
+
+        # Extract priority fees from fee history
+        history_priority = [r[0] for r in fee_history["reward"]]
+
+        # Calculate moving average of priority fees
+        if len(history_priority) == 0:
+            est_priority = 0
+        else:
+            est_priority = int(sum(history_priority) / len(history_priority))
+
+        # Set a minimum priority fee of 1 nAVAX (== 1 gwei)
+        min_priority = AvaWeb3.to_wei(1, "gwei")
+        priority_fee = max(est_priority, min_priority)
+
+        # Calculate max fee
+        # - Set max_fee as double the base fee plus the priority fee
+        max_fee = base_fee * 2 + priority_fee
+
+        return {
+            "baseFee": base_fee,
+            "maxFeePerGas": max_fee,
+            "maxPriorityFeePerGas": priority_fee,
+        }
+
+
+class AvaAsyncContractEventsView:
+    def __init__(self, address: str, contract_events: AsyncContractEvents) -> None:
+        self._address = address
+        self._events = contract_events
+
+    @property
+    def address(self) -> str:
+        return self._address
+
+    @property
+    def events(self) -> AsyncContractEvents:
+        return self._events
+
+
+class AvaAsyncContractUtils:
+    # Contract factories are bound to the AsyncWeb3 that created them.
+    factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
+        WeakKeyDictionary()
+    )
+
+    @staticmethod
+    def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
+        """Get contract code
+
+        :param contract_name: contract name
+        :return: ABI, bytecode, deployedBytecode
+        """
+        contract_json: ContractArtifact = json.load(
+            open(f"contracts/wst/{contract_name}.json", "r")
+        )
+
+        if "bytecode" not in contract_json.keys():
+            contract_json["bytecode"] = None
+            contract_json["deployedBytecode"] = None
+
+        return (
+            contract_json["abi"],
+            contract_json["bytecode"],
+            contract_json["deployedBytecode"],
+        )
+
+    @staticmethod
+    async def deploy_contract(
+        contract_name: str,
+        args: list[Any],
+        deployer: EthereumAddress,
+        private_key: bytes,
+    ) -> tuple[str, Nonce]:
+        """Deploy contract
+
+        :param contract_name: contract name
+        :param args: arguments given to constructor
+        :param deployer: contract deployer
+        :param private_key: private key
+        :return: contract address, ABI, transaction hash
+        """
+        contract_file = f"contracts/wst/{contract_name}.json"
+        try:
+            contract_json: ContractArtifact = json.load(open(contract_file, "r"))
+        except FileNotFoundError as file_not_found_err:
+            raise SendTransactionError(file_not_found_err)
+
+        async_contract = AvaWeb3.eth.contract(
+            abi=contract_json["abi"],
+            bytecode=contract_json["bytecode"],
+            bytecode_runtime=contract_json["deployedBytecode"],
+        )
+
+        try:
+            # Build transaction
+            tx = await async_contract.constructor(*args).build_transaction(
+                transaction={
+                    "chainId": AVA_CHAIN_ID,
+                    "from": deployer,
+                    "gas": 4010000,
+                }
+            )
+            # Send transaction
+            tx_hash, nonce = await AvaAsyncContractUtils.send_transaction(
+                transaction=tx, private_key=private_key
+            )
+        except TimeExhausted as timeout_error:
+            # NOTE: Time-out occurred because sending transaction stays in pending, etc.
+            raise SendTransactionError(timeout_error)
+        except Exception as error:
+            raise SendTransactionError(error)
+
+        return tx_hash, nonce
+
+    @classmethod
+    def get_contract(
+        cls, contract_name: str, contract_address: EthereumAddress
+    ) -> AsyncContract:
+        """Get contract
+
+        :param contract_name: contract name
+        :param contract_address: contract address
+        :return: Contract
+        """
+        # Reuse factories only within the same AsyncWeb3 context so provider
+        # state and loop ownership stay consistent.
+        current_async_web3 = AvaWeb3.get_web3()
+        contract_factory_map = cls.factory_map.get(current_async_web3)
+        if contract_factory_map is None:
+            contract_factory_map = {}
+            cls.factory_map[current_async_web3] = contract_factory_map
+
+        contract_factory = contract_factory_map.get(contract_name)
+        if contract_factory is not None:
+            return contract_factory(address=to_checksum_address(contract_address))
+
+        contract_file = f"contracts/wst/{contract_name}.json"
+        contract_json: ContractArtifact = json.load(open(contract_file, "r"))
+        contract_factory = current_async_web3.eth.contract(abi=contract_json["abi"])
+        contract_factory_map[contract_name] = contract_factory
+        return contract_factory(address=to_checksum_address(contract_address))
+
+    @staticmethod
+    async def call_function[T](
+        contract: AsyncContract,
+        function_name: str,
+        args: tuple[Any, ...],
+        default_returns: T = None,
+    ) -> T:
+        """Call contract function
+
+        :param contract: Contract
+        :param function_name: Function name
+        :param args: Function args
+        :param default_returns: Default return when web3 exceptions are raised
+        :return: Return from function or default return
+        """
+        try:
+            _function = getattr(contract.functions, function_name)
+            result = await _function(*args).call()
+        except (
+            BadFunctionCallOutput,
+            ABIFunctionNotFound,
+            ContractLogicError,
+        ) as web3_exception:
+            if default_returns is not None:
+                return default_returns
+            else:
+                raise web3_exception
+
+        return result
+
+    @staticmethod
+    async def send_transaction(
+        transaction: TxParams, private_key: bytes
+    ) -> tuple[str, Nonce]:
+        """Send transaction
+
+        :param transaction: Transaction parameters
+        :param private_key: Private key of the sender
+        :return: Tuple of transaction hash and nonce
+        """
+        tx_from_value = transaction.get("from")
+        if tx_from_value is None:
+            raise SendTransactionError("Transaction sender is required")
+        tx_from = to_checksum_address(cast(str, tx_from_value))
+
+        # Get nonce
+        nonce = await AvaWeb3.eth.get_transaction_count(
+            tx_from, block_identifier="pending"
+        )
+        transaction["nonce"] = nonce
+        signed_tx = AvaWeb3.eth.account.sign_transaction(
+            transaction_dict=transaction, private_key=private_key
+        )
+        # Send Transaction
+        tx_hash = await AvaWeb3.eth.send_raw_transaction(
+            signed_tx.raw_transaction.to_0x_hex()
+        )
+        return tx_hash.to_0x_hex(), nonce
+
+    @staticmethod
+    async def wait_for_transaction_receipt(
+        tx_hash: str, timeout: int = 10
+    ) -> TxReceipt:
+        """Wait for transaction receipt
+
+        :param tx_hash: Transaction hash
+        :param timeout: Timeout in seconds
+        :return: Transaction receipt
+        """
+        try:
+            tx_receipt: TxReceipt = await AvaWeb3.eth.wait_for_transaction_receipt(
+                transaction_hash=HexStr(tx_hash), timeout=timeout
+            )
+        except TimeExhausted:
+            raise
+
+        return tx_receipt
+
+    @staticmethod
+    async def get_block_by_transaction_hash(tx_hash: str) -> Any:
+        """Get block by transaction hash
+
+        :param tx_hash: transaction hash
+        :return: block
+        """
+        tx = await AvaWeb3.eth.get_transaction(HexStr(tx_hash))
+        tx_block_number = tx.get("blockNumber")
+        if tx_block_number is None:
+            raise SendTransactionError("Transaction has not been mined yet")
+        block = await AvaWeb3.eth.get_block(tx_block_number)
+        return block
+
+    @staticmethod
+    async def get_finalized_block_number() -> int:
+        """Get finalized block number
+
+        :return: finalized block number
+        """
+        block = await AvaWeb3.eth.get_block("finalized")
+        block_number = block.get("number")
+        assert block_number is not None
+        return block_number
+
+    @staticmethod
+    async def get_event_logs(
+        contract: AsyncContract | AvaAsyncContractEventsView,
+        event: str,
+        block_from: int | None = None,
+        block_to: int | None = None,
+        argument_filters: EventArgumentFilters = None,
+    ) -> list[Any]:
+        """Get contract event logs
+
+        :param contract: Contract
+        :param event: Event
+        :param block_from: from_block
+        :param block_to: to_block
+        :param argument_filters: Argument filter
+        :return: Event logs
+        """
+        try:
+            _event = getattr(contract.events, event)
+            get_logs_kwargs: dict[str, Any] = {}
+            if block_from is not None:
+                get_logs_kwargs["from_block"] = block_from
+            if block_to is not None:
+                get_logs_kwargs["to_block"] = block_to
+            if argument_filters is not None:
+                get_logs_kwargs["argument_filters"] = argument_filters
+            result = await _event.get_logs(**get_logs_kwargs)
+        except ABIEventNotFound:
+            return []
+
+        return cast(list[Any], result)

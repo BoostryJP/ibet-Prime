@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,11 +22,14 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -56,13 +61,16 @@ class TestAddIbetWSTWhitelist:
 
     # <Normal_1>
     # Add account to whitelist
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
         "app.routers.issuer.token_common.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -75,8 +83,8 @@ class TestAddIbetWSTWhitelist:
         token.token_address = self.token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
 
         await async_db.commit()
@@ -101,6 +109,77 @@ class TestAddIbetWSTWhitelist:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
+        assert wst_tx.tx_type == IbetWSTTxType.ADD_WHITELIST
+        assert wst_tx.version == IbetWSTVersion.V_1
+        assert wst_tx.status == IbetWSTTxStatus.PENDING
+        assert wst_tx.ibet_wst_address == self.ibet_wst_address
+        assert wst_tx.tx_params == {
+            "st_account": self.user1_st["address"],
+            "sc_account_in": self.user1_sc["address"],
+            "sc_account_out": self.user1_sc["address"],
+        }
+        assert wst_tx.tx_sender == self.relayer["address"]
+        assert wst_tx.authorizer == self.issuer["address"]
+        assert wst_tx.authorization == {
+            "nonce": mock.ANY,
+            "v": mock.ANY,
+            "r": mock.ANY,
+            "s": mock.ANY,
+        }
+
+    # <Normal_2>
+    # Add account to whitelist
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.issuer.token_common.AVA_MASTER_ACCOUNT_ADDRESS",
+        relayer["address"],
+    )
+    async def test_normal_2(self, async_db: AsyncSession, async_client: AsyncClient):
+        # Prepare data
+        account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
+        account.issuer_address = self.issuer["address"]
+        account.keyfile = self.issuer["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = self.issuer["address"]
+        token.token_address = self.token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address)
+        async_db.add(token)
+
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(token_address=self.token_address),
+            json={
+                "st_account_address": self.user1_st["address"],
+                "sc_account_address_in": self.user1_sc["address"],
+                "sc_account_address_out": self.user1_sc["address"],
+                "blockchain_platform": "avalanche",
+            },
+            headers={
+                "issuer-address": self.issuer["address"],
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # Check response status code and content
+        assert resp.status_code == 200
+        assert resp.json() == {"tx_id": mock.ANY}
+
+        # Check transaction creation
+        wst_tx = (await async_db.scalars(select(AvaIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.ADD_WHITELIST
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -125,7 +204,7 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_1>
     # Invalid account address
-    async def test_error_1(self, async_db, async_client):
+    async def test_error_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request with invalid account address
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
@@ -171,7 +250,7 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_2>
     # Invalid issuer address and password
-    async def test_error_2(self, async_db, async_client):
+    async def test_error_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request
         resp = await async_client.post(
             self.api_url.format(token_address=self.token_address),
@@ -208,9 +287,11 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_3>
     # Issuer does not exist or password mismatch
-    async def test_error_3(self, async_db, async_client):
+    async def test_error_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -223,8 +304,8 @@ class TestAddIbetWSTWhitelist:
         token.token_address = self.token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
 
         await async_db.commit()
@@ -252,9 +333,11 @@ class TestAddIbetWSTWhitelist:
 
     # <Error_4>
     # Token not found
-    async def test_error_4(self, async_db, async_client):
+    async def test_error_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.issuer["address"]
         account.keyfile = self.issuer["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")

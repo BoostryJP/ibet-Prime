@@ -20,16 +20,19 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import json
 import logging
+from collections.abc import Generator
+from typing import Any, Sequence
 from unittest.mock import patch
 
 import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.model.db import (
@@ -40,6 +43,7 @@ from app.model.db import (
     PersonalInfoDataSource,
     PersonalInfoEventType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -48,7 +52,7 @@ from app.model.ibet.tx_params.ibet_straight_bond import (
     UpdateParams as IbetStraightBondUpdateParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
+from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_personal_info import LOG, Processor, main
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
@@ -69,7 +73,9 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> Generator[Processor, None, None]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -80,12 +86,12 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -115,7 +121,9 @@ async def deploy_bond_token_contract(
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-def encrypt_personal_info(personal_info, rsa_public_key, passphrase):
+def encrypt_personal_info(
+    personal_info: dict[str, Any], rsa_public_key: str, passphrase: str
+) -> bytes:
     rsa_key = RSA.importKey(rsa_public_key, passphrase=passphrase)
     cipher = PKCS1_OAEP.new(rsa_key)
     ciphertext = base64.encodebytes(
@@ -134,12 +142,20 @@ class TestProcessor:
     # No event logs
     # not issue token
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = user_1["rsa_private_key"]
         account.rsa_public_key = user_1["rsa_public_key"]
@@ -154,7 +170,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = {}
         token_1.tx_hash = "tx_hash"
-        token_1.token_status = 0
+        token_1.token_status = TokenStatus.PENDING
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
@@ -166,16 +182,19 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        _personal_info_list: Sequence[IDXPersonalInfo] = (
+            await async_db.scalars(select(IDXPersonalInfo))
+        ).all()
         assert len(_personal_info_list) == 0
 
-        _idx_personal_info_block_number = (
+        _idx_personal_info_block_number: IDXPersonalInfoBlockNumber | None = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
-        _personal_info_history_list = (
+        _personal_info_history_list: Sequence[IDXPersonalInfoHistory] = (
             await async_db.scalars(select(IDXPersonalInfoHistory))
         ).all()
         assert len(_personal_info_history_list) == 0
@@ -185,7 +204,12 @@ class TestProcessor:
     # No event logs
     # issued token
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -197,6 +221,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -225,7 +252,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -242,16 +269,19 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        _personal_info_list: Sequence[IDXPersonalInfo] = (
+            await async_db.scalars(select(IDXPersonalInfo))
+        ).all()
         assert len(_personal_info_list) == 0
 
-        _idx_personal_info_block_number = (
+        _idx_personal_info_block_number: IDXPersonalInfoBlockNumber | None = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
-        _personal_info_history_list = (
+        _personal_info_history_list: Sequence[IDXPersonalInfoHistory] = (
             await async_db.scalars(select(IDXPersonalInfoHistory))
         ).all()
         assert len(_personal_info_history_list) == 0
@@ -261,7 +291,12 @@ class TestProcessor:
     # Single event logs
     # - Register
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_2_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -278,6 +313,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -306,7 +344,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -344,7 +382,9 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        _personal_info_list: Sequence[IDXPersonalInfo] = (
+            await async_db.scalars(select(IDXPersonalInfo))
+        ).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.account_address == user_address_1
@@ -352,7 +392,7 @@ class TestProcessor:
         assert _personal_info.personal_info == personal_info_1
         assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
-        _personal_info_history_list = (
+        _personal_info_history_list: Sequence[IDXPersonalInfoHistory] = (
             await async_db.scalars(select(IDXPersonalInfoHistory))
         ).all()
         assert len(_personal_info_history_list) == 1
@@ -363,9 +403,10 @@ class TestProcessor:
         assert _personal_info_history.issuer_address == issuer_address
         assert _personal_info_history.personal_info == personal_info_1
 
-        _idx_personal_info_block_number = (
+        _idx_personal_info_block_number: IDXPersonalInfoBlockNumber | None = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -374,7 +415,12 @@ class TestProcessor:
     # Single event logs
     # - Modify
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_2_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -391,6 +437,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -419,7 +468,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -455,7 +504,9 @@ class TestProcessor:
         await processor.process()
         async_db.expire_all()
 
-        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        _personal_info_list: Sequence[IDXPersonalInfo] = (
+            await async_db.scalars(select(IDXPersonalInfo))
+        ).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.account_address == user_address_1
@@ -507,7 +558,7 @@ class TestProcessor:
         assert _personal_info.personal_info == personal_info_2
         assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
-        _personal_info_history_list = (
+        _personal_info_history_list: Sequence[IDXPersonalInfoHistory] = (
             await async_db.scalars(select(IDXPersonalInfoHistory))
         ).all()
         assert len(_personal_info_history_list) == 2
@@ -524,9 +575,10 @@ class TestProcessor:
         assert _personal_info_history_2.issuer_address == issuer_address
         assert _personal_info_history_2.personal_info == personal_info_2
 
-        _idx_personal_info_block_number = (
+        _idx_personal_info_block_number: IDXPersonalInfoBlockNumber | None = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -535,7 +587,12 @@ class TestProcessor:
     # Multi event logs
     # - Modify(twice)
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -552,6 +609,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -580,7 +640,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -616,7 +676,9 @@ class TestProcessor:
         await processor.process()
         async_db.expire_all()
 
-        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        _personal_info_list: Sequence[IDXPersonalInfo] = (
+            await async_db.scalars(select(IDXPersonalInfo))
+        ).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.account_address == user_address_1
@@ -664,7 +726,7 @@ class TestProcessor:
         assert _personal_info.personal_info == personal_info_2
         assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
-        _personal_info_history_list = (
+        _personal_info_history_list: Sequence[IDXPersonalInfoHistory] = (
             await async_db.scalars(
                 select(IDXPersonalInfoHistory).order_by(IDXPersonalInfoHistory.id)
             )
@@ -683,9 +745,10 @@ class TestProcessor:
         assert _personal_info_history_2.issuer_address == issuer_address
         assert _personal_info_history_2.personal_info == personal_info_2
 
-        _idx_personal_info_block_number = (
+        _idx_personal_info_block_number: IDXPersonalInfoBlockNumber | None = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -745,13 +808,14 @@ class TestProcessor:
         _idx_personal_info_block_number = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
     # <Normal_4>
     # Multi Token
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, async_db):
+    async def test_normal_4(self, processor: Processor, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         issuer_private_key_1 = decode_keyfile_json(
@@ -772,6 +836,9 @@ class TestProcessor:
 
         # Prepare data : Account(Issuer1)
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address_1
         account.rsa_private_key = issuer_rsa_private_key_1
         account.rsa_public_key = issuer_rsa_public_key_1
@@ -781,6 +848,9 @@ class TestProcessor:
 
         # Prepare data : Account(Issuer2)
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address_2
         account.rsa_private_key = issuer_rsa_private_key_2
         account.rsa_public_key = issuer_rsa_public_key_2
@@ -913,7 +983,9 @@ class TestProcessor:
         stored_address_order = [line["issuer_address"] for line in unique_list]
 
         # Assertion
-        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        _personal_info_list: Sequence[IDXPersonalInfo] = (
+            await async_db.scalars(select(IDXPersonalInfo))
+        ).all()
         assert len(_personal_info_list) == 2
 
         for i in range(2):
@@ -926,7 +998,7 @@ class TestProcessor:
             )
             assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
-        _personal_info_history_list = (
+        _personal_info_history_list: Sequence[IDXPersonalInfoHistory] = (
             await async_db.scalars(select(IDXPersonalInfoHistory))
         ).all()
         assert len(_personal_info_history_list) == 2
@@ -942,9 +1014,10 @@ class TestProcessor:
                 == personal_info_dict[stored_address_order[i]]
             )
 
-        _idx_personal_info_block_number = (
+        _idx_personal_info_block_number: IDXPersonalInfoBlockNumber | None = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -953,7 +1026,10 @@ class TestProcessor:
     # batch logs "skip Process".
     @pytest.mark.asyncio
     async def test_normal_5(
-        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         _idx_personal_info_block_number = IDXPersonalInfoBlockNumber()
         _idx_personal_info_block_number.id = 1
@@ -969,7 +1045,12 @@ class TestProcessor:
     # <Normal_6>
     # After off-chain registration
     @pytest.mark.asyncio
-    async def test_normal_6(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_6(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -986,6 +1067,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -1014,7 +1098,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -1059,7 +1143,9 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        _personal_info_list = (await async_db.scalars(select(IDXPersonalInfo))).all()
+        _personal_info_list: Sequence[IDXPersonalInfo] = (
+            await async_db.scalars(select(IDXPersonalInfo))
+        ).all()
         assert len(_personal_info_list) == 1
         _personal_info = _personal_info_list[0]
         assert _personal_info.account_address == user_address_1
@@ -1067,7 +1153,7 @@ class TestProcessor:
         assert _personal_info.personal_info == personal_info_1
         assert _personal_info.data_source == PersonalInfoDataSource.ON_CHAIN
 
-        _personal_info_history_list = (
+        _personal_info_history_list: Sequence[IDXPersonalInfoHistory] = (
             await async_db.scalars(select(IDXPersonalInfoHistory))
         ).all()
         assert len(_personal_info_history_list) == 1
@@ -1078,9 +1164,10 @@ class TestProcessor:
         assert _personal_info_history.issuer_address == issuer_address
         assert _personal_info_history.personal_info == personal_info_1
 
-        _idx_personal_info_block_number = (
+        _idx_personal_info_block_number: IDXPersonalInfoBlockNumber | None = (
             await async_db.scalars(select(IDXPersonalInfoBlockNumber).limit(1))
         ).first()
+        assert _idx_personal_info_block_number is not None
         assert _idx_personal_info_block_number.id == 1
         assert _idx_personal_info_block_number.latest_block_number == block_number
 
@@ -1093,9 +1180,9 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(
         self,
-        main_func,
-        async_db,
-        ibet_personal_info_contract,
+        main_func,  # type: ignore
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -1114,6 +1201,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = issuer_rsa_private_key
         account.rsa_public_key = issuer_rsa_public_key
@@ -1176,7 +1266,9 @@ class TestProcessor:
         # Run mainloop once and fail with connection to blockchain
         with (
             patch("batch.indexer_personal_info.INDEXER_SYNC_INTERVAL", None),
-            patch.object(AsyncContractUtils, "call_function", ConnectionError()),
+            patch.object(
+                IbetStraightBondContract, "get", side_effect=ConnectionError()
+            ),
             pytest.raises(TypeError),
         ):
             await main_func()

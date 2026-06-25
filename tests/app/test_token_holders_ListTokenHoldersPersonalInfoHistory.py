@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import UTC, datetime
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import IDXPersonalInfoHistory, PersonalInfoEventType
 from tests.account_config import default_eth_account
@@ -41,7 +43,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(
             self.url,
@@ -61,7 +63,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # No search filter
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -185,7 +187,9 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Search filter: key_manager_type = "SELF"
     @pytest.mark.freeze_time("2024-11-11 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_3_1_1(self, async_client, async_db):
+    async def test_normal_3_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -275,7 +279,9 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Search filter: key_manager_type = "OTHERS"
     @pytest.mark.freeze_time("2024-11-11 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_3_1_2(self, async_client, async_db):
+    async def test_normal_3_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -381,7 +387,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Search filter: account_address
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -505,7 +511,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Search filter: event_type
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -614,7 +620,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Search filter: created_from, created_to
     @pytest.mark.asyncio
-    async def test_normal_3_4(self, async_client, async_db):
+    async def test_normal_3_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -724,7 +730,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Search filter: block_timestamp_from, block_timestamp_to
     @pytest.mark.asyncio
-    async def test_normal_3_5(self, async_client, async_db):
+    async def test_normal_3_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -834,7 +840,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Sort: block_timestamp, DESC
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -977,7 +983,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # Multiple records
     # Pagination: offset, limit
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         history = IDXPersonalInfoHistory()
         history.issuer_address = self.test_issuer_address_1
@@ -1080,6 +1086,59 @@ class TestListTokenHoldersPersonalInfoHistory:
             ],
         }
 
+    # <Normal_6>
+    # Pagination: same block_timestamp
+    @pytest.mark.asyncio
+    async def test_normal_6(self, async_client: AsyncClient, async_db: AsyncSession):
+        same_timestamp = datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(tzinfo=None)
+        created_list = [
+            datetime(2024, 5, 14, 0, 0, 2, tzinfo=UTC).replace(tzinfo=None),
+            datetime(2024, 5, 14, 0, 0, 0, tzinfo=UTC).replace(tzinfo=None),
+            datetime(2024, 5, 14, 0, 0, 1, tzinfo=UTC).replace(tzinfo=None),
+        ]
+
+        for index in range(0, 3):
+            history = IDXPersonalInfoHistory()
+            history.issuer_address = self.test_issuer_address_1
+            history.account_address = self.test_account_address_1
+            history.event_type = PersonalInfoEventType.REGISTER
+            history.personal_info = {
+                "key_manager": f"key_manager_test{index + 1}",
+                "name": f"name_test{index + 1}",
+                "postal_code": f"postal_code_test{index + 1}",
+                "address": f"address_test{index + 1}",
+                "email": f"email_test{index + 1}",
+                "birth": f"birth_test{index + 1}",
+                "is_corporate": False,
+                "tax_category": 10,
+            }
+            history.block_timestamp = same_timestamp
+            history.created = created_list[index]
+            async_db.add(history)
+
+        await async_db.commit()
+
+        returned_names: list[str] = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.url,
+                headers={
+                    "issuer-address": self.test_issuer_address_1,
+                },
+                params={"sort_order": 0, "offset": offset, "limit": 1},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "limit": 1,
+                "offset": offset,
+                "total": 3,
+            }
+            returned_names.append(body["personal_info"][0]["personal_info"]["name"])
+
+        assert returned_names == ["name_test1", "name_test2", "name_test3"]
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -1087,7 +1146,7 @@ class TestListTokenHoldersPersonalInfoHistory:
     # <Error_1>
     # RequestValidationError: created_from, created_to
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(
             self.url,

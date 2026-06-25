@@ -21,7 +21,7 @@ import math
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Any, Dict, Optional, Self
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field, RootModel, field_validator, model_validator
 
@@ -97,7 +97,7 @@ class IbetStraightBondScheduledUpdateData(BaseModel):
 
     @field_validator("base_fx_rate")
     @classmethod
-    def base_fx_rate_6_decimal_places(cls, v):
+    def base_fx_rate_6_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**6)
             int_data = int(Decimal(str(v)) * 10**6)
@@ -109,14 +109,14 @@ class IbetStraightBondScheduledUpdateData(BaseModel):
 
     @field_validator("is_redeemed")
     @classmethod
-    def is_redeemed_is_valid(cls, v):
+    def is_redeemed_is_valid(cls, v: Optional[bool]) -> Optional[bool]:
         if v is not None and v is False:
             raise ValueError("is_redeemed cannot be updated to `false`")
         return v
 
     @field_validator("interest_rate")
     @classmethod
-    def interest_rate_4_decimal_places(cls, v):
+    def interest_rate_4_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**4)
             int_data = int(Decimal(str(v)) * 10**4)
@@ -126,7 +126,9 @@ class IbetStraightBondScheduledUpdateData(BaseModel):
 
     @field_validator("interest_payment_date")
     @classmethod
-    def interest_payment_date_list_length_less_than_13(cls, v):
+    def interest_payment_date_list_length_less_than_13(
+        cls, v: Optional[list[MMDD_constr]]
+    ) -> Optional[list[MMDD_constr]]:
         if v is not None and len(v) >= 13:
             raise ValueError(
                 "list length of interest_payment_date must be less than 13"
@@ -164,14 +166,14 @@ class IbetShareScheduledUpdateData(BaseModel):
 
     @field_validator("is_canceled")
     @classmethod
-    def is_canceled_is_valid(cls, v):
+    def is_canceled_is_valid(cls, v: Optional[bool]) -> Optional[bool]:
         if v is not None and v is False:
             raise ValueError("is_canceled cannot be updated to `false`")
         return v
 
     @field_validator("dividends")
     @classmethod
-    def dividends_13_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**13)
             int_data = int(Decimal(str(v)) * 10**13)
@@ -181,7 +183,7 @@ class IbetShareScheduledUpdateData(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def dividend_information_all_required(cls, v: Self):
+    def dividend_information_all_required(cls, v: Any) -> Any:
         if v.dividends:
             if v.dividend_record_date is None or v.dividend_payment_date is None:
                 raise ValueError(

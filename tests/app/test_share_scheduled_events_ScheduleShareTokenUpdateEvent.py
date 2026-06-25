@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,14 +22,17 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import UTC, datetime
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone as tz
 from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
     ScheduledEvents,
     ScheduledEventType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -46,7 +51,7 @@ class TestScheduleShareTokenUpdateEvent:
     # <Normal_1>
     # Timezone of input data is UTC
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -54,6 +59,8 @@ class TestScheduleShareTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -93,7 +100,7 @@ class TestScheduleShareTokenUpdateEvent:
         }
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -120,6 +127,7 @@ class TestScheduleShareTokenUpdateEvent:
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert resp_1.status_code == 200
         assert resp_1.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
@@ -133,7 +141,7 @@ class TestScheduleShareTokenUpdateEvent:
     # <Normal_2>
     # Timezone of input data is JST
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -141,6 +149,8 @@ class TestScheduleShareTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -180,7 +190,7 @@ class TestScheduleShareTokenUpdateEvent:
         }
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -203,6 +213,7 @@ class TestScheduleShareTokenUpdateEvent:
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert resp.status_code == 200
         assert resp.json() == {"scheduled_event_id": _scheduled_event.event_id}
         assert _scheduled_event.token_type == TokenType.IBET_SHARE
@@ -220,7 +231,7 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_1_1>
     # RequestValidationError: issuer_address
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -228,10 +239,10 @@ class TestScheduleShareTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -266,7 +277,7 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_1_2>
     # RequestValidationError: is_canceled
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -274,10 +285,10 @@ class TestScheduleShareTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {"is_canceled": False}
+        update_data: dict[str, object] = {"is_canceled": False}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -308,7 +319,7 @@ class TestScheduleShareTokenUpdateEvent:
     # AuthorizationError
     # issuer_address does not exists
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -316,10 +327,10 @@ class TestScheduleShareTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -342,7 +353,7 @@ class TestScheduleShareTokenUpdateEvent:
     # AuthorizationError
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -350,6 +361,8 @@ class TestScheduleShareTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -369,10 +382,10 @@ class TestScheduleShareTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -395,7 +408,7 @@ class TestScheduleShareTokenUpdateEvent:
     # NotFound
     # token not found
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -403,6 +416,8 @@ class TestScheduleShareTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -413,10 +428,10 @@ class TestScheduleShareTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -439,13 +454,13 @@ class TestScheduleShareTokenUpdateEvent:
     # RequestValidationError
     # event_data
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": "this is not time format",
             "event_type": "aUpdateb",
             "data": {
@@ -491,7 +506,7 @@ class TestScheduleShareTokenUpdateEvent:
     # InvalidParameterError
     # processing token
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -499,6 +514,8 @@ class TestScheduleShareTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -510,7 +527,7 @@ class TestScheduleShareTokenUpdateEvent:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -519,10 +536,10 @@ class TestScheduleShareTokenUpdateEvent:
         # test data
         datetime_now_utc = datetime.now(UTC)
         datetime_now_str = datetime_now_utc.isoformat()
-        update_data = {}
+        update_data: dict[str, object] = {}
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": update_data,
@@ -546,7 +563,7 @@ class TestScheduleShareTokenUpdateEvent:
     # <Error_7>
     # OperationNotSupportedVersionError: v24.6
     @pytest.mark.asyncio
-    async def test_error_7(self, async_client, async_db):
+    async def test_error_7(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -554,6 +571,8 @@ class TestScheduleShareTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -565,7 +584,7 @@ class TestScheduleShareTokenUpdateEvent:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 1
+        token.token_status = TokenStatus.SUCCEEDED
         token.version = TokenVersion.V_22_12
         async_db.add(token)
 

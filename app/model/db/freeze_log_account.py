@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
+
 from sqlalchemy import JSON, Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,8 +33,8 @@ class FreezeLogAccount(Base):
     # account address
     account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
     # ethereum keyfile
-    keyfile: Mapped[dict | None] = mapped_column(JSON)
+    keyfile: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # ethereum account password(encrypted)
-    eoa_password: Mapped[str | None] = mapped_column(String(2000))
+    eoa_password: Mapped[str] = mapped_column(String(2000), nullable=False)
     # delete flag
-    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

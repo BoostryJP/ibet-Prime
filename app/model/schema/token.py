@@ -21,7 +21,7 @@ import math
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Annotated, Literal, Optional, Self
+from typing import Annotated, Any, Literal, Optional
 
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -51,6 +51,12 @@ from .position import LockEvent, LockEventCategory
 ############################
 # REQUEST
 ############################
+class IbetWSTBlockchain(StrEnum):
+    ETHEREUM = "ethereum"
+    AVALANCHE = "avalanche"
+    # NOTE: Add other blockchains here when needed
+
+
 class IbetStraightBondCreate(BaseModel):
     """ibet Straight Bond schema (Create)"""
 
@@ -88,13 +94,17 @@ class IbetStraightBondCreate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
+    )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
     )
 
     @field_validator("base_fx_rate")
     @classmethod
-    def base_fx_rate_6_decimal_places(cls, v):
+    def base_fx_rate_6_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**6)
             int_data = int(Decimal(str(v)) * 10**6)
@@ -106,7 +116,7 @@ class IbetStraightBondCreate(BaseModel):
 
     @field_validator("interest_rate")
     @classmethod
-    def interest_rate_4_decimal_places(cls, v):
+    def interest_rate_4_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**4)
             int_data = int(Decimal(str(v)) * 10**4)
@@ -118,7 +128,9 @@ class IbetStraightBondCreate(BaseModel):
 
     @field_validator("interest_payment_date")
     @classmethod
-    def interest_payment_date_list_length_less_than_13(cls, v):
+    def interest_payment_date_list_length_less_than_13(
+        cls, v: Optional[list[MMDD_constr]]
+    ) -> Optional[list[MMDD_constr]]:
         if v is not None and len(v) >= 13:
             raise ValueError(
                 "list length of interest_payment_date must be less than 13"
@@ -127,8 +139,10 @@ class IbetStraightBondCreate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Any) -> Any:
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -164,13 +178,17 @@ class IbetStraightBondUpdate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
+    )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
     )
 
     @field_validator("base_fx_rate")
     @classmethod
-    def base_fx_rate_6_decimal_places(cls, v):
+    def base_fx_rate_6_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**6)
             int_data = int(Decimal(str(v)) * 10**6)
@@ -182,14 +200,14 @@ class IbetStraightBondUpdate(BaseModel):
 
     @field_validator("is_redeemed")
     @classmethod
-    def is_redeemed_is_valid(cls, v):
+    def is_redeemed_is_valid(cls, v: Optional[bool]) -> Optional[bool]:
         if v is not None and v is False:
             raise ValueError("is_redeemed cannot be updated to `false`")
         return v
 
     @field_validator("interest_rate")
     @classmethod
-    def interest_rate_4_decimal_places(cls, v):
+    def interest_rate_4_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**4)
             int_data = int(Decimal(str(v)) * 10**4)
@@ -199,7 +217,9 @@ class IbetStraightBondUpdate(BaseModel):
 
     @field_validator("interest_payment_date")
     @classmethod
-    def interest_payment_date_list_length_less_than_13(cls, v):
+    def interest_payment_date_list_length_less_than_13(
+        cls, v: Optional[list[MMDD_constr]]
+    ) -> Optional[list[MMDD_constr]]:
         if v is not None and len(v) >= 13:
             raise ValueError(
                 "list length of interest_payment_date must be less than 13"
@@ -208,8 +228,10 @@ class IbetStraightBondUpdate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Any) -> Any:
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -266,13 +288,17 @@ class IbetShareCreate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
+    )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
     )
 
     @field_validator("dividends")
     @classmethod
-    def dividends_13_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**13)
             int_data = int(Decimal(str(v)) * 10**13)
@@ -282,8 +308,10 @@ class IbetShareCreate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Any) -> Any:
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -314,20 +342,24 @@ class IbetShareUpdate(BaseModel):
     activate_ibet_wst: Optional[Literal[True]] = Field(
         default=None, description="Activate IbetWST"
     )
+    ibet_wst_blockchains: Optional[list[IbetWSTBlockchain]] = Field(
+        default=None,
+        description="Blockchains to activate IbetWST on",
+    )
     ibet_wst_name: Optional[str] = Field(
         default=None, max_length=100, description="IbetWST name"
     )
 
     @field_validator("is_canceled")
     @classmethod
-    def is_canceled_is_valid(cls, v):
+    def is_canceled_is_valid(cls, v: Optional[bool]) -> Optional[bool]:
         if v is not None and v is False:
             raise ValueError("is_canceled cannot be updated to `false`")
         return v
 
     @field_validator("dividends")
     @classmethod
-    def dividends_13_decimal_places(cls, v):
+    def dividends_13_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**13)
             int_data = int(Decimal(str(v)) * 10**13)
@@ -337,7 +369,7 @@ class IbetShareUpdate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def dividend_information_all_required(cls, v: Self):
+    def dividend_information_all_required(cls, v: Any) -> Any:
         if v.dividends:
             if v.dividend_record_date is None or v.dividend_payment_date is None:
                 raise ValueError(
@@ -347,8 +379,10 @@ class IbetShareUpdate(BaseModel):
 
     @model_validator(mode="after")
     @classmethod
-    def ibet_wst_name_required_if_activated(cls, v: Self):
+    def required_ibet_wst_fields_if_activated(cls, v: Any) -> Any:
         if v.activate_ibet_wst:
+            if v.ibet_wst_blockchains is None:
+                v.ibet_wst_blockchains = [IbetWSTBlockchain.ETHEREUM]
             if v.ibet_wst_name is None:
                 raise ValueError(
                     "ibet_wst_name is required when activate_ibet_wst is true"
@@ -498,7 +532,7 @@ class ListAllTokenLockEventsSortItem(StrEnum):
     account_address = "account_address"
     lock_address = "lock_address"
     recipient_address = "recipient_address"
-    value = "value"
+    value = "value"  # type: ignore
     block_timestamp = "block_timestamp"
 
 
@@ -579,11 +613,26 @@ class ListAllIssuedTokensResponse(BaseModel):
     tokens: list[IssuedToken]
 
 
-class TokenAddressResponse(BaseModel):
-    """token address"""
+class IssueTokenResponse(BaseModel):
+    """Issue token response"""
 
     token_address: str
     token_status: TokenStatus
+    contract_version: IbetStraightBondContractVersion | IbetShareContractVersion
+
+
+class IbetWSTSettingsByBlockchainResponse(BaseModel):
+    """IbetWST settings by blockchain"""
+
+    activated: dict[IbetWSTBlockchain, bool] | None = Field(
+        ..., description="IbetWST activation status by blockchain"
+    )
+    deployed: dict[IbetWSTBlockchain, bool] | None = Field(
+        ..., description="IbetWST deployment status by blockchain"
+    )
+    address: dict[IbetWSTBlockchain, str] | None = Field(
+        ..., description="IbetWST contract address by blockchain"
+    )
 
 
 class IbetStraightBondResponse(IbetStraightBond):
@@ -594,10 +643,19 @@ class IbetStraightBondResponse(IbetStraightBond):
     contract_version: IbetStraightBondContractVersion = Field(
         ..., description="Contract version"
     )
-    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_activated: bool = Field(
+        ..., description="[Deprecated] IbetWST activated on Ethereum"
+    )
+    ibet_wst_deployed: bool = Field(
+        ..., description="[Deprecated] IbetWST deployed on Ethereum"
+    )
+    ibet_wst_address: Optional[str] = Field(
+        ..., description="[Deprecated] IbetWST contract address on Ethereum"
+    )
+    ibet_wst_settings_by_blockchain: IbetWSTSettingsByBlockchainResponse = Field(
+        ..., description="IbetWST settings by blockchain"
+    )
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
-    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
-    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
     ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")
 
 
@@ -609,18 +667,27 @@ class IbetShareResponse(IbetShare):
     contract_version: IbetShareContractVersion = Field(
         ..., description="Contract version"
     )
-    ibet_wst_activated: bool = Field(..., description="IbetWST activated")
+    ibet_wst_activated: bool = Field(
+        ..., description="[Deprecated] IbetWST activated on Ethereum"
+    )
+    ibet_wst_deployed: bool = Field(
+        ..., description="[Deprecated] IbetWST deployed on Ethereum"
+    )
+    ibet_wst_address: Optional[str] = Field(
+        ..., description="[Deprecated] IbetWST contract address on Ethereum"
+    )
+    ibet_wst_settings_by_blockchain: IbetWSTSettingsByBlockchainResponse = Field(
+        ..., description="IbetWST settings by blockchain"
+    )
     ibet_wst_version: Optional[str] = Field(..., description="IbetWST version")
-    ibet_wst_deployed: bool = Field(..., description="IbetWST deployed")
-    ibet_wst_address: Optional[str] = Field(..., description="IbetWST contract address")
     ibet_wst_name: Optional[str] = Field(..., description="IbetWST name")
 
 
 class TokenOperationLogResponse(BaseModel):
-    original_contents: dict | None = Field(
+    original_contents: dict[str, Any] | None = Field(
         default=None, description="original attributes before update"
     )
-    modified_contents: dict = Field(..., description="update attributes")
+    modified_contents: dict[str, Any] = Field(..., description="update attributes")
     operation_category: TokenUpdateOperationCategory
     created: datetime
 

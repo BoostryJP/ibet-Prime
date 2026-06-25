@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import JSON, BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -38,9 +39,11 @@ class TokenUpdateOperationLog(Base):
     # token type(TokenType)
     type: Mapped[str] = mapped_column(String(40), nullable=False)
     # arguments
-    arguments: Mapped[dict] = mapped_column(JSON, nullable=False)
+    arguments: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # original contents
-    original_contents: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    original_contents: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True
+    )
     # operation category(TokenUpdateOperationCategory)
     operation_category: Mapped[str] = mapped_column(String(40), nullable=False)
 

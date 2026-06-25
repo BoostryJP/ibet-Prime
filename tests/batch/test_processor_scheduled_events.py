@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,10 +22,12 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import patch
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3.datastructures import AttributeDict
 
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -32,6 +36,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     ScheduledEvents,
+    ScheduledEventStatus,
     ScheduledEventType,
     TokenType,
     TokenUpdateOperationCategory,
@@ -43,7 +48,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -61,7 +66,7 @@ class TestProcessor:
     # <Normal_1>
     # IbetStraightBond
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db):
+    async def test_normal_1(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -71,6 +76,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -109,7 +116,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_past_utc.replace(tzinfo=None)
-        token_event.status = 2
+        token_event.status = ScheduledEventStatus.FAILED
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -120,7 +127,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -131,7 +138,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_pending_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -153,31 +160,34 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address_1)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address_2)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 1
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address_3)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 0
-        _operation_log = (
+        _operation_log: Any = (
             await async_db.scalars(
                 select(TokenUpdateOperationLog)
                 .where(TokenUpdateOperationLog.token_address == _token_address_2)
@@ -210,7 +220,7 @@ class TestProcessor:
     # <Normal_2>
     # IbetShare
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, async_db):
+    async def test_normal_2(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -220,6 +230,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -258,7 +270,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_past_utc.replace(tzinfo=None)
-        token_event.status = 2
+        token_event.status = ScheduledEventStatus.FAILED
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -269,7 +281,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -280,7 +292,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_pending_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -302,37 +314,41 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address_1)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address_2)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 1
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address_3)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 0
-        _operation_log = (
+        _operation_log: TokenUpdateOperationLog | None = (
             await async_db.scalars(
                 select(TokenUpdateOperationLog)
                 .where(TokenUpdateOperationLog.token_address == _token_address_2)
                 .limit(1)
             )
         ).first()
+        assert _operation_log is not None
         assert _operation_log.issuer_address == _issuer_address
         assert _operation_log.type == TokenType.IBET_SHARE
         assert _operation_log.arguments == {
@@ -359,7 +375,7 @@ class TestProcessor:
     # <Normal_3>
     # soft_deleted events
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db):
+    async def test_normal_3(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -369,6 +385,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -404,7 +422,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_pending_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.is_soft_deleted = True
         async_db.add(token_event)
@@ -416,13 +434,14 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address_1)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 0
 
         _operation_log = (
@@ -441,7 +460,7 @@ class TestProcessor:
     # <Error_1>
     # Account does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, async_db):
+    async def test_error_1(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -458,7 +477,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -469,16 +488,20 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
 
-        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        _notification: Notification | None = (
+            await async_db.scalars(select(Notification).limit(1))
+        ).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -494,15 +517,20 @@ class TestProcessor:
     # <Error_2>
     # fail to get the private key
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db):
+    async def test_error_2(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
-        account.eoa_password = E2EEUtils.encrypt("password")
+        account.eoa_password = E2EEUtils.encrypt(
+            "incorrect_password"
+        )  # incorrect password to cause decryption failure
         async_db.add(account)
 
         # prepare data : ScheduledEvents
@@ -517,7 +545,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -528,15 +556,19 @@ class TestProcessor:
         async_db.expire_all()
 
         # Assertion
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
-        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        _notification: Notification | None = (
+            await async_db.scalars(select(Notification).limit(1))
+        ).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -552,7 +584,7 @@ class TestProcessor:
     # <Error_3>
     # IbetStraightBond : SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_3(self, processor, async_db):
+    async def test_error_3(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -560,6 +592,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -577,7 +611,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -599,15 +633,19 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
-        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        _notification: Notification | None = (
+            await async_db.scalars(select(Notification).limit(1))
+        ).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -623,7 +661,7 @@ class TestProcessor:
     # <Error_4>
     # IbetShare : SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_4(self, processor, async_db):
+    async def test_error_4(self, processor: Processor, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -631,6 +669,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -648,7 +688,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -671,15 +711,19 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion
-        _scheduled_event = (
+        _scheduled_event: ScheduledEvents | None = (
             await async_db.scalars(
                 select(ScheduledEvents)
                 .where(ScheduledEvents.token_address == _token_address)
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
-        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        _notification: Notification | None = (
+            await async_db.scalars(select(Notification).limit(1))
+        ).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -695,7 +739,12 @@ class TestProcessor:
     # <Error_5>
     # IbetStraightBond : ContractRevertError
     @pytest.mark.asyncio
-    async def test_error_5(self, processor, async_db, caplog):
+    async def test_error_5(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -703,6 +752,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -720,7 +771,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
 
@@ -750,8 +801,12 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
-        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        _notification: Notification | None = (
+            await async_db.scalars(select(Notification).limit(1))
+        ).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address
@@ -777,7 +832,12 @@ class TestProcessor:
     # <Error_6>
     # IbetShare : ContractRevertError
     @pytest.mark.asyncio
-    async def test_error_6(self, processor, async_db, caplog):
+    async def test_error_6(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -785,6 +845,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _keyfile
@@ -802,7 +864,7 @@ class TestProcessor:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc.replace(tzinfo=None)
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         async_db.add(token_event)
         await async_db.commit()
@@ -832,8 +894,12 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _scheduled_event is not None
         assert _scheduled_event.status == 2
-        _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        _notification: Notification | None = (
+            await async_db.scalars(select(Notification).limit(1))
+        ).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _issuer_address

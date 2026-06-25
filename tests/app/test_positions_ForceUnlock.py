@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -24,17 +26,21 @@ from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
     Account,
     AuthToken,
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTTxParamsBurn,
     IbetWSTTxStatus,
     IbetWSTTxType,
     IbetWSTVersion,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -57,7 +63,10 @@ class TestForceUnlock:
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_1_1(
-        self, IbetSecurityTokenInterface_mock, async_client, async_db
+        self,
+        IbetSecurityTokenInterface_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -72,6 +81,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -110,15 +121,11 @@ class TestForceUnlock:
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
             tx_params=ForceUnlockParams(
-                **{
-                    "lock_address": _lock_address,
-                    "account_address": account_address,
-                    "recipient_address": _recipient_address,
-                    "value": 10,
-                    "data": json.dumps(
-                        {"message": "force_unlock"}, separators=(",", ":")
-                    ),
-                }
+                lock_address=_lock_address,
+                account_address=account_address,
+                recipient_address=_recipient_address,
+                value=10,
+                data=json.dumps({"message": "force_unlock"}, separators=(",", ":")),
             ),
             tx_sender=_admin_address,
             tx_sender_key=ANY,
@@ -133,7 +140,10 @@ class TestForceUnlock:
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_1_2(
-        self, IbetSecurityTokenInterface_mock, async_client, async_db
+        self,
+        IbetSecurityTokenInterface_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -148,6 +158,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -187,15 +199,11 @@ class TestForceUnlock:
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
             tx_params=ForceUnlockParams(
-                **{
-                    "lock_address": _lock_address,
-                    "account_address": account_address,
-                    "recipient_address": _recipient_address,
-                    "value": 10,
-                    "data": json.dumps(
-                        {"message": "garnishment"}, separators=(",", ":")
-                    ),
-                }
+                lock_address=_lock_address,
+                account_address=account_address,
+                recipient_address=_recipient_address,
+                value=10,
+                data=json.dumps({"message": "garnishment"}, separators=(",", ":")),
             ),
             tx_sender=_admin_address,
             tx_sender_key=ANY,
@@ -209,7 +217,10 @@ class TestForceUnlock:
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, IbetSecurityTokenInterface_mock, async_client, async_db
+        self,
+        IbetSecurityTokenInterface_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -224,6 +235,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -265,15 +278,11 @@ class TestForceUnlock:
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
             tx_params=ForceUnlockParams(
-                **{
-                    "lock_address": _lock_address,
-                    "account_address": account_address,
-                    "recipient_address": _recipient_address,
-                    "value": 10,
-                    "data": json.dumps(
-                        {"message": "force_unlock"}, separators=(",", ":")
-                    ),
-                }
+                lock_address=_lock_address,
+                account_address=account_address,
+                recipient_address=_recipient_address,
+                value=10,
+                data=json.dumps({"message": "force_unlock"}, separators=(",", ":")),
             ),
             tx_sender=_admin_address,
             tx_sender_key=ANY,
@@ -287,7 +296,10 @@ class TestForceUnlock:
     @mock.patch("app.model.ibet.token.IbetSecurityTokenInterface.force_unlock")
     @pytest.mark.asyncio
     async def test_normal_3(
-        self, IbetSecurityTokenInterface_mock, async_client, async_db
+        self,
+        IbetSecurityTokenInterface_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         account_address = "0x1234567890123456789012345678900000000000"
 
@@ -303,6 +315,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -315,8 +329,8 @@ class TestForceUnlock:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
-        token.ibet_wst_address = _ibet_wst_address
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_address("ethereum", _ibet_wst_address)
         async_db.add(token)
 
         tx_id = str(uuid.uuid4())
@@ -358,15 +372,11 @@ class TestForceUnlock:
         # assertion
         IbetSecurityTokenInterface_mock.assert_any_call(
             tx_params=ForceUnlockParams(
-                **{
-                    "lock_address": _lock_address,
-                    "account_address": account_address,
-                    "recipient_address": _recipient_address,
-                    "value": 10,
-                    "data": json.dumps(
-                        {"message": "force_unlock"}, separators=(",", ":")
-                    ),
-                }
+                lock_address=_lock_address,
+                account_address=account_address,
+                recipient_address=_recipient_address,
+                value=10,
+                data=json.dumps({"message": "force_unlock"}, separators=(",", ":")),
             ),
             tx_sender=_admin_address,
             tx_sender_key=ANY,
@@ -383,11 +393,11 @@ class TestForceUnlock:
     # RequestValidationError
     # Required fields are not set
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target API
-        req_param = {}
+        req_param: dict[str, str] = {}
         resp = await async_client.post(
             self.test_url.format(account_address=account_address),
             json=req_param,
@@ -431,7 +441,7 @@ class TestForceUnlock:
     # - address is invalid
     # - value is not greater than 0
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D78"  # short address
@@ -493,7 +503,7 @@ class TestForceUnlock:
     # RequestValidationError
     # Header and body are required
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
         # request target API
         resp = await async_client.post(
@@ -524,7 +534,7 @@ class TestForceUnlock:
     # RequestValidationError
     # issuer-address is not a valid address
     @pytest.mark.asyncio
-    async def test_error_1_4(self, async_client, async_db):
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -568,7 +578,7 @@ class TestForceUnlock:
     # RequestValidationError
     # eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
-    async def test_error_1_5(self, async_client, async_db):
+    async def test_error_1_5(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -615,7 +625,7 @@ class TestForceUnlock:
     # RequestValidationError
     # Invalid message
     @pytest.mark.asyncio
-    async def test_error_1_6(self, async_client, async_db):
+    async def test_error_1_6(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -629,6 +639,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -674,7 +686,7 @@ class TestForceUnlock:
     # AuthorizationError
     # Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -714,7 +726,7 @@ class TestForceUnlock:
     # AuthorizationError
     # Password mismatch
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -728,6 +740,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -762,7 +776,7 @@ class TestForceUnlock:
     # InvalidParameterError
     # account_address is not a valid address
     @pytest.mark.asyncio
-    async def test_error_3_1(self, async_client, async_db):
+    async def test_error_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "invalid_address"
 
         _admin_account = default_eth_account("user1")
@@ -776,6 +790,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -819,7 +835,7 @@ class TestForceUnlock:
     # InvalidParameterError
     # token not found
     @pytest.mark.asyncio
-    async def test_error_3_2(self, async_client, async_db):
+    async def test_error_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -833,6 +849,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -867,7 +885,7 @@ class TestForceUnlock:
     # InvalidParameterError
     # token is temporarily unavailable
     @pytest.mark.asyncio
-    async def test_error_3_3(self, async_client, async_db):
+    async def test_error_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -881,6 +899,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -892,7 +912,7 @@ class TestForceUnlock:
         token.issuer_address = _admin_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -925,7 +945,7 @@ class TestForceUnlock:
     # InvalidParameterError
     # When there is a pending IbetWST Burn transaction
     @pytest.mark.asyncio
-    async def test_error_3_4(self, async_client, async_db):
+    async def test_error_3_4(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -940,6 +960,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -952,8 +974,8 @@ class TestForceUnlock:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
-        token.ibet_wst_address = _ibet_wst_address
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_address("ethereum", _ibet_wst_address)
         async_db.add(token)
 
         tx_id = str(uuid.uuid4())
@@ -996,6 +1018,80 @@ class TestForceUnlock:
             "detail": "There is a pending ibetWST Burn or ForceBurn transaction for this account",
         }
 
+    # <Error_3_5>
+    # InvalidParameterError
+    # When there is a pending Avalanche IbetWST Burn transaction
+    @pytest.mark.asyncio
+    async def test_error_3_5(self, async_client: AsyncClient, async_db: AsyncSession):
+        account_address = "0x1234567890123456789012345678900000000000"
+
+        _admin_account = default_eth_account("user1")
+        _admin_address = _admin_account["address"]
+        _admin_keyfile = _admin_account["keyfile_json"]
+
+        _lock_address = default_eth_account("user2")["address"]
+        _recipient_address = default_eth_account("user3")["address"]
+
+        _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
+        _ava_ibet_wst_address = "0x2234567890abcdef1234567890abcdef12345678"
+
+        account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
+        account.issuer_address = _admin_address
+        account.keyfile = _admin_keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        token = Token()
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.issuer_address = _admin_address
+        token.token_address = _token_address
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_activated("avalanche", True)
+        token.set_ibet_wst_address("avalanche", _ava_ibet_wst_address)
+        async_db.add(token)
+
+        tx_id = str(uuid.uuid4())
+        ava_ibet_wst_tx = AvaIbetWSTTx()
+        ava_ibet_wst_tx.tx_id = tx_id
+        ava_ibet_wst_tx.tx_type = IbetWSTTxType.BURN
+        ava_ibet_wst_tx.version = IbetWSTVersion.V_1
+        ava_ibet_wst_tx.status = IbetWSTTxStatus.SUCCEEDED
+        ava_ibet_wst_tx.ibet_wst_address = _ava_ibet_wst_address
+        ava_ibet_wst_tx.tx_params = IbetWSTTxParamsBurn(
+            from_address=account_address, value=10
+        )
+        ava_ibet_wst_tx.tx_sender = _admin_address
+        ava_ibet_wst_tx.authorizer = account_address
+        ava_ibet_wst_tx.finalized = False  # not finalized
+        async_db.add(ava_ibet_wst_tx)
+
+        await async_db.commit()
+
+        req_param = {
+            "token_address": _token_address,
+            "lock_address": _lock_address,
+            "recipient_address": _recipient_address,
+            "value": 10,
+        }
+        resp = await async_client.post(
+            self.test_url.format(account_address=account_address),
+            json=req_param,
+            headers={
+                "issuer-address": _admin_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        assert resp.status_code == 400
+        assert resp.json() == {
+            "meta": {"code": 1, "title": "InvalidParameterError"},
+            "detail": "There is a pending ibetWST Burn or ForceBurn transaction for this account",
+        }
+
     # <Error_4>
     # ContractRevertError
     @mock.patch(
@@ -1003,7 +1099,7 @@ class TestForceUnlock:
         MagicMock(side_effect=ContractRevertError(code_msg="111201")),
     )
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -1017,6 +1113,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1050,10 +1148,10 @@ class TestForceUnlock:
         )
 
         # assertion
-        assert resp.status_code == 400
+        assert resp.status_code == 503
         assert resp.json() == {
-            "meta": {"code": 111201, "title": "ContractRevertError"},
-            "detail": "Unlock amount is greater than locked amount.",
+            "meta": {"code": 2, "title": "SendTransactionError"},
+            "detail": "failed to send transaction",
         }
 
     # <Error_5>
@@ -1063,7 +1161,7 @@ class TestForceUnlock:
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         _admin_account = default_eth_account("user1")
@@ -1077,6 +1175,8 @@ class TestForceUnlock:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _admin_address
         account.keyfile = _admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

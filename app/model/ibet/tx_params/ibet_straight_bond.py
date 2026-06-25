@@ -64,7 +64,7 @@ class UpdateParams(BaseModel):
 
     @field_validator("base_fx_rate")
     @classmethod
-    def base_fx_rate_6_decimal_places(cls, v):
+    def base_fx_rate_6_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**6)
             int_data = int(Decimal(str(v)) * 10**6)
@@ -74,7 +74,7 @@ class UpdateParams(BaseModel):
 
     @field_validator("interest_rate")
     @classmethod
-    def interest_rate_4_decimal_places(cls, v):
+    def interest_rate_4_decimal_places(cls, v: Optional[float]) -> Optional[float]:
         if v is not None:
             float_data = float(Decimal(str(v)) * 10**4)
             int_data = int(Decimal(str(v)) * 10**4)
@@ -84,7 +84,9 @@ class UpdateParams(BaseModel):
 
     @field_validator("interest_payment_date")
     @classmethod
-    def interest_payment_date_list_length_less_than_13(cls, v):
+    def interest_payment_date_list_length_less_than_13(
+        cls, v: Optional[List[str]]
+    ) -> Optional[List[str]]:
         if v is not None and len(v) >= 13:
             raise ValueError(
                 "list length of interest_payment_date must be less than 13"

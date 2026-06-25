@@ -1,3 +1,7 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+from tests.account_config import default_eth_account
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -21,6 +25,8 @@ import datetime
 from unittest.mock import ANY
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, ChildAccount, IDXPersonalInfo, PersonalInfoDataSource
 
@@ -48,9 +54,13 @@ class TestListAllChildAccount:
     # - Personal information is not set
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -121,9 +131,13 @@ class TestListAllChildAccount:
     # - Personal information is set
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -221,9 +235,13 @@ class TestListAllChildAccount:
     # - child_account_address (partial match)
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -288,9 +306,13 @@ class TestListAllChildAccount:
     # - name (partial match)
     @pytest.mark.freeze_time("2024-10-28 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -353,9 +375,13 @@ class TestListAllChildAccount:
     # Search query
     # - created_from
     @pytest.mark.asyncio
-    async def test_normal_2_3(self, async_client, async_db):
+    async def test_normal_2_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -439,9 +465,13 @@ class TestListAllChildAccount:
     # Search query
     # - created_to
     @pytest.mark.asyncio
-    async def test_normal_2_4(self, async_client, async_db):
+    async def test_normal_2_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -525,9 +555,13 @@ class TestListAllChildAccount:
     # Search query
     # - modified_from
     @pytest.mark.asyncio
-    async def test_normal_2_5(self, async_client, async_db):
+    async def test_normal_2_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -611,9 +645,13 @@ class TestListAllChildAccount:
     # Search query
     # - modified_to
     @pytest.mark.asyncio
-    async def test_normal_2_6(self, async_client, async_db):
+    async def test_normal_2_6(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -697,9 +735,13 @@ class TestListAllChildAccount:
     # Sort order
     # - child_account_index (default)
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -769,9 +811,13 @@ class TestListAllChildAccount:
     # Sort order
     # - child_account_address
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -842,9 +888,13 @@ class TestListAllChildAccount:
     # Sort order
     # - name
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -948,9 +998,13 @@ class TestListAllChildAccount:
     # Sort order
     # - created
     @pytest.mark.asyncio
-    async def test_normal_3_4(self, async_client, async_db):
+    async def test_normal_3_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -1054,9 +1108,13 @@ class TestListAllChildAccount:
     # Sort order
     # - modified
     @pytest.mark.asyncio
-    async def test_normal_3_5(self, async_client, async_db):
+    async def test_normal_3_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -1159,9 +1217,13 @@ class TestListAllChildAccount:
     # <Normal_4>
     # Offset / Limit
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -1202,7 +1264,7 @@ class TestListAllChildAccount:
     # <Error_1>
     # 404: Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         for i in range(1, 6):
             _child_account = ChildAccount()

@@ -204,7 +204,7 @@ class Processor:
                 )
             )
         ).all()
-        personal_info_contract_list = set()
+        personal_info_contract_list: Set[PersonalInfoContract] = set()
         for token in token_list:
             if token.type == TokenType.IBET_SHARE.value:
                 token_contract = await IbetShareContract(token.token_address).get()
@@ -224,6 +224,9 @@ class Processor:
                         .limit(1)
                     )
                 ).first()
+                if issuer_account is None:
+                    LOG.error(f"Issuer account not found: {issuer_address}")
+                    continue
                 personal_info_contract_list.add(
                     PersonalInfoContract(
                         logger=LOG,
@@ -317,8 +320,8 @@ async def main():
         while not is_shutdown.is_set():
             try:
                 await processor.process()
-            except ServiceUnavailableError:
-                LOG.warning("An external service was unavailable")
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

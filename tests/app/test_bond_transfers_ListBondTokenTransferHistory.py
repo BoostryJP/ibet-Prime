@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from app.model.db import (
@@ -29,6 +31,7 @@ from app.model.db import (
     IDXTransferSourceEventType,
     PersonalInfoDataSource,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -67,7 +70,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_1>
     # default sort
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -141,10 +144,10 @@ class TestAppRoutersBondTransfersGET:
         }
         assert resp.json() == assumed_response
 
-    # <Normal_2>
+    # <Normal_2_1>
     # offset, limit
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -159,7 +162,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address_1
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -175,7 +178,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address_1
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -247,10 +250,56 @@ class TestAppRoutersBondTransfersGET:
         }
         assert resp.json() == assumed_response
 
+    # <Normal_2_2>
+    # offset, limit with same block_timestamp
+    @pytest.mark.asyncio
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        for amount in range(0, 3):
+            _idx_transfer = IDXTransfer()
+            _idx_transfer.transaction_hash = self.test_transaction_hash
+            _idx_transfer.token_address = self.test_token_address
+            _idx_transfer.from_address = self.test_from_address_1
+            _idx_transfer.to_address = self.test_to_address_1
+            _idx_transfer.amount = amount
+            _idx_transfer.source_event = IDXTransferSourceEventType.TRANSFER
+            _idx_transfer.data = None
+            _idx_transfer.block_timestamp = self.test_block_timestamp[0]
+            async_db.add(_idx_transfer)
+
+        await async_db.commit()
+
+        returned_amounts: list[int] = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.base_url.format(self.test_token_address),
+                params={"offset": offset, "limit": 1},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "offset": offset,
+                "limit": 1,
+                "total": 3,
+            }
+            returned_amounts.append(body["transfer_history"][0]["amount"])
+
+        assert returned_amounts == [2, 1, 0]
+
     # <Normal_3_1>
     # filter: block_timestamp_from
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -339,7 +388,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_2>
     # filter: block_timestamp_to
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -428,7 +477,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_3>
     # filter: from_address
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -505,7 +554,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_4>
     # filter: to_address
     @pytest.mark.asyncio
-    async def test_normal_3_4(self, async_client, async_db):
+    async def test_normal_3_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -582,7 +631,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_5>
     # filter: from_address_name
     @pytest.mark.asyncio
-    async def test_normal_3_5(self, async_client, async_db):
+    async def test_normal_3_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -620,7 +669,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address_1
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
@@ -636,7 +685,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_from_address_2
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -690,7 +739,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_6>
     # filter: to_address_name
     @pytest.mark.asyncio
-    async def test_normal_3_6(self, async_client, async_db):
+    async def test_normal_3_6(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -728,7 +777,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_to_address_1
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
@@ -744,7 +793,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address_2
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -798,7 +847,9 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_7_1>
     # filter: amount (EQUAL)
     @pytest.mark.asyncio
-    async def test_normal_3_7_1(self, async_client, async_db):
+    async def test_normal_3_7_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -875,7 +926,9 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_7_2>
     # filter: amount (GTE)
     @pytest.mark.asyncio
-    async def test_normal_3_7_2(self, async_client, async_db):
+    async def test_normal_3_7_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -964,7 +1017,9 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_7_3>
     # filter: amount (LTE)
     @pytest.mark.asyncio
-    async def test_normal_3_7_3(self, async_client, async_db):
+    async def test_normal_3_7_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1053,7 +1108,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_8>
     # filter: source_event
     @pytest.mark.asyncio
-    async def test_normal_3_8(self, async_client, async_db):
+    async def test_normal_3_8(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1130,7 +1185,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_9>
     # filter: data
     @pytest.mark.asyncio
-    async def test_normal_3_9(self, async_client, async_db):
+    async def test_normal_3_9(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1206,7 +1261,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_3_10>
     # filter: message
     @pytest.mark.asyncio
-    async def test_normal_3_10(self, async_client, async_db):
+    async def test_normal_3_10(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1284,7 +1339,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_4_1>
     # sort: block_timestamp ASC
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db):
+    async def test_normal_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1367,7 +1422,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_4_2>
     # sort: from_address ASC
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db):
+    async def test_normal_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1471,7 +1526,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_4_3>
     # sort: to_address DESC
     @pytest.mark.asyncio
-    async def test_normal_4_3(self, async_client, async_db):
+    async def test_normal_4_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1575,7 +1630,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_4_4>
     # sort: from_address_name DESC
     @pytest.mark.asyncio
-    async def test_normal_4_4(self, async_client, async_db):
+    async def test_normal_4_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1613,7 +1668,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address_1
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
@@ -1629,7 +1684,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_from_address_2
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "テスト太郎2",
             "postal_code": "postal_code_test2",
@@ -1707,7 +1762,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_4_5>
     # sort: to_address_name DESC
     @pytest.mark.asyncio
-    async def test_normal_4_5(self, async_client, async_db):
+    async def test_normal_4_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1745,7 +1800,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_to_address_1
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "テスト太郎1",
             "postal_code": "postal_code_test1",
@@ -1761,7 +1816,7 @@ class TestAppRoutersBondTransfersGET:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address_2
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "テスト太郎2",
             "postal_code": "postal_code_test2",
@@ -1839,7 +1894,7 @@ class TestAppRoutersBondTransfersGET:
     # <Normal_4_6>
     # sort: amount DESC
     @pytest.mark.asyncio
-    async def test_normal_4_6(self, async_client, async_db):
+    async def test_normal_4_6(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1947,7 +2002,7 @@ class TestAppRoutersBondTransfersGET:
     # <Error_1>
     # token not found
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(self.base_url.format(self.test_token_address))
 
@@ -1962,7 +2017,7 @@ class TestAppRoutersBondTransfersGET:
     # <Error_2>
     # processing token
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1970,7 +2025,7 @@ class TestAppRoutersBondTransfersGET:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -1989,7 +2044,7 @@ class TestAppRoutersBondTransfersGET:
     # <Error_3>
     # param error: sort_item
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address),
@@ -2016,7 +2071,7 @@ class TestAppRoutersBondTransfersGET:
     # <Error_4>
     # param error: sort_order(min)
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": -1}
@@ -2041,7 +2096,7 @@ class TestAppRoutersBondTransfersGET:
     # <Error_5>
     # param error: sort_order(max)
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": 2}

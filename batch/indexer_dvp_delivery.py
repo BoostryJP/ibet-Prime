@@ -24,15 +24,17 @@ import sys
 import uuid
 from datetime import UTC, datetime
 from json import JSONDecodeError
-from typing import Annotated, Literal, Optional, Sequence
+from typing import Any, Literal, Optional, Sequence, TypedDict
 
 import uvloop
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
+from eth_utils.address import to_checksum_address
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import AsyncContract
+from web3.types import BlockData
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -71,6 +73,22 @@ LOG = batch_log.get_logger(process_name=process_name)
 web3 = AsyncWeb3Wrapper()
 
 
+type DeliveryNotificationCode = Literal[0, 1]
+
+
+class DeliveryNotificationEvent(TypedDict):
+    exchange_address: str
+    delivery_id: int
+    issuer_address: str
+    token_address: str
+    token_type: str
+    buyer_address: str
+    seller_address: str
+    amount: int
+    agent_address: str
+    code: DeliveryNotificationCode
+
+
 """
 Batch process for indexing security token dvp delivery events
 
@@ -87,7 +105,7 @@ class Processor:
     def __init__(self):
         self.token_list: list[str] = []
         self.exchange_list: list[AsyncContract] = []
-        self.notification_events: list[dict] = []
+        self.notification_events: list[DeliveryNotificationEvent] = []
 
     async def sync_new_logs(self):
         db_session = BatchAsyncSessionLocal()
@@ -189,21 +207,21 @@ class Processor:
             )
         ).all()
 
-        _exchange_list_tmp = []
+        _exchange_list_tmp: list[str] = []
         for load_required_token in load_required_token_list:
-            self.token_list.append(load_required_token.token_address)
-            token_contract = web3.eth.contract(
-                address=load_required_token.token_address, abi=load_required_token.abi
-            )
+            token_address = load_required_token.token_address
+            self.token_list.append(token_address)
+            checksum_token_address = to_checksum_address(token_address)
             tradable_exchange_address = ZERO_ADDRESS
-            if load_required_token.type == TokenType.IBET_STRAIGHT_BOND.value:
-                bond_token = IbetStraightBondContract(token_contract.address)
+
+            if load_required_token.type == TokenType.IBET_STRAIGHT_BOND:
+                bond_token = IbetStraightBondContract(checksum_token_address)
                 await bond_token.get()
                 tradable_exchange_address = (
                     bond_token.tradable_exchange_contract_address
                 )
-            elif load_required_token.type == TokenType.IBET_SHARE.value:
-                share_token = IbetShareContract(token_contract.address)
+            elif load_required_token.type == TokenType.IBET_SHARE:
+                share_token = IbetShareContract(checksum_token_address)
                 await share_token.get()
                 tradable_exchange_address = (
                     share_token.tradable_exchange_contract_address
@@ -326,18 +344,20 @@ class Processor:
 
                 _data: str = raw_data
                 if DVP_DATA_ENCRYPTION_MODE == "aes-256-cbc":
+                    encrypted_data_value = raw_data_json.get("data")
                     if (
                         raw_data_json.get("encryption_algorithm") == "aes-256-cbc"
                         and raw_data_json.get("encryption_key_ref") == "local"
-                        and raw_data_json.get("data") is not None
+                        and isinstance(encrypted_data_value, str)
+                        and DVP_DATA_ENCRYPTION_KEY is not None
                     ):
                         try:
-                            encrypted_data = base64.b64decode(raw_data_json.get("data"))
+                            encrypted_data = base64.b64decode(encrypted_data_value)
                             aes_iv = encrypted_data[: AES.block_size]
                             aes_encryption_key = base64.b64decode(
                                 DVP_DATA_ENCRYPTION_KEY
                             )
-                            aes_cipher = AES.new(
+                            aes_cipher = AES.new(  # type: ignore
                                 aes_encryption_key, AES.MODE_CBC, aes_iv
                             )
                             pad_message = aes_cipher.decrypt(
@@ -579,9 +599,13 @@ class Processor:
             raise
 
     @staticmethod
-    async def __get_block_timestamp(event) -> int:
-        block_timestamp = (await web3.eth.get_block(event["blockNumber"]))["timestamp"]
-        return block_timestamp
+    async def __get_block_timestamp(event: dict[str, Any]) -> int:
+        block_number = event.get("blockNumber")
+        assert block_number is not None
+        block: BlockData = await web3.eth.get_block(block_number)
+        block_timestamp = block.get("timestamp")
+        assert block_timestamp is not None
+        return int(block_timestamp)
 
     @staticmethod
     async def __sink_on_delivery(
@@ -674,7 +698,7 @@ class Processor:
                 delivery.seller_address = seller_address
                 delivery.amount = amount
                 delivery.agent_address = agent_address
-                delivery.data = data
+                delivery.data = data if data is not None else ""
                 delivery.settlement_service_type = settlement_service_type
                 delivery.create_blocktimestamp = datetime.fromtimestamp(
                     block_timestamp, tz=UTC
@@ -778,8 +802,8 @@ class Processor:
     @staticmethod
     async def __get_issuer_address_token_type(
         db_session: AsyncSession, token_address: str
-    ):
-        (issuer_address, token_type) = (
+    ) -> tuple[str, TokenType]:
+        token_info = (
             (
                 await db_session.execute(
                     select(Token.issuer_address, Token.type)
@@ -790,6 +814,10 @@ class Processor:
             .tuples()
             .first()
         )
+        if token_info is None:
+            raise ValueError(f"token not found: {token_address}")
+
+        issuer_address, token_type = token_info
         return issuer_address, token_type
 
     async def __insert_notification_events(self, db_session: AsyncSession):
@@ -823,9 +851,7 @@ class Processor:
         seller_address: str,
         amount: int,
         agent_address: str,
-        code: Literal[
-            Annotated[0, "deliveryConfirmed"], Annotated[1, "deliveryFinished"]
-        ],
+        code: DeliveryNotificationCode,
     ):
         notification = Notification()
         notification.notice_id = str(uuid.uuid4())
@@ -853,8 +879,8 @@ async def main():
     while True:
         try:
             await processor.sync_new_logs()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:

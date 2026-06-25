@@ -1,13 +1,11 @@
-.PHONY: format doc test test_migrations run
+.PHONY: format lint typecheck doc test test_migrations run
 
 install:
-	uv sync --frozen --no-install-project --all-extras
+	UV_MALWARE_CHECK=1 uv sync --frozen --no-install-project --all-extras
 	uv run pre-commit install
-	npm install
 
 update:
 	uv lock --upgrade
-	npm update
 
 format:
 	uv run ruff format && uv run ruff check --fix --select I
@@ -15,8 +13,11 @@ format:
 lint:
 	uv run ruff check --fix
 
+typecheck:
+	uv run pyright --project pyrightconfig.json
+
 doc:
-	IBET_WST_FEATURE_ENABLED=1 DVP_AGENT_FEATURE_ENABLED=1 BC_EXPLORER_ENABLED=1 FREEZE_LOG_FEATURE_ENABLED=1 uv run python docs/generate_openapi_doc.py
+	IBET_WST_ETH_FEATURE_ENABLED=1 IBET_WST_AVA_FEATURE_ENABLED=1 DVP_AGENT_FEATURE_ENABLED=1 BC_EXPLORER_ENABLED=1 FREEZE_LOG_FEATURE_ENABLED=1 uv run python docs/generate_openapi_doc.py
 
 test:
 	uv run pytest tests/ ${ARG}

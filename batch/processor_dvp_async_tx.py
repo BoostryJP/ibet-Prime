@@ -23,14 +23,14 @@ from asyncio import Event
 from typing import Sequence
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import and_, asc, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.exceptions import TimeExhausted
 
 from app.database import BatchAsyncSessionLocal
-from app.exceptions import SendTransactionError
+from app.exceptions import SendTransactionError, ServiceUnavailableError
 from app.model.db import (
     Account,
     DVPAsyncProcess,
@@ -110,7 +110,7 @@ class Processor:
                 issuer_pk = await self.__get_issuers_pk(
                     db_session, record.issuer_address
                 )
-            except (AccountNotFound, KeyfileDecodingError):
+            except AccountNotFound, KeyfileDecodingError:
                 LOG.warning("[SendStepTx] Failed to get issuer's private key")
                 LOG.info(f"[SendStepTx] End: record_id={record.id}")
                 continue
@@ -122,6 +122,7 @@ class Processor:
             try:
                 if record.process_type == DVPAsyncProcessType.CREATE_DELIVERY:
                     # 0) Deposit -> 1) CreateDelivery
+                    assert record.data is not None
                     tx_hash = await dvp_contract_nw.create_delivery(
                         tx_params=CreateDeliveryParams(
                             token_address=record.token_address,
@@ -193,6 +194,7 @@ class Processor:
 
             # Wait for tx receipt
             try:
+                assert record.step_tx_hash is not None
                 tx_receipt = await AsyncContractUtils.wait_for_transaction_receipt(
                     tx_hash=record.step_tx_hash, timeout=1
                 )
@@ -210,7 +212,7 @@ class Processor:
                     issuer_pk = await self.__get_issuers_pk(
                         db_session, record.issuer_address
                     )
-                except (AccountNotFound, KeyfileDecodingError):
+                except AccountNotFound, KeyfileDecodingError:
                     LOG.warning("[SyncStepTxResult] Failed to get issuer's private key")
                     LOG.info(f"[SyncStepTxResult] End: record_id={record.id}")
                     continue
@@ -288,8 +290,9 @@ class Processor:
 
             # Wait for tx receipt
             try:
+                assert record.revert_tx_hash is not None
                 tx_receipt = await AsyncContractUtils.wait_for_transaction_receipt(
-                    tx_hash=record.step_tx_hash, timeout=1
+                    tx_hash=record.revert_tx_hash, timeout=1
                 )
             except TimeExhausted:
                 LOG.info(f"[SyncRevertTxResult] End: record_id={record.id}")
@@ -304,7 +307,7 @@ class Processor:
                     issuer_pk = await self.__get_issuers_pk(
                         db_session, record.issuer_address
                     )
-                except (AccountNotFound, KeyfileDecodingError):
+                except AccountNotFound, KeyfileDecodingError:
                     LOG.warning(
                         "[SyncRevertTxResult] Failed to get issuer's private key"
                     )
@@ -343,7 +346,7 @@ class Processor:
             LOG.info(f"[SyncRevertTxResult] End: record_id={record.id}")
 
     @staticmethod
-    async def __get_issuers_pk(db_session: AsyncSession, issuer_address):
+    async def __get_issuers_pk(db_session: AsyncSession, issuer_address: str) -> bytes:
         """Get issuer's private key"""
         issuer_account: Account | None = (
             await db_session.scalars(
@@ -358,7 +361,7 @@ class Processor:
                 raw_keyfile_json=issuer_account.keyfile,
                 password=E2EEUtils.decrypt(issuer_account.eoa_password).encode("utf-8"),
             )
-        except:
+        except Exception:
             raise KeyfileDecodingError from None
 
         return issuer_pk
@@ -383,6 +386,8 @@ async def main():
         while not is_shutdown.is_set():
             try:
                 await processor.process()
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

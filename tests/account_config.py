@@ -18,21 +18,29 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
+from typing import Any, cast
 
 import yaml
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
 import config
+from tests.types import RawUnitTestAccount, UnitTestAccount
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 # Account Address(from local config)
-def default_eth_account(name):
-    account_config = yaml.safe_load(open("tests/data/account_config.yml", "r"))
-    account_config[name]["keyfile_json"] = json.loads(
-        account_config[name]["keyfile_json"]
-    )
-    return account_config[name]
+def default_eth_account(name: str) -> UnitTestAccount:
+    with open("tests/data/account_config.yml", "r") as fp:
+        account_config = cast(dict[str, RawUnitTestAccount], yaml.safe_load(fp))
+    raw_account = account_config[name]
+    return {
+        "address": raw_account["address"],
+        "private_key": raw_account["private_key"],
+        "password": raw_account["password"],
+        "keyfile_json": cast(dict[str, Any], json.loads(raw_account["keyfile_json"])),
+        "rsa_private_key": raw_account["rsa_private_key"],
+        "rsa_public_key": raw_account["rsa_public_key"],
+    }

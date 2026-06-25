@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,9 +20,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, AccountRsaKeyTemporary, AccountRsaStatus
+from app.model.db import Account, AccountRsaKeyTemporary
 from app.utils.e2ee_utils import E2EEUtils
 from config import (
     PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE,
@@ -44,10 +48,11 @@ class TestCreateIssuerRSAKey:
     # <Normal_1>
     # RSA Create
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
 
         _account_before = Account()
+        _account_before.is_deleted = False
         _account_before.issuer_address = _user_1["address"]
         _account_before.keyfile = _user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")
@@ -73,22 +78,25 @@ class TestCreateIssuerRSAKey:
             "is_deleted": False,
         }
         _account_after = (await async_db.scalars(select(Account).limit(1))).first()
+        assert _account_after is not None
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
         assert _account_after.rsa_private_key is None
         assert _account_after.rsa_public_key is None
+        assert _account_after.rsa_passphrase is not None
         assert E2EEUtils.decrypt(_account_after.rsa_passphrase) == password
         assert _account_after.rsa_status == AccountRsaStatus.CREATING.value
 
     # <Normal_2>
     # RSA Change
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
         _user_2 = default_eth_account("user2")
 
         _account_before = Account()
+        _account_before.is_deleted = False
         _account_before.issuer_address = _user_1["address"]
         _account_before.keyfile = _user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")
@@ -133,21 +141,24 @@ class TestCreateIssuerRSAKey:
         assert _temporary.rsa_passphrase == rsa_passphrase
 
         _account_after = (await async_db.scalars(select(Account).limit(1))).first()
+        assert _account_after is not None
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
         assert _account_after.rsa_private_key == _user_1["rsa_private_key"]
         assert _account_after.rsa_public_key == _user_1["rsa_public_key"]
+        assert _account_after.rsa_passphrase is not None
         assert E2EEUtils.decrypt(_account_after.rsa_passphrase) == password
         assert _account_after.rsa_status == AccountRsaStatus.CHANGING.value
 
     # <Normal_3>
     # RSA Create(default passphrase)
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
 
         _account_before = Account()
+        _account_before.is_deleted = False
         _account_before.issuer_address = _user_1["address"]
         _account_before.keyfile = _user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")
@@ -157,7 +168,7 @@ class TestCreateIssuerRSAKey:
 
         await async_db.commit()
 
-        req_param = {}
+        req_param: dict[str, str] = {}
 
         resp = await async_client.post(
             self.base_url.format(_user_1["address"]), json=req_param
@@ -172,11 +183,13 @@ class TestCreateIssuerRSAKey:
             "is_deleted": False,
         }
         _account_after = (await async_db.scalars(select(Account).limit(1))).first()
+        assert _account_after is not None
         assert _account_after.issuer_address == _user_1["address"]
         assert _account_after.keyfile == _user_1["keyfile_json"]
         assert _account_after.eoa_password == eoa_password
         assert _account_after.rsa_private_key is None
         assert _account_after.rsa_public_key is None
+        assert _account_after.rsa_passphrase is not None
         assert (
             E2EEUtils.decrypt(_account_after.rsa_passphrase)
             == PERSONAL_INFO_RSA_DEFAULT_PASSPHRASE
@@ -190,7 +203,7 @@ class TestCreateIssuerRSAKey:
     # <Error_1>
     # Parameter Error: no body
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.post(self.base_url.format(ZERO_ADDRESS))
 
         # assertion
@@ -210,7 +223,7 @@ class TestCreateIssuerRSAKey:
     # <Error_2>
     # Parameter Error: rsa_passphrase
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
 
         req_param = {"rsa_passphrase": "test"}
@@ -238,10 +251,11 @@ class TestCreateIssuerRSAKey:
     # <Error_3>
     # Not Exists Account
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")
@@ -270,10 +284,11 @@ class TestCreateIssuerRSAKey:
     # <Error_4>
     # now Generating RSA(CREATING)
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")
@@ -298,10 +313,11 @@ class TestCreateIssuerRSAKey:
     # <Error_5>
     # now Generating RSA(CHANGING)
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")
@@ -329,10 +345,11 @@ class TestCreateIssuerRSAKey:
     # <Error_6>
     # Passphrase Policy Violation
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         _user_1 = default_eth_account("user1")
 
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = _user_1["address"]
         _account.keyfile = _user_1["keyfile_json"]
         _account.eoa_password = E2EEUtils.encrypt("password")

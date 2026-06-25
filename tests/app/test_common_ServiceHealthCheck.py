@@ -22,8 +22,10 @@ from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import EthereumNode, Node
+from app.model.db import AvalancheNode, EthereumNode, Node
 
 
 class TestServiceHealthCheck:
@@ -36,7 +38,7 @@ class TestServiceHealthCheck:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _node = Node()
         _node.endpoint_uri = "http://test1"
         _node.priority = 0
@@ -56,6 +58,18 @@ class TestServiceHealthCheck:
         async_db.add(_node)
 
         _node = EthereumNode()
+        _node.endpoint_uri = "http://test2"
+        _node.priority = 1
+        _node.is_synced = True
+        async_db.add(_node)
+
+        _node = AvalancheNode()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = False
+        async_db.add(_node)
+
+        _node = AvalancheNode()
         _node.endpoint_uri = "http://test2"
         _node.priority = 1
         _node.is_synced = True
@@ -90,7 +104,7 @@ class TestServiceHealthCheck:
         "app.utils.e2ee_utils.E2EE_RSA_RESOURCE", "tests/data/account_config.yml"
     )
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _node = Node()
         _node.endpoint_uri = "http://test1"
         _node.priority = 0
@@ -110,6 +124,18 @@ class TestServiceHealthCheck:
         async_db.add(_node)
 
         _node = EthereumNode()
+        _node.endpoint_uri = "http://test2"
+        _node.priority = 1
+        _node.is_synced = False
+        async_db.add(_node)
+
+        _node = AvalancheNode()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = False
+        async_db.add(_node)
+
+        _node = AvalancheNode()
         _node.endpoint_uri = "http://test2"
         _node.priority = 1
         _node.is_synced = False
@@ -127,14 +153,41 @@ class TestServiceHealthCheck:
             "detail": [
                 "ibet node is down",
                 "ethereum node is down",
+                "avalanche node is down",
                 "Setting E2EE key is invalid",
             ],
         }
 
+    # <Normal_2>
+    # ETH feature disabled -> ethereum node check is skipped
+    @mock.patch("app.routers.common.common.IBET_WST_ETH_FEATURE_ENABLED", False)
+    @mock.patch("app.routers.common.common.IBET_WST_AVA_FEATURE_ENABLED", True)
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
+        _node = Node()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = True
+        async_db.add(_node)
+
+        _node = AvalancheNode()
+        _node.endpoint_uri = "http://test1"
+        _node.priority = 0
+        _node.is_synced = True
+        async_db.add(_node)
+
+        # Do not add EthereumNode on purpose
+        await async_db.commit()
+
+        resp = await async_client.get(self.apiurl)
+
+        assert resp.status_code == 200
+        assert resp.json() is None
+
     # <Error_2>
     # DB connect error
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         with mock.patch(
             "sqlalchemy.ext.asyncio.AsyncSession.connection",

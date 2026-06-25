@@ -22,8 +22,11 @@ import uuid
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTAuthorization,
     IbetWSTEventLogTradeRequested,
@@ -65,7 +68,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_1>
     # Return empty list when no transactions found for the specified address
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -103,6 +106,7 @@ class TestListIbetWSTTransactions:
             self.api_url,
             params={
                 "ibet_wst_address": self.wst_token_address_1,
+                "blockchain_platform": "ethereum",
             },
         )
 
@@ -118,9 +122,12 @@ class TestListIbetWSTTransactions:
             "transactions": [],
         }
 
-    # <Normal_2_1>
+    # <Normal_2_1_1>
     # Return transactions for the specified address
-    async def test_normal_2_1(self, async_db, async_client):
+    # - blockchain_platform = "ethereum" (default)
+    async def test_normal_2_1_1(
+        self, async_db: AsyncSession, async_client: AsyncClient
+    ):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -230,10 +237,59 @@ class TestListIbetWSTTransactions:
             ],
         }
 
+    # <Normal_2_1_2>
+    # Return transactions for the specified address
+    # - blockchain_platform = "avalanche"
+    async def test_normal_2_1_2(
+        self, async_db: AsyncSession, async_client: AsyncClient
+    ):
+        tx_id_1 = str(uuid.uuid4())
+        tx_1 = AvaIbetWSTTx()
+        tx_1.tx_id = tx_id_1
+        tx_1.tx_type = IbetWSTTxType.TRANSFER
+        tx_1.version = IbetWSTVersion.V_1
+        tx_1.status = IbetWSTTxStatus.SUCCEEDED
+        tx_1.ibet_wst_address = self.wst_token_address_1
+        tx_1.tx_params = IbetWSTTxParamsTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+            valid_after=1,
+            valid_before=2**64 - 1,
+        )
+        tx_1.tx_sender = self.tx_sender["address"]
+        tx_1.authorizer = self.authorizer_1["address"]
+        tx_1.authorization = self.dummy_authorization
+        tx_1.tx_hash = (
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        )
+        tx_1.block_number = 12345678
+        tx_1.finalized = True
+        tx_1.event_log = IbetWSTEventLogTransfer(
+            from_address=self.user1["address"],
+            to_address=self.user2["address"],
+            value=1000,
+        )
+        tx_1.created = datetime.datetime(2025, 1, 2, 3, 4, 5, tzinfo=None)
+        async_db.add(tx_1)
+        await async_db.commit()
+
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "ibet_wst_address": self.wst_token_address_1,
+                "blockchain_platform": "avalanche",
+            },
+        )
+
+        assert resp.status_code == 200
+        assert resp.json()["result_set"]["count"] == 1
+        assert resp.json()["transactions"][0]["tx_id"] == tx_id_1
+
     # <Normal_2_2>
     # Return transactions for the specified address
     # - For trade-related transactions, display_sc_value is set based on sc_value and sc_decimals
-    async def test_normal_2_2(self, async_db, async_client):
+    async def test_normal_2_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -326,7 +382,7 @@ class TestListIbetWSTTransactions:
     # <Normal_2_3>
     # Return transactions for the specified address
     # - For trade-related transactions, handle large sc_value correctly (greater than 2^63-1)
-    async def test_normal_2_3(self, async_db, async_client):
+    async def test_normal_2_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -370,7 +426,7 @@ class TestListIbetWSTTransactions:
         await async_db.commit()
 
         # Send request
-        with mock.patch("app.utils.fastapi_utils.RESPONSE_VALIDATION_MODE", False):
+        with mock.patch("app.main.RESPONSE_VALIDATION_MODE", False):
             resp = await async_client.get(
                 self.api_url,
                 params={
@@ -387,7 +443,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_1>
     # Filter by tx_id
-    async def test_normal_3_1(self, async_db, async_client):
+    async def test_normal_3_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -486,7 +542,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_2>
     # Filter by tx_type
-    async def test_normal_3_2(self, async_db, async_client):
+    async def test_normal_3_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -585,7 +641,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_3>
     # Filter by tx_hash
-    async def test_normal_3_3(self, async_db, async_client):
+    async def test_normal_3_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -684,7 +740,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_4>
     # Filter by authorizer
-    async def test_normal_3_4(self, async_db, async_client):
+    async def test_normal_3_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -783,7 +839,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_5>
     # Filter by finalized status
-    async def test_normal_3_5(self, async_db, async_client):
+    async def test_normal_3_5(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -879,7 +935,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_6>
     # Filter by created date range
-    async def test_normal_3_6(self, async_db, async_client):
+    async def test_normal_3_6(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -1012,7 +1068,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_3_7>
     # Filter by status
-    async def test_normal_3_7(self, async_db, async_client):
+    async def test_normal_3_7(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -1118,7 +1174,7 @@ class TestListIbetWSTTransactions:
 
     # <Normal_4>
     # Return transactions with pagination
-    async def test_normal_4(self, async_db, async_client):
+    async def test_normal_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data
         tx_id_1 = str(uuid.uuid4())
         tx_1 = EthIbetWSTTx()
@@ -1222,7 +1278,7 @@ class TestListIbetWSTTransactions:
 
     # <Error_1>
     # Return error when required query parameter is missing
-    async def test_error_1(self, async_db, async_client):
+    async def test_error_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request with pagination
         resp = await async_client.get(self.api_url, params={})
 
@@ -1235,14 +1291,14 @@ class TestListIbetWSTTransactions:
                     "type": "missing",
                     "loc": ["query", "ibet_wst_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 }
             ],
         }
 
     # <Error_2>
     # Return error when query parameters are invalid
-    async def test_error_2(self, async_db, async_client):
+    async def test_error_2(self, async_db: AsyncSession, async_client: AsyncClient):
         # Send request with pagination
         resp = await async_client.get(
             self.api_url,

@@ -18,9 +18,11 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import IDXEthIbetWSTWhitelist
+from app.model.db import IDXAvaIbetWSTWhitelist, IDXEthIbetWSTWhitelist
 from tests.account_config import default_eth_account
 
 
@@ -41,7 +43,7 @@ class TestRetrieveIbetWSTWhitelistAccounts:
 
     # <Normal_1>
     # Whitelist account is not registered for the specified WST token address.
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         whitelist = IDXEthIbetWSTWhitelist(
             ibet_wst_address=to_checksum_address(
@@ -65,9 +67,10 @@ class TestRetrieveIbetWSTWhitelistAccounts:
             "whitelist_accounts": [],
         }
 
-    # <Normal_2>
+    # <Normal_2_1>
     # Whitelist accounts are registered for the specified WST token address.
-    async def test_normal_2(self, async_db, async_client):
+    # - blockchain_platform = "ethereum" (default)
+    async def test_normal_2_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         whitelist_1 = IDXEthIbetWSTWhitelist(
             ibet_wst_address=to_checksum_address(self.wst_token_address_1),
@@ -107,13 +110,57 @@ class TestRetrieveIbetWSTWhitelistAccounts:
             ],
         }
 
+    # <Normal_2_2>
+    # Whitelist accounts are registered for the specified WST token address.
+    # - blockchain_platform = "avalanche"
+    async def test_normal_2_2(self, async_db: AsyncSession, async_client: AsyncClient):
+        # Prepare test data
+        whitelist_1 = IDXAvaIbetWSTWhitelist(
+            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+            st_account_address=self.user1["address"],
+            sc_account_address_in=self.user1["address"],
+            sc_account_address_out=self.user1["address"],
+        )
+        whitelist_2 = IDXAvaIbetWSTWhitelist(
+            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+            st_account_address=self.user2["address"],
+            sc_account_address_in=self.user2["address"],
+            sc_account_address_out=self.user2["address"],
+        )
+        async_db.add(whitelist_1)
+        async_db.add(whitelist_2)
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url.format(ibet_wst_address=self.wst_token_address_1),
+            params={"blockchain_platform": "avalanche"},
+        )
+
+        # Check response
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "whitelist_accounts": [
+                {
+                    "st_account_address": self.user2["address"],
+                    "sc_account_address_in": self.user2["address"],
+                    "sc_account_address_out": self.user2["address"],
+                },
+                {
+                    "st_account_address": self.user1["address"],
+                    "sc_account_address_in": self.user1["address"],
+                    "sc_account_address_out": self.user1["address"],
+                },
+            ],
+        }
+
     ###########################################################################
     # Error
     ###########################################################################
 
     # <Error_1>
     # Invalid WST token address format.
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request with invalid WST token address format
         resp = await async_client.get(
             self.api_url.format(ibet_wst_address="invalid_address"),

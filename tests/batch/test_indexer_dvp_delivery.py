@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,15 +20,19 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import logging
+from collections.abc import Generator
 from datetime import UTC, datetime
+from typing import Any, cast
 from unittest import mock
 from unittest.mock import patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
+from web3.types import TxParams, TxReceipt
 
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
@@ -39,6 +45,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -71,7 +78,9 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> Generator[Processor, None, None]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -82,12 +91,12 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -118,12 +127,12 @@ async def deploy_bond_token_contract(
 
 
 async def deploy_share_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -151,6 +160,42 @@ async def deploy_share_token_contract(
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
+def _build_tx_params(from_address: str) -> TxParams:
+    return cast(
+        TxParams,
+        {
+            "chainId": CHAIN_ID,
+            "from": from_address,
+            "gas": TX_GAS_LIMIT,
+            "gasPrice": 0,
+        },
+    )
+
+
+def _build_contract_transaction(
+    contract: Contract,
+    function_name: str,
+    args: tuple[Any, ...],
+    from_address: str,
+) -> TxParams:
+    contract_functions = contract.functions
+    contract_function = getattr(contract_functions, function_name)
+    return contract_function(*args).build_transaction(_build_tx_params(from_address))
+
+
+def _get_block_number(tx_receipt: TxReceipt) -> int:
+    block_number = tx_receipt.get("blockNumber")
+    assert block_number is not None
+    return block_number
+
+
+async def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:
+    block = await web3.eth.get_block(_get_block_number(tx_receipt))
+    timestamp = block.get("timestamp")
+    assert timestamp is not None
+    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
+
+
 class TestProcessor:
     ###########################################################################
     # Normal Case
@@ -162,10 +207,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_1_1(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -173,6 +218,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = user_1["rsa_private_key"]
         account.rsa_public_key = user_1["rsa_public_key"]
@@ -187,7 +235,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = {}
         token_1.tx_hash = "tx_hash"
-        token_1.token_status = 0
+        token_1.token_status = TokenStatus.PENDING
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
@@ -212,9 +260,9 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_1_2(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -225,6 +273,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = user_1["rsa_private_key"]
         account.rsa_public_key = user_1["rsa_public_key"]
@@ -256,7 +307,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -281,10 +332,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_1_3(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -295,6 +346,9 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.rsa_private_key = user_1["rsa_private_key"]
         account.rsa_public_key = user_1["rsa_public_key"]
@@ -326,7 +380,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -344,6 +398,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert _idx_delivery_block_number.latest_block_number == block_number
         assert (
             _idx_delivery_block_number.exchange_address
@@ -368,10 +423,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_1_1(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -392,6 +447,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -421,7 +478,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -479,10 +536,9 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
@@ -499,6 +555,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -531,10 +588,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_1_2(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -555,6 +612,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -584,7 +643,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -646,10 +705,9 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "test_message"
         assert _delivery.settlement_service_type == "test_service"
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
@@ -666,6 +724,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -698,10 +757,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_1_3(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -722,6 +781,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -730,7 +791,7 @@ class TestProcessor:
         # Prepare data : DVPAgentAccount
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = agent_address
-        dvp_agent_account.keyfile = "test_keyfile_0"
+        dvp_agent_account.keyfile = "test_keyfile_0"  # type: ignore
         dvp_agent_account.eoa_password = "test_password_0"
         dvp_agent_account.dedicated_agent_id = "test_agent_id_0"
         async_db.add(dvp_agent_account)
@@ -759,7 +820,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -832,10 +893,9 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "test_message"
         assert _delivery.settlement_service_type == "test_service"
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
@@ -853,6 +913,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -876,10 +937,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_2_1(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -896,6 +957,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -925,7 +988,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -996,15 +1059,13 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
-        block = await web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _delivery.cancel_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.cancel_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_2
+        )
         assert _delivery.cancel_transaction_hash == tx_hash_2
         assert _delivery.confirm_blocktimestamp is None
         assert _delivery.confirm_transaction_hash is None
@@ -1019,6 +1080,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -1066,10 +1128,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_2_2(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -1087,6 +1149,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1116,7 +1180,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -1131,41 +1195,29 @@ class TestProcessor:
         await async_db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            token_contract_1,
+            "transferFrom",
+            (issuer_address, ibet_security_token_dvp_contract.address, 40),
+            issuer_address,
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # CreateDelivery
-        tx = ibet_security_token_dvp_contract.functions.createDelivery(
-            token_address_1, user_address_1, 30, agent_address, "." * 1000
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "createDelivery",
+            (token_address_1, user_address_1, 30, agent_address, "." * 1000),
+            issuer_address,
         )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # CancelDelivery
-        tx = ibet_security_token_dvp_contract.functions.cancelDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": user_address_1,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "cancelDelivery",
+            (1,),
+            user_address_1,
         )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
@@ -1187,15 +1239,13 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
-        block = await web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _delivery.cancel_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.cancel_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_2
+        )
         assert _delivery.cancel_transaction_hash == tx_hash_2
         assert _delivery.confirm_blocktimestamp is None
         assert _delivery.confirm_transaction_hash is None
@@ -1210,6 +1260,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -1258,10 +1309,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_3(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -1279,6 +1330,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1308,7 +1361,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -1323,41 +1376,29 @@ class TestProcessor:
         await async_db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            token_contract_1,
+            "transferFrom",
+            (issuer_address, ibet_security_token_dvp_contract.address, 40),
+            issuer_address,
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # CreateDelivery
-        tx = ibet_security_token_dvp_contract.functions.createDelivery(
-            token_address_1, user_address_1, 30, agent_address, "." * 1000
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "createDelivery",
+            (token_address_1, user_address_1, 30, agent_address, "." * 1000),
+            issuer_address,
         )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # ConfirmDelivery
-        tx = ibet_security_token_dvp_contract.functions.confirmDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": user_address_1,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "confirmDelivery",
+            (1,),
+            user_address_1,
         )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
@@ -1379,17 +1420,15 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
-        block = await web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _delivery.confirm_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.confirm_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_2
+        )
         assert _delivery.confirm_transaction_hash == tx_hash_2
         assert _delivery.finish_blocktimestamp is None
         assert _delivery.finish_transaction_hash is None
@@ -1402,6 +1441,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -1446,10 +1486,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_4_1(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -1470,6 +1510,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1499,7 +1541,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -1514,54 +1556,38 @@ class TestProcessor:
         await async_db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            token_contract_1,
+            "transferFrom",
+            (issuer_address, ibet_security_token_dvp_contract.address, 40),
+            issuer_address,
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # CreateDelivery
-        tx = ibet_security_token_dvp_contract.functions.createDelivery(
-            token_address_1, user_address_1, 30, agent_address, "." * 1000
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "createDelivery",
+            (token_address_1, user_address_1, 30, agent_address, "." * 1000),
+            issuer_address,
         )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # ConfirmDelivery
-        tx = ibet_security_token_dvp_contract.functions.confirmDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": user_address_1,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "confirmDelivery",
+            (1,),
+            user_address_1,
         )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # FinishDelivery
-        tx = ibet_security_token_dvp_contract.functions.finishDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": agent_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "finishDelivery",
+            (1,),
+            agent_address,
         )
         tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, agent_private_key)
 
@@ -1583,22 +1609,19 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
-        block = await web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _delivery.confirm_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.confirm_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_2
+        )
         assert _delivery.confirm_transaction_hash == tx_hash_2
-        block = await web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _delivery.finish_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.finish_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_3
+        )
         assert _delivery.finish_transaction_hash == tx_hash_3
         assert _delivery.abort_blocktimestamp is None
         assert _delivery.abort_transaction_hash is None
@@ -1609,6 +1632,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -1670,10 +1694,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_4_2(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -1694,12 +1718,16 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
         async_db.add(account)
 
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = user_address_1
         account.keyfile = user_2["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1729,7 +1757,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -1744,54 +1772,38 @@ class TestProcessor:
         await async_db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            token_contract_1,
+            "transferFrom",
+            (issuer_address, ibet_security_token_dvp_contract.address, 40),
+            issuer_address,
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # CreateDelivery
-        tx = ibet_security_token_dvp_contract.functions.createDelivery(
-            token_address_1, user_address_1, 30, agent_address, "." * 1000
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "createDelivery",
+            (token_address_1, user_address_1, 30, agent_address, "." * 1000),
+            issuer_address,
         )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # ConfirmDelivery
-        tx = ibet_security_token_dvp_contract.functions.confirmDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": user_address_1,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "confirmDelivery",
+            (1,),
+            user_address_1,
         )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # FinishDelivery
-        tx = ibet_security_token_dvp_contract.functions.finishDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": agent_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "finishDelivery",
+            (1,),
+            agent_address,
         )
         tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, agent_private_key)
 
@@ -1813,22 +1825,19 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
-        block = await web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _delivery.confirm_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.confirm_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_2
+        )
         assert _delivery.confirm_transaction_hash == tx_hash_2
-        block = await web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _delivery.finish_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.finish_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_3
+        )
         assert _delivery.finish_transaction_hash == tx_hash_3
         assert _delivery.abort_blocktimestamp is None
         assert _delivery.abort_transaction_hash is None
@@ -1839,6 +1848,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -1919,10 +1929,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_2_5(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -1943,6 +1953,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1972,7 +1984,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -1987,54 +1999,38 @@ class TestProcessor:
         await async_db.commit()
 
         # Transfer
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            token_contract_1,
+            "transferFrom",
+            (issuer_address, ibet_security_token_dvp_contract.address, 40),
+            issuer_address,
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # CreateDelivery
-        tx = ibet_security_token_dvp_contract.functions.createDelivery(
-            token_address_1, user_address_1, 30, agent_address, "." * 1000
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "createDelivery",
+            (token_address_1, user_address_1, 30, agent_address, "." * 1000),
+            issuer_address,
         )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # ConfirmDelivery
-        tx = ibet_security_token_dvp_contract.functions.confirmDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": user_address_1,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "confirmDelivery",
+            (1,),
+            user_address_1,
         )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # AbortDelivery
-        tx = ibet_security_token_dvp_contract.functions.abortDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": agent_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "abortDelivery",
+            (1,),
+            agent_address,
         )
         tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, agent_private_key)
 
@@ -2046,7 +2042,7 @@ class TestProcessor:
         # Assertion
         _delivery_list = (await async_db.scalars(select(IDXDelivery))).all()
         assert len(_delivery_list) == 1
-        _delivery = _delivery_list[0]
+        _delivery: IDXDelivery = _delivery_list[0]
         assert _delivery.id == 1
         assert _delivery.exchange_address == ibet_security_token_dvp_contract.address
         assert _delivery.token_address == token_address_1
@@ -2056,24 +2052,21 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
-        block = await web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _delivery.confirm_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.confirm_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_2
+        )
         assert _delivery.confirm_transaction_hash == tx_hash_2
         assert _delivery.finish_blocktimestamp is None
         assert _delivery.finish_transaction_hash is None
-        block = await web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _delivery.abort_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.abort_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_3
+        )
         assert _delivery.abort_transaction_hash == tx_hash_3
         assert _delivery.confirmed is True
         assert _delivery.valid is False
@@ -2082,6 +2075,7 @@ class TestProcessor:
         _idx_delivery_block_number = (
             await async_db.scalars(select(IDXDeliveryBlockNumber).limit(1))
         ).first()
+        assert _idx_delivery_block_number is not None
         assert (
             _idx_delivery_block_number.exchange_address
             == ibet_security_token_dvp_contract.address
@@ -2128,11 +2122,11 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_normal_3(
         self,
-        processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
-        ibet_security_token_dvp_contract,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -2153,6 +2147,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -2203,54 +2199,38 @@ class TestProcessor:
         await async_db.commit()
 
         # Transfer
-        tx = token_contract_2.functions.transferFrom(
-            issuer_address, ibet_security_token_dvp_contract.address, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            token_contract_2,
+            "transferFrom",
+            (issuer_address, ibet_security_token_dvp_contract.address, 40),
+            issuer_address,
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
 
         # CreateDelivery
-        tx = ibet_security_token_dvp_contract.functions.createDelivery(
-            token_address_2, user_address_1, 30, agent_address, "." * 1000
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "createDelivery",
+            (token_address_2, user_address_1, 30, agent_address, "." * 1000),
+            issuer_address,
         )
         tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # ConfirmDelivery
-        tx = ibet_security_token_dvp_contract.functions.confirmDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": user_address_1,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "confirmDelivery",
+            (1,),
+            user_address_1,
         )
         tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, user_private_key_1)
 
         # FinishDelivery
-        tx = ibet_security_token_dvp_contract.functions.abortDelivery(
-            1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": agent_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx = _build_contract_transaction(
+            ibet_security_token_dvp_contract,
+            "abortDelivery",
+            (1,),
+            agent_address,
         )
         tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, agent_private_key)
 
@@ -2272,24 +2252,21 @@ class TestProcessor:
         assert _delivery.agent_address == agent_address
         assert _delivery.data == "." * 1000
         assert _delivery.settlement_service_type is None
-        block = await web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _delivery.create_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.create_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_1
+        )
         assert _delivery.create_transaction_hash == tx_hash_1
         assert _delivery.cancel_blocktimestamp is None
         assert _delivery.cancel_transaction_hash is None
-        block = await web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _delivery.confirm_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.confirm_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_2
+        )
         assert _delivery.confirm_transaction_hash == tx_hash_2
         assert _delivery.finish_blocktimestamp is None
         assert _delivery.finish_transaction_hash is None
-        block = await web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _delivery.abort_blocktimestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _delivery.abort_blocktimestamp == await _get_block_timestamp(
+            tx_receipt_3
+        )
         assert _delivery.abort_transaction_hash == tx_hash_3
         assert _delivery.confirmed is True
         assert _delivery.valid is False
@@ -2303,6 +2280,7 @@ class TestProcessor:
                 )
             )
         ).first()
+        assert _idx_delivery_block_number is not None
         assert _idx_delivery_block_number.latest_block_number == block_number
 
         _idx_delivery_block_number = (
@@ -2313,6 +2291,7 @@ class TestProcessor:
                 )
             )
         ).first()
+        assert _idx_delivery_block_number is not None
         assert _idx_delivery_block_number.latest_block_number == block_number
 
         _notifications = (
@@ -2364,9 +2343,9 @@ class TestProcessor:
     async def test_normal_4(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -2377,6 +2356,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -2406,7 +2387,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -2431,10 +2412,10 @@ class TestProcessor:
     async def test_normal_6(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_dvp_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -2444,6 +2425,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -2514,9 +2497,9 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(
         self,
-        main_func,
-        async_db,
-        ibet_personal_info_contract,
+        main_func,  # type: ignore
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -2527,6 +2510,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -2552,15 +2537,16 @@ class TestProcessor:
         with (
             patch("batch.indexer_dvp_delivery.INDEXER_SYNC_INTERVAL", None),
             patch.object(
-                AsyncWeb3Wrapper().eth,
-                "contract",
+                IbetStraightBondContract,
+                "get",
                 side_effect=ServiceUnavailableError(),
             ),
             pytest.raises(TypeError),
         ):
             await main_func()
+
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.WARNING, "An external service was unavailable")
+            (LOG.name, logging.ERROR, "All blockchain nodes are unavailable: ")
         )
         caplog.clear()
 

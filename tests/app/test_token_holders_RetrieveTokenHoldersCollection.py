@@ -21,6 +21,8 @@ import uuid
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -32,6 +34,7 @@ from app.model.db import (
     TokenHolder,
     TokenHolderBatchStatus,
     TokenHoldersList,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -52,7 +55,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_1
     # Holders in response is empty.
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -96,7 +99,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_2
     # Holders in response is filled.
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -121,7 +124,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -151,7 +154,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             self.base_url.format(token_address=token_address, list_id=list_id),
             headers={"issuer-address": issuer_address},
         )
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -164,7 +167,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_1_1
     # Search filter: hold balance & "="
     @pytest.mark.asyncio
-    async def test_normal_3_1_1(self, async_client, async_db):
+    async def test_normal_3_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -189,7 +194,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -200,7 +205,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -230,7 +235,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[0]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -243,7 +248,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_1_2
     # Search filter: hold balance & ">="
     @pytest.mark.asyncio
-    async def test_normal_3_1_2(self, async_client, async_db):
+    async def test_normal_3_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -268,7 +275,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -279,7 +286,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -309,7 +316,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[1], holders[2]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -322,7 +329,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_1_3
     # Search filter: hold balance & "<="
     @pytest.mark.asyncio
-    async def test_normal_3_1_3(self, async_client, async_db):
+    async def test_normal_3_1_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -347,7 +356,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -358,7 +367,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -388,7 +397,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[0]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -401,7 +410,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_2_1
     # Search filter: locked balance & "="
     @pytest.mark.asyncio
-    async def test_normal_3_2_1(self, async_client, async_db):
+    async def test_normal_3_2_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -426,7 +437,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -437,7 +448,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -467,7 +478,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[0]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -480,7 +491,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_2_2
     # Search filter: locked balance & ">="
     @pytest.mark.asyncio
-    async def test_normal_3_2_2(self, async_client, async_db):
+    async def test_normal_3_2_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -505,7 +518,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -516,7 +529,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -546,7 +559,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[1], holders[2]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -559,7 +572,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_2_3
     # Search filter: locked balance & "<="
     @pytest.mark.asyncio
-    async def test_normal_3_2_3(self, async_client, async_db):
+    async def test_normal_3_2_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -584,7 +599,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -595,7 +610,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -625,7 +640,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[0]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -638,7 +653,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_3
     # Search filter: key_manager
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -663,7 +678,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -674,7 +689,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -703,7 +718,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[0]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -716,7 +731,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_4
     # Search filter: tax_category
     @pytest.mark.asyncio
-    async def test_normal_3_4(self, async_client, async_db):
+    async def test_normal_3_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -741,7 +756,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -752,7 +767,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -779,7 +794,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             params={"tax_category": 1},
         )
         holders = [holders[0]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -792,7 +807,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_3_5
     # Search filter: account_address
     @pytest.mark.asyncio
-    async def test_normal_3_5(self, async_client, async_db):
+    async def test_normal_3_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -817,7 +832,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -828,7 +843,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -857,7 +872,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             },
         )
         holders = [holders[0]]
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -880,7 +895,9 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         ],
     )
     @pytest.mark.asyncio
-    async def test_normal_4(self, sort_item, async_client, async_db):
+    async def test_normal_4(
+        self, sort_item: str, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -905,7 +922,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -916,7 +933,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             _personal_info = IDXPersonalInfo()
             _personal_info.issuer_address = issuer_address
             _personal_info.account_address = default_eth_account(user)["address"]
-            _personal_info._personal_info = {
+            _personal_info.personal_info = {
                 "key_manager": f"key_manager_{str(i + 1)}",
                 "name": f"name_{str(i + 1)}",
                 "postal_code": f"{str(i + 1)}",
@@ -942,7 +959,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             headers={"issuer-address": issuer_address},
             params={"sort_item": sort_item},
         )
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -955,7 +972,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Normal_5
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -980,7 +997,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         async_db.add(_token_holders_list)
         await async_db.commit()
 
-        holders = []
+        holders: list[dict[str, object]] = []
         for i, user in enumerate(["user2", "user3", "user4"]):
             _token_holder = TokenHolder()
             _token_holder.holder_list_id = _token_holders_list.id
@@ -1011,7 +1028,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             headers={"issuer-address": issuer_address},
             params={"offset": 1, "limit": 1},
         )
-        sorted_holders = sorted(holders, key=lambda x: x["account_address"])
+        sorted_holders = sorted(holders, key=lambda x: str(x["account_address"]))
 
         # assertion
         assert resp.status_code == 200
@@ -1029,7 +1046,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # 404: Not Found Error
     # Invalid contract address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # issue token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -1053,7 +1070,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # 400: Invalid Parameter Error
     # Token is pending
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # issue token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -1066,7 +1083,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         # set status pending
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.abi = {}
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
@@ -1098,7 +1115,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # 400: Invalid Parameter Error
     # Invalid list_id
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # issue token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -1141,7 +1158,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # 404: Not Found Error
     # There is no holder list record with given list_id.
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # issue token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -1178,7 +1195,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # 400: Invalid Parameter Error
     # Invalid contract address and list id combi.
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # issue token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -1232,7 +1249,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # Issuer-address in request header is not set.
     @mock.patch("web3.eth.Eth.block_number", 100)
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -1282,7 +1299,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
     # 422: Request Validation Error
     # offset/limit: Input should be greater than or equal to 0
     @pytest.mark.asyncio
-    async def test_error_7(self, async_client, async_db):
+    async def test_error_7(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]

@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,10 +20,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import asyncio
+from typing import Any
 from unittest.mock import ANY, patch
 
 import pytest
 from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
@@ -41,12 +45,12 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession):
     return Processor(worker_num=0, is_shutdown=asyncio.Event())
 
 
 class TestProcessor:
-    account_list = [
+    account_list: list[dict[str, Any]] = [
         {
             "address": default_eth_account("user1")["address"],
             "keyfile": default_eth_account("user1")["keyfile_json"],
@@ -87,13 +91,15 @@ class TestProcessor:
     # ~v24.6: Transfer individually
     # IbetStraightBond
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, async_db):
+    async def test_normal_1_1(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -167,13 +173,15 @@ class TestProcessor:
     # ~v24.6: Transfer individually
     # IbetShare
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, async_db):
+    async def test_normal_1_2(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -247,13 +255,15 @@ class TestProcessor:
     # v24.9~: Transfer in batch
     # IbetStraightBond
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, async_db):
+    async def test_normal_2_1(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -350,13 +360,15 @@ class TestProcessor:
     # v24.9~: Transfer in batch
     # IbetShare
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, processor, async_db):
+    async def test_normal_2_2(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -453,7 +465,7 @@ class TestProcessor:
     # Skip other thread processed issuer
     @patch("batch.processor_bulk_transfer.BULK_TRANSFER_WORKER_LOT_SIZE", 2)
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db):
+    async def test_normal_3(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
@@ -461,6 +473,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -512,7 +526,7 @@ class TestProcessor:
         async_db.add(bulk_transfer_upload)
 
         # Prepare data : BulkTransfer
-        for i in range(0, 3):
+        for _ in range(0, 3):
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[3]
@@ -524,7 +538,7 @@ class TestProcessor:
             bulk_transfer.status = 0
             async_db.add(bulk_transfer)
 
-        for i in range(0, 3):
+        for _ in range(0, 3):
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[4]
@@ -561,7 +575,7 @@ class TestProcessor:
             # Assertion
             _bulk_transfer_upload_list = (
                 await async_db.scalars(
-                    select(BulkTransferUpload).order_by(BulkTransferUpload.created)
+                    select(BulkTransferUpload).order_by(BulkTransferUpload.upload_id)
                 )
             ).all()
             _bulk_transfer_upload = _bulk_transfer_upload_list[0]
@@ -599,13 +613,15 @@ class TestProcessor:
     # Other thread processed issuer(all same issuer)
     @patch("batch.processor_bulk_transfer.BULK_TRANSFER_WORKER_LOT_SIZE", 2)
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, async_db):
+    async def test_normal_4(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -653,7 +669,7 @@ class TestProcessor:
         async_db.add(bulk_transfer_upload)
 
         # Prepare data : BulkTransfer
-        for i in range(0, 3):
+        for _ in range(0, 3):
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[2]
@@ -665,7 +681,7 @@ class TestProcessor:
             bulk_transfer.status = 0
             async_db.add(bulk_transfer)
 
-        for i in range(0, 3):
+        for _ in range(0, 3):
             bulk_transfer = BulkTransfer()
             bulk_transfer.issuer_address = _account["address"]
             bulk_transfer.upload_id = self.upload_id_list[3]
@@ -702,7 +718,7 @@ class TestProcessor:
             # Assertion
             _bulk_transfer_upload_list = (
                 await async_db.scalars(
-                    select(BulkTransferUpload).order_by(BulkTransferUpload.created)
+                    select(BulkTransferUpload).order_by(BulkTransferUpload.upload_id)
                 )
             ).all()
             _bulk_transfer_upload = _bulk_transfer_upload_list[0]
@@ -741,7 +757,7 @@ class TestProcessor:
     # <Error_1>
     # Account does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, async_db):
+    async def test_error_1(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
 
         # Prepare data : BulkTransferUpload
@@ -767,9 +783,11 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _bulk_transfer_upload is not None
         assert _bulk_transfer_upload.status == 2
 
         _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _account["address"]
@@ -786,11 +804,13 @@ class TestProcessor:
     # <Error_2>
     # fail to get the private key
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db):
+    async def test_error_2(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
@@ -819,9 +839,11 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _bulk_transfer_upload is not None
         assert _bulk_transfer_upload.status == 2
 
         _notification = (await async_db.scalars(select(Notification).limit(1))).first()
+        assert _notification is not None
         assert _notification.id == 1
         assert _notification.notice_id is not None
         assert _notification.issuer_address == _account["address"]
@@ -839,13 +861,15 @@ class TestProcessor:
     # ~v24.6: Transfer individually
     # SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_3_1(self, processor, async_db):
+    async def test_error_3_1(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -893,6 +917,7 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _bulk_transfer_upload is not None
             assert _bulk_transfer_upload.status == 2
 
             _bulk_transfer = (
@@ -907,11 +932,13 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _bulk_transfer is not None
             assert _bulk_transfer.status == 2
 
             _notification = (
                 await async_db.scalars(select(Notification).limit(1))
             ).first()
+            assert _notification is not None
             assert _notification.id == 1
             assert _notification.notice_id is not None
             assert _notification.issuer_address == _account["address"]
@@ -929,13 +956,15 @@ class TestProcessor:
     # ~v24.6: Transfer individually
     # ContractRevertError
     @pytest.mark.asyncio
-    async def test_error_3_2(self, processor, async_db):
+    async def test_error_3_2(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -983,6 +1012,7 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _bulk_transfer_upload is not None
             assert _bulk_transfer_upload.status == 2
 
             _bulk_transfer = (
@@ -997,6 +1027,7 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _bulk_transfer is not None
             assert _bulk_transfer.status == 2
             assert _bulk_transfer.transaction_error_code == 120601
             assert (
@@ -1007,6 +1038,7 @@ class TestProcessor:
             _notification = (
                 await async_db.scalars(select(Notification).limit(1))
             ).first()
+            assert _notification is not None
             assert _notification.id == 1
             assert _notification.notice_id is not None
             assert _notification.issuer_address == _account["address"]
@@ -1024,13 +1056,15 @@ class TestProcessor:
     # v24.9~: Transfer in batch
     # SendTransactionError
     @pytest.mark.asyncio
-    async def test_error_4_1(self, processor, async_db):
+    async def test_error_4_1(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -1100,13 +1134,15 @@ class TestProcessor:
     # v24.9~: Transfer in batch
     # ContractRevertError
     @pytest.mark.asyncio
-    async def test_error_4_2(self, processor, async_db):
+    async def test_error_4_2(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -1175,13 +1211,15 @@ class TestProcessor:
     # <Error_5>
     # Process down after error occurred, Re-run process
     @pytest.mark.asyncio
-    async def test_error_5(self, processor, async_db):
+    async def test_error_5(self, processor: Processor, async_db: AsyncSession):
         _account = self.account_list[0]
         _from_address = self.account_list[1]
         _to_address = self.account_list[2]
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -1232,6 +1270,7 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _bulk_transfer_upload is not None
             assert _bulk_transfer_upload.status == 2
 
             _bulk_transfer = (
@@ -1246,11 +1285,13 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _bulk_transfer is not None
             assert _bulk_transfer.status == 1
 
             _notification = (
                 await async_db.scalars(select(Notification).limit(1))
             ).first()
+            assert _notification is not None
             assert _notification.id == 1
             assert _notification.notice_id is not None
             assert _notification.issuer_address == _account["address"]

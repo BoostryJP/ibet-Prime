@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from app.model.db import (
@@ -28,6 +30,7 @@ from app.model.db import (
     IDXIssueRedeemEventType,
     IDXIssueRedeemSortItem,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -68,7 +71,7 @@ class TestListBondRedemptionHistory:
     # Normal_1
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -105,7 +108,7 @@ class TestListBondRedemptionHistory:
     # Normal_2
     # multiple records
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -187,7 +190,7 @@ class TestListBondRedemptionHistory:
     # Normal_3
     # sort
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -275,7 +278,7 @@ class TestListBondRedemptionHistory:
     # Normal_4
     # pagination
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -341,6 +344,51 @@ class TestListBondRedemptionHistory:
             ],
         }
 
+    # Normal_5
+    # Pagination with same block_timestamp
+    @pytest.mark.asyncio
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
+        # prepare data: Token
+        _token = Token()
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = self.test_transaction_hash
+        _token.issuer_address = self.test_issuer_address
+        _token.token_address = self.test_token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        for amount in self.test_amount:
+            _record = IDXIssueRedeem()
+            _record.event_type = IDXIssueRedeemEventType.REDEEM
+            _record.transaction_hash = self.test_transaction_hash
+            _record.token_address = self.test_token_address
+            _record.locked_address = self.test_locked_address
+            _record.target_address = self.test_target_address
+            _record.amount = amount
+            _record.block_timestamp = self.test_block_timestamp[0]
+            async_db.add(_record)
+
+        await async_db.commit()
+
+        returned_amounts: list[int] = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.base_url.format(self.test_token_address),
+                params={"offset": offset, "limit": 1},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "offset": offset,
+                "limit": 1,
+                "total": 3,
+            }
+            returned_amounts.append(body["history"][0]["amount"])
+
+        assert returned_amounts == [30, 20, 10]
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -348,7 +396,7 @@ class TestListBondRedemptionHistory:
     # Error_1
     # NotFound
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(self.base_url.format(self.test_token_address))
 
@@ -363,7 +411,7 @@ class TestListBondRedemptionHistory:
     # InvalidParameterError
     # this token is temporarily unavailable
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -371,7 +419,7 @@ class TestListBondRedemptionHistory:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -391,7 +439,7 @@ class TestListBondRedemptionHistory:
     # RequestValidationError
     # sort_item
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address),
@@ -421,7 +469,7 @@ class TestListBondRedemptionHistory:
     # RequestValidationError
     # sort_order(min)
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_client, async_db):
+    async def test_error_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": -1}
@@ -446,7 +494,7 @@ class TestListBondRedemptionHistory:
     # RequestValidationError
     # sort_order(max)
     @pytest.mark.asyncio
-    async def test_error_4_2(self, async_client, async_db):
+    async def test_error_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address), params={"sort_order": 2}

@@ -19,7 +19,7 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import datetime
 from enum import IntEnum, StrEnum
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -92,7 +92,7 @@ class TransferWithMessage(TransferBase):
         TransferSourceEventType.ForceUnlock,
         TransferSourceEventType.ForceChangeLockedAccount,
     ] = Field(description="Source Event")
-    data: TransferDataMessage | dict = Field(description="Event data")
+    data: TransferDataMessage | dict[str, Any] = Field(description="Event data")
 
 
 ############################

@@ -22,14 +22,17 @@ import secrets
 from typing import Annotated, Sequence
 
 import boto3
-import eth_keyfile
-from coincurve import PublicKey
-from eth_utils import keccak, to_checksum_address
+from eth_keyfile.keyfile import create_keyfile_json, decode_keyfile_json
+from eth_utils.crypto import keccak
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import select
 
 from app.database import DBAsyncSession
-from app.exceptions import InvalidParameterError, SendTransactionError
+from app.exceptions import (
+    ContractRevertError,
+    InvalidParameterError,
+    SendTransactionError,
+)
 from app.model.db import FreezeLogAccount, TransactionLock
 from app.model.ibet import FreezeLogContract
 from app.model.schema import (
@@ -46,6 +49,10 @@ from app.model.schema import (
 from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
+from app.utils.secp256k1_utils import (
+    private_key_to_public_key,
+    public_key_to_address,
+)
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -87,9 +94,10 @@ async def create_account(
         private_key = keccak(result.get("Plaintext"))
     else:
         private_key = keccak(secrets.token_bytes(32))
-    public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
-    addr = to_checksum_address(keccak(public_key)[-20:])
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    addr = public_key_to_address(
+        private_key_to_public_key(private_key, compressed=False)
+    )
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -218,12 +226,12 @@ async def change_eoa_password(
         raise InvalidParameterError(EOA_PASSWORD_PATTERN_MSG)
 
     # Get Ethereum Key
-    private_key = eth_keyfile.decode_keyfile_json(
+    private_key = decode_keyfile_json(
         raw_keyfile_json=_account.keyfile, password=old_eoa_password.encode("utf-8")
     )
 
     # Create New Ethereum Key File
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -272,6 +280,10 @@ async def record_new_log(
         raise InvalidParameterError("password mismatch")
 
     # Record new log
+    if FREEZE_LOG_CONTRACT_ADDRESS is None:
+        raise HTTPException(
+            status_code=500, detail="FREEZE_LOG_CONTRACT_ADDRESS is not set"
+        )
     log_contract = FreezeLogContract(
         log_account=log_account, contract_address=FREEZE_LOG_CONTRACT_ADDRESS
     )
@@ -280,7 +292,7 @@ async def record_new_log(
             log_message=req.log_message,
             freezing_grace_block_count=req.freezing_grace_block_count,
         )
-    except SendTransactionError:
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to record log")
 
     return json_response({"log_index": log_index})
@@ -322,6 +334,10 @@ async def update_log(
         raise InvalidParameterError("password mismatch")
 
     # Update log
+    if FREEZE_LOG_CONTRACT_ADDRESS is None:
+        raise HTTPException(
+            status_code=500, detail="FREEZE_LOG_CONTRACT_ADDRESS is not set"
+        )
     log_contract = FreezeLogContract(
         log_account=log_account, contract_address=FREEZE_LOG_CONTRACT_ADDRESS
     )
@@ -330,7 +346,7 @@ async def update_log(
             log_index=log_index,
             log_message=req.log_message,
         )
-    except SendTransactionError:
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to update log")
 
     return
@@ -360,6 +376,10 @@ async def retrieve_log(
         raise HTTPException(status_code=404, detail="account is not exists")
 
     # Get frozen log
+    if FREEZE_LOG_CONTRACT_ADDRESS is None:
+        raise HTTPException(
+            status_code=500, detail="FREEZE_LOG_CONTRACT_ADDRESS is not set"
+        )
     log_contract = FreezeLogContract(
         log_account=log_account, contract_address=FREEZE_LOG_CONTRACT_ADDRESS
     )

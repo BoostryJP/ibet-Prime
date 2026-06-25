@@ -49,3 +49,17 @@ class EthereumNode(Base):
     priority: Mapped[int | None] = mapped_column(Integer)
     # node synchronized status
     is_synced: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+
+class AvalancheNode(Base):
+    """Avalanche node information"""
+
+    __tablename__ = "avalanche_node"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # endpoint uri(http[s]://domain:port)
+    endpoint_uri: Mapped[str | None] = mapped_column(String(267))
+    # connect priority(top priority is lower number)
+    priority: Mapped[int | None] = mapped_column(Integer)
+    # node synchronized status
+    is_synced: Mapped[bool] = mapped_column(Boolean, nullable=False)

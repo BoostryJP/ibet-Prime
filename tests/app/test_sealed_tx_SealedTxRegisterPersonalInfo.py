@@ -18,9 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import datetime
+from typing import Any
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     IDXPersonalInfo,
@@ -38,7 +41,7 @@ class TestSealedTxRegisterPersonalInfo:
     test_account_pk = "0000000000000000000000000000000000000000000000000000000000000001"
 
     # Target API endpoint
-    url = "/sealed_tx/personal_info"
+    url: str = "/sealed_tx/personal_info"
 
     ###########################################################################
     # Normal Case
@@ -48,7 +51,9 @@ class TestSealedTxRegisterPersonalInfo:
     # Register personal information
     @pytest.mark.freeze_time("2024-09-30 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # Derive a signature
         _params = {
             "link_address": self.test_issuer_address,
@@ -87,6 +92,7 @@ class TestSealedTxRegisterPersonalInfo:
         _personal_info = (
             await async_db.scalars(select(IDXPersonalInfo).limit(1))
         ).first()
+        assert _personal_info is not None
         assert _personal_info.issuer_address == self.test_issuer_address
         assert _personal_info.account_address == self.test_account_address
         assert _personal_info.personal_info == {
@@ -104,6 +110,7 @@ class TestSealedTxRegisterPersonalInfo:
         _history = (
             await async_db.scalars(select(IDXPersonalInfoHistory).limit(1))
         ).first()
+        assert _history is not None
         assert _history.issuer_address == self.test_issuer_address
         assert _history.account_address == self.test_account_address
         assert _history.event_type == PersonalInfoEventType.REGISTER
@@ -123,7 +130,9 @@ class TestSealedTxRegisterPersonalInfo:
     # Blank personal information
     @pytest.mark.freeze_time("2024-09-30 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # Derive a signature
         _params = {
             "link_address": self.test_issuer_address,
@@ -153,6 +162,7 @@ class TestSealedTxRegisterPersonalInfo:
         _personal_info = (
             await async_db.scalars(select(IDXPersonalInfo).limit(1))
         ).first()
+        assert _personal_info is not None
         assert _personal_info.issuer_address == self.test_issuer_address
         assert _personal_info.account_address == self.test_account_address
         assert _personal_info.personal_info == {
@@ -170,6 +180,7 @@ class TestSealedTxRegisterPersonalInfo:
         _history = (
             await async_db.scalars(select(IDXPersonalInfoHistory).limit(1))
         ).first()
+        assert _history is not None
         assert _history.issuer_address == self.test_issuer_address
         assert _history.account_address == self.test_account_address
         assert _history.event_type == PersonalInfoEventType.REGISTER
@@ -189,7 +200,9 @@ class TestSealedTxRegisterPersonalInfo:
     # Overwrite the already registered personal information
     @pytest.mark.freeze_time("2024-09-30 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         _personal_info = IDXPersonalInfo()
         _personal_info.issuer_address = self.test_issuer_address
         _personal_info.account_address = self.test_account_address
@@ -261,6 +274,7 @@ class TestSealedTxRegisterPersonalInfo:
         _history = (
             await async_db.scalars(select(IDXPersonalInfoHistory).limit(1))
         ).first()
+        assert _history is not None
         assert _history.issuer_address == self.test_issuer_address
         assert _history.account_address == self.test_account_address
         assert _history.event_type == PersonalInfoEventType.REGISTER
@@ -284,7 +298,9 @@ class TestSealedTxRegisterPersonalInfo:
     # RequestValidationError
     # Missing X-SealedTx-Signature header
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         _params = {
             "link_address": self.test_issuer_address,
             "personal_information": {
@@ -325,9 +341,11 @@ class TestSealedTxRegisterPersonalInfo:
     # <Error_2>
     # Missing required field: key_manager
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         # Derive a signature
-        _params = {
+        _params: dict[str, Any] = {
             "link_address": self.test_issuer_address,
             "personal_information": {},
         }

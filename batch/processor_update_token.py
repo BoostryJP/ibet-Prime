@@ -22,10 +22,10 @@ import sys
 import uuid
 from asyncio import Event
 from datetime import UTC, datetime
-from typing import Sequence
+from typing import Any, Sequence
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -125,6 +125,7 @@ class Processor:
                         )
                         await db_session.commit()
                         continue
+
                     keyfile_json = _account.keyfile
                     decrypt_password = E2EEUtils.decrypt(_account.eoa_password)
                     private_key = decode_keyfile_json(
@@ -160,6 +161,7 @@ class Processor:
                             token_type=TokenType.IBET_SHARE.value,
                             arguments=_update_token.arguments,
                         )
+                        assert isinstance(_update_data, IbetShareUpdateParams)
                         await IbetShareContract(_update_token.token_address).update(
                             tx_params=_update_data,
                             tx_sender=_update_token.issuer_address,
@@ -173,6 +175,7 @@ class Processor:
                             token_type=TokenType.IBET_STRAIGHT_BOND.value,
                             arguments=_update_token.arguments,
                         )
+                        assert isinstance(_update_data, IbetStraightBondUpdateParams)
                         await IbetStraightBondContract(
                             _update_token.token_address
                         ).update(
@@ -184,6 +187,7 @@ class Processor:
 
                     if _update_token.trigger == "Issue":
                         # Register token_address token list
+                        assert TOKEN_LIST_CONTRACT_ADDRESS is not None
                         await TokenListContract(TOKEN_LIST_CONTRACT_ADDRESS).register(
                             token_address=_update_token.token_address,
                             token_template=token_template,
@@ -202,7 +206,7 @@ class Processor:
                         db_session.add(_position)
 
                         # Insert issuer's UTXO data
-                        _token: Token = (
+                        _token: Token | None = (
                             await db_session.scalars(
                                 select(Token)
                                 .where(
@@ -211,6 +215,7 @@ class Processor:
                                 .limit(1)
                             )
                         ).first()
+                        assert _token is not None
                         block = await AsyncContractUtils.get_block_by_transaction_hash(
                             _token.tx_hash
                         )
@@ -219,9 +224,10 @@ class Processor:
                         _utxo.account_address = _update_token.issuer_address
                         _utxo.token_address = _update_token.token_address
                         _utxo.amount = _update_token.arguments.get("total_supply")
-                        _utxo.block_number = block["number"]
+                        _utxo.block_number = block["number"]  # type: ignore
                         _utxo.block_timestamp = datetime.fromtimestamp(
-                            block["timestamp"], UTC
+                            block["timestamp"],  # type: ignore
+                            UTC,
                         ).replace(tzinfo=None)
                         db_session.add(_utxo)
 
@@ -277,7 +283,11 @@ class Processor:
         return _update_token_list
 
     @staticmethod
-    def __create_update_data(trigger, token_type, arguments: dict):
+    def __create_update_data(
+        trigger: str,
+        token_type: str,
+        arguments: dict[str, Any],
+    ) -> IbetShareUpdateParams | IbetStraightBondUpdateParams | None:
         if trigger == "Issue":
             # NOTE: Items set at the time of issue do not need to be updated.
             if token_type == TokenType.IBET_SHARE.value:
@@ -344,6 +354,7 @@ class Processor:
             )
         ).first()
         if _update_token is not None:
+            assert _update_token.token_address is not None
             _update_token.status = status
             await db_session.merge(_update_token)
 
@@ -362,7 +373,7 @@ class Processor:
         code: int,
         token_address: str,
         token_type: str,
-        arguments: dict,
+        arguments: dict[str, Any],
     ):
         notification = Notification()
         notification.notice_id = str(uuid.uuid4())
@@ -390,8 +401,8 @@ async def main():
         while not is_shutdown.is_set():
             try:
                 await processor.process()
-            except ServiceUnavailableError:
-                LOG.warning("An external service was unavailable")
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

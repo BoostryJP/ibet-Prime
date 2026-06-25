@@ -21,7 +21,9 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Token, TokenType, TokenVersion
 
@@ -37,10 +39,12 @@ class TestGetIbetWSTBalance:
 
     # <Normal_1>
     # Return balance of account
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.balance_of", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
+        AsyncMock(return_value=1000),
     )
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         issuer_address = "0x1234567890abcdef1234567890abcdef12345678"
         account_address = "0x234567890abcdef1234567890abcdef123456789"
@@ -55,8 +59,8 @@ class TestGetIbetWSTBalance:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = to_checksum_address(ibet_wst_address)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", to_checksum_address(ibet_wst_address))
         async_db.add(token)
         await async_db.commit()
 
@@ -72,6 +76,42 @@ class TestGetIbetWSTBalance:
         assert resp.status_code == 200
         assert resp.json() == {"balance": 1000}
 
+    # <Normal_2>
+    # Return balance of account on avalanche
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheIbetWST.balance_of",
+        AsyncMock(return_value=1000),
+    )
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
+        issuer_address = "0x1234567890abcdef1234567890abcdef12345678"
+        account_address = "0x234567890abcdef1234567890abcdef123456789"
+        ibet_token_address = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+        ibet_wst_address = "0xbcdefabcdefabcdefabcdefabcdefabcdefabcde"
+
+        token = Token()
+        token.token_address = to_checksum_address(ibet_token_address)
+        token.issuer_address = issuer_address
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", to_checksum_address(ibet_wst_address))
+        async_db.add(token)
+        await async_db.commit()
+
+        resp = await async_client.get(
+            self.api_url.format(
+                account_address=account_address,
+                ibet_wst_address=ibet_wst_address,
+            ),
+            params={"blockchain_platform": "avalanche"},
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {"balance": 1000}
+
     ###########################################################################
     # Error
     ###########################################################################
@@ -79,7 +119,7 @@ class TestGetIbetWSTBalance:
     # <Error_1>
     # Invalid addresses
     # - Return 422 error
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request with invalid addresses
         resp = await async_client.get(
             self.api_url.format(
@@ -112,7 +152,7 @@ class TestGetIbetWSTBalance:
 
     # <Error_2>
     # IbetWST token not found
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         account_address = "0x234567890abcdef1234567890abcdef123456789"
         ibet_wst_address = "0xbcdefabcdefabcdefabcdefabcdefabcdefabcde"

@@ -27,6 +27,7 @@ from app.model.schema.base import (
     BasePaginationQuery,
     IbetShare,
     IbetStraightBond,
+    IbetWSTBlockchain,
     ResultSet,
     SortOrder,
     TokenType,
@@ -101,7 +102,7 @@ class IbetWSTTrade(BaseModel):
     buyer_sc_account_address: str = Field(description="SC buyer account address")
     st_value: int = Field(description="Value of IbetWST to trade")
     sc_value: int = Field(description="Value of SC token to trade")
-    state: Literal["Pending", "Executed", "Cancelled"] = Field(
+    state: Literal["Pending", "Executed", "Cancelled", "Rejected"] = Field(
         description="Trade state"
     )
     memo: str = Field(description="Memo for the trade")
@@ -118,6 +119,10 @@ class ListAllIbetWSTTokensSortItem(StrEnum):
 class ListAllIbetWSTTokensQuery(BasePaginationQuery):
     """ListAllIbetWSTTokens request query schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform (**This affects total number**)",
+    )
     issuer_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="Issuer address (**This affects total number**)"
     )
@@ -140,6 +145,10 @@ class ListAllIbetWSTTokensQuery(BasePaginationQuery):
 class ListIbetWSTTransactionsQuery(BasePaginationQuery):
     """ListIbetWSTTransactions request query schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     ibet_wst_address: ChecksumEthereumAddress = Field(
         description="IbetWST contract address (**This affects total number**) "
     )
@@ -164,9 +173,22 @@ class ListIbetWSTTransactionsQuery(BasePaginationQuery):
     )
 
 
+class GetIbetWSTTransactionQuery(BaseModel):
+    """GetIbetWSTTransaction request query schema"""
+
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
+
+
 class AddIbetWSTWhitelistRequest(BaseModel):
     """AddIbetWSTWhitelist request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
+    )
     st_account_address: ChecksumEthereumAddress = Field(
         description="ST account address to be added to the whitelist"
     )
@@ -181,14 +203,31 @@ class AddIbetWSTWhitelistRequest(BaseModel):
 class DeleteIbetWSTWhitelistRequest(BaseModel):
     """DeleteIbetWSTWhitelist request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
+    )
     st_account_address: ChecksumEthereumAddress = Field(
         description="ST account address to be removed from the whitelist"
+    )
+
+
+class IbetWSTWhitelistQuery(BaseModel):
+    """IbetWST whitelist request query schema"""
+
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
     )
 
 
 class BurnIbetWSTRequest(BaseModel):
     """BurnIbetWST request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     value: PositiveInt = Field(description="Amount of IbetWST to burn")
     authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
@@ -199,6 +238,10 @@ class BurnIbetWSTRequest(BaseModel):
 class ForceBurnIbetWSTRequest(BaseModel):
     """ForceBurnIbetWST request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
+    )
     account_address: ChecksumEthereumAddress = Field(
         description="Account address from which to force burn IbetWST"
     )
@@ -208,6 +251,10 @@ class ForceBurnIbetWSTRequest(BaseModel):
 class TransferIbetWSTRequest(BaseModel):
     """TransferIbetWST request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     from_address: ChecksumEthereumAddress = Field(description="Sender address")
     to_address: ChecksumEthereumAddress = Field(description="Recipient address")
     value: PositiveInt = Field(description="Amount of IbetWST to transfer")
@@ -228,6 +275,10 @@ class TransferIbetWSTRequest(BaseModel):
 class RequestIbetWSTTradeRequest(BaseModel):
     """RequestIbetWSTTrade request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     seller_st_account_address: ChecksumEthereumAddress = Field(
         description="IbetWST seller account address"
     )
@@ -249,6 +300,10 @@ class RequestIbetWSTTradeRequest(BaseModel):
 class CancelIbetWSTTradeRequest(BaseModel):
     """CancelIbetWSTTrade request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     index: PositiveInt = Field(description="Trade index")
     authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
@@ -259,6 +314,10 @@ class CancelIbetWSTTradeRequest(BaseModel):
 class AcceptIbetWSTTradeRequest(BaseModel):
     """AcceptIbetWSTTrade request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     index: PositiveInt = Field(description="Trade index")
     authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
@@ -269,6 +328,10 @@ class AcceptIbetWSTTradeRequest(BaseModel):
 class RejectIbetWSTTradeRequest(BaseModel):
     """RejectIbetWSTTrade request schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     index: PositiveInt = Field(description="Trade index")
     authorizer: ChecksumEthereumAddress = Field(description="Authorizer address")
     authorization: IbetWSTAuthorization = Field(
@@ -279,6 +342,10 @@ class RejectIbetWSTTradeRequest(BaseModel):
 class ListIbetWSTTradesQuery(BasePaginationQuery):
     """ListIbetWSTTrades request query schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
+    )
     seller_st_account_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="IbetWST seller account address"
     )
@@ -294,14 +361,27 @@ class ListIbetWSTTradesQuery(BasePaginationQuery):
     buyer_sc_account_address: Optional[ChecksumEthereumAddress] = Field(
         None, description="SC buyer account address"
     )
-    state: Optional[Literal["Pending", "Executed", "Cancelled"]] = Field(
+    state: Optional[Literal["Pending", "Executed", "Cancelled", "Rejected"]] = Field(
         None, description="Trade state"
+    )
+
+
+class GetIbetWSTBalanceQuery(BaseModel):
+    """GetIbetWSTBalance request query schema"""
+
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
     )
 
 
 class GetERC20BalanceQuery(BaseModel):
     """GetERC20Balance request query schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for ERC20 lookup",
+    )
     token_address: ChecksumEthereumAddress = Field(
         description="Token contract address to check balance"
     )
@@ -313,6 +393,10 @@ class GetERC20BalanceQuery(BaseModel):
 class GetERC20AllowanceQuery(BaseModel):
     """GetERC20Allowance request query schema"""
 
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for ERC20 lookup",
+    )
     token_address: ChecksumEthereumAddress = Field(
         description="Token contract address to check allowance"
     )
@@ -321,6 +405,33 @@ class GetERC20AllowanceQuery(BaseModel):
     )
     spender_address: ChecksumEthereumAddress = Field(
         description="Spender address to check allowance"
+    )
+
+
+class RetrieveIbetWSTWhitelistAccountsQuery(BaseModel):
+    """RetrieveIbetWSTWhitelistAccounts request query schema"""
+
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
+    )
+
+
+class GetIbetWSTWhitelistQuery(BaseModel):
+    """GetIbetWSTWhitelist request query schema"""
+
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST operation",
+    )
+
+
+class GetIbetWSTTradeQuery(BaseModel):
+    """GetIbetWSTTrade request query schema"""
+
+    blockchain_platform: IbetWSTBlockchain = Field(
+        default=IbetWSTBlockchain.ETHEREUM,
+        description="Blockchain platform for IbetWST lookup",
     )
 
 

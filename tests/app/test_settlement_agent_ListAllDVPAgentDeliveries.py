@@ -22,6 +22,8 @@ from datetime import UTC, datetime
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import DeliveryStatus, IDXDelivery, Token, TokenType, TokenVersion
 
@@ -40,7 +42,7 @@ class TestListAllDVPDeliveries:
     # Normal_1
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
@@ -65,7 +67,7 @@ class TestListAllDVPDeliveries:
     # Multi record
     # - DEDICATED_DVP_AGENT_MODE = False (default)
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -463,7 +465,7 @@ class TestListAllDVPDeliveries:
     @mock.patch(
         "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_0"
     )
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -599,7 +601,7 @@ class TestListAllDVPDeliveries:
     # Normal_3_1
     # Search filter: token_address
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -995,7 +997,7 @@ class TestListAllDVPDeliveries:
     # Normal_3_2
     # Search filter: seller_address
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -1391,7 +1393,7 @@ class TestListAllDVPDeliveries:
     # Normal_3_3
     # Search filter: valid
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -1694,7 +1696,7 @@ class TestListAllDVPDeliveries:
     # Normal_3_4
     # Search filter: status
     @pytest.mark.asyncio
-    async def test_normal_3_4(self, async_client, async_db):
+    async def test_normal_3_4(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -1970,7 +1972,9 @@ class TestListAllDVPDeliveries:
     # Normal_3_5_1
     # Search filter: create_blocktimestamp_from
     @pytest.mark.asyncio
-    async def test_normal_3_5_1(self, async_client, async_db):
+    async def test_normal_3_5_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -2246,7 +2250,9 @@ class TestListAllDVPDeliveries:
     # Normal_3_5_2
     # Search filter: create_blocktimestamp_to
     @pytest.mark.asyncio
-    async def test_normal_3_5_2(self, async_client, async_db):
+    async def test_normal_3_5_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -2550,7 +2556,9 @@ class TestListAllDVPDeliveries:
     # Normal_3_5_3
     # Search filter: create_blocktimestamp_from & create_blocktimestamp_to
     @pytest.mark.asyncio
-    async def test_normal_3_5_3(self, async_client, async_db):
+    async def test_normal_3_5_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -2825,7 +2833,7 @@ class TestListAllDVPDeliveries:
     # Normal_4
     # Sort
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -3248,7 +3256,7 @@ class TestListAllDVPDeliveries:
     # Normal_5
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
         token_address_1 = "0x1234567890123456789012345678900000000010"
         token_address_2 = "0x1234567890123456789012345678900000000020"
@@ -3556,7 +3564,7 @@ class TestListAllDVPDeliveries:
     # RequestValidationError
     # Missing agent_address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
@@ -3582,7 +3590,7 @@ class TestListAllDVPDeliveries:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         exchange_address = "0x1234567890123456789012345678900000000000"
 
         # request target api

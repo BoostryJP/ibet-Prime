@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Dict
+from typing import Any, Dict
 
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -38,7 +38,9 @@ on contracts that are not executed by the issuer.
 
 class PersonalInfoContractTestUtils:
     @staticmethod
-    def register(contract_address: str, tx_from: str, private_key: str, args: list):
+    def register(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         personal_info_contract = ContractUtils.get_contract(
             contract_name="PersonalInfo", contract_address=contract_address
         )
@@ -50,7 +52,7 @@ class PersonalInfoContractTestUtils:
 
 class IbetStandardTokenUtils:
     @staticmethod
-    def issue(tx_from: str, private_key: str, args: Dict):
+    def issue(tx_from: str, private_key: bytes, args: Dict[str, Any]):
         """issue token
 
         :param tx_from: transaction sender
@@ -58,7 +60,7 @@ class IbetStandardTokenUtils:
         :param args: deploy args
         :return: Contract
         """
-        web3.eth.default_account = tx_from
+        web3.eth.default_account = tx_from  # type: ignore
         arguments = [
             args["name"],
             args["symbol"],
@@ -79,7 +81,9 @@ class IbetStandardTokenUtils:
         return contract
 
     @staticmethod
-    def transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+    def transfer(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         token_contract = ContractUtils.get_contract(
             contract_name="IbetStandardTokenInterface",
             contract_address=contract_address,
@@ -104,7 +108,9 @@ class IbetSecurityTokenContractTestUtils:
         return security_token_contract.functions.balanceOf(account_address).call()
 
     @staticmethod
-    def transfer(contract_address: str, tx_from: str, private_key: str, args: list):
+    def transfer(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address,
@@ -116,7 +122,7 @@ class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
     def bulk_transfer(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
@@ -128,7 +134,7 @@ class IbetSecurityTokenContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
-    def lock(contract_address: str, tx_from: str, private_key: str, args: list):
+    def lock(contract_address: str, tx_from: str, private_key: bytes, args: list[Any]):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address,
@@ -139,7 +145,9 @@ class IbetSecurityTokenContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
-    def force_lock(contract_address: str, tx_from: str, private_key: str, args: list):
+    def force_lock(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address,
@@ -150,7 +158,9 @@ class IbetSecurityTokenContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
-    def unlock(contract_address: str, tx_from: str, private_key: str, args: list):
+    def unlock(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address,
@@ -161,7 +171,9 @@ class IbetSecurityTokenContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
-    def force_unlock(contract_address: str, tx_from: str, private_key: str, args: list):
+    def force_unlock(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address,
@@ -173,7 +185,7 @@ class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
     def force_change_locked_account(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
@@ -187,7 +199,9 @@ class IbetSecurityTokenContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
-    def issue_from(contract_address: str, tx_from: str, private_key: str, args: list):
+    def issue_from(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address,
@@ -198,7 +212,9 @@ class IbetSecurityTokenContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
-    def redeem_from(contract_address: str, tx_from: str, private_key: str, args: list):
+    def redeem_from(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
             contract_address=contract_address,
@@ -210,7 +226,7 @@ class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
     def set_transfer_approve_required(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
@@ -225,7 +241,7 @@ class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
     def apply_for_transfer(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
@@ -240,7 +256,7 @@ class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
     def cancel_transfer(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
@@ -253,7 +269,7 @@ class IbetSecurityTokenContractTestUtils:
 
     @staticmethod
     def approve_transfer(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         security_token_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenInterface",
@@ -276,7 +292,9 @@ class IbetExchangeContractTestUtils:
         ).call()
 
     @staticmethod
-    def create_order(contract_address: str, tx_from: str, private_key: str, args: list):
+    def create_order(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         exchange_contract = ContractUtils.get_contract(
             contract_name="IbetExchange", contract_address=contract_address
         )
@@ -294,7 +312,7 @@ class IbetExchangeContractTestUtils:
 
     @staticmethod
     def force_cancel_order(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         exchange_contract = ContractUtils.get_contract(
             contract_name="IbetExchange", contract_address=contract_address
@@ -305,7 +323,9 @@ class IbetExchangeContractTestUtils:
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
     @staticmethod
-    def cancel_order(contract_address: str, tx_from: str, private_key: str, args: list):
+    def cancel_order(
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
+    ):
         exchange_contract = ContractUtils.get_contract(
             contract_name="IbetExchange", contract_address=contract_address
         )
@@ -316,7 +336,7 @@ class IbetExchangeContractTestUtils:
 
     @staticmethod
     def execute_order(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         exchange_contract = ContractUtils.get_contract(
             contract_name="IbetExchange", contract_address=contract_address
@@ -335,7 +355,7 @@ class IbetExchangeContractTestUtils:
 
     @staticmethod
     def cancel_agreement(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         exchange_contract = ContractUtils.get_contract(
             contract_name="IbetExchange", contract_address=contract_address
@@ -347,7 +367,7 @@ class IbetExchangeContractTestUtils:
 
     @staticmethod
     def confirm_agreement(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         exchange_contract = ContractUtils.get_contract(
             contract_name="IbetExchange", contract_address=contract_address
@@ -370,7 +390,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
 
     @staticmethod
     def create_escrow(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         escrow_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
@@ -382,7 +402,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
 
     @staticmethod
     def cancel_escrow(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         escrow_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
@@ -394,7 +414,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
 
     @staticmethod
     def approve_transfer(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         escrow_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
@@ -406,7 +426,7 @@ class IbetSecurityTokenEscrowContractTestUtils:
 
     @staticmethod
     def finish_escrow(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         escrow_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
@@ -434,7 +454,7 @@ class IbetSecurityTokenDVPContractTestUtils:
 
     @staticmethod
     def create_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         dvp_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
@@ -446,7 +466,7 @@ class IbetSecurityTokenDVPContractTestUtils:
 
     @staticmethod
     def cancel_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         dvp_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
@@ -458,7 +478,7 @@ class IbetSecurityTokenDVPContractTestUtils:
 
     @staticmethod
     def confirm_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         dvp_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
@@ -470,7 +490,7 @@ class IbetSecurityTokenDVPContractTestUtils:
 
     @staticmethod
     def finish_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         dvp_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
@@ -482,7 +502,7 @@ class IbetSecurityTokenDVPContractTestUtils:
 
     @staticmethod
     def abort_delivery(
-        contract_address: str, tx_from: str, private_key: str, args: list
+        contract_address: str, tx_from: str, private_key: bytes, args: list[Any]
     ):
         dvp_contract = ContractUtils.get_contract(
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address

@@ -82,14 +82,17 @@ class Processor:
                     return
 
                 # Get token attributes
+                token_contract: IbetShareContract | IbetStraightBondContract | None = (
+                    None
+                )
                 if req.token_type == TokenType.IBET_SHARE:
-                    token_contract: IbetShareContract = await IbetShareContract(
+                    token_contract = await IbetShareContract(req.token_address).get()
+                elif req.token_type == TokenType.IBET_STRAIGHT_BOND:
+                    token_contract = await IbetStraightBondContract(
                         req.token_address
                     ).get()
-                elif req.token_type == TokenType.IBET_STRAIGHT_BOND:
-                    token_contract: IbetStraightBondContract = (
-                        await IbetStraightBondContract(req.token_address).get()
-                    )
+                if token_contract is None:
+                    continue
 
                 # Sync ledger creation request data with registered personal info
                 (
@@ -104,17 +107,22 @@ class Processor:
                     f"Personal information fields have been updated: {req.request_id} {final_set_count}/{initial_unset_count}"
                 )
 
+                currency_code = (
+                    token_contract.face_value_currency
+                    if isinstance(token_contract, IbetStraightBondContract)
+                    else None
+                )
+
                 # Finalize the creation of the ledger
                 # - 1) If all the holder's personal information has been set.
                 # - 2) If more than 6 hours have passed since the creation request.
+                assert req.created is not None
                 if initial_unset_count == final_set_count:
                     await finalize_ledger(
                         db=db,
                         request_id=req.request_id,
                         token_address=token_contract.token_address,
-                        currency_code=token_contract.face_value_currency
-                        if req.token_type == TokenType.IBET_STRAIGHT_BOND
-                        else None,
+                        currency_code=currency_code,
                     )
                     req.status = LedgerCreationStatus.COMPLETED
                     await db.merge(req)
@@ -128,9 +136,7 @@ class Processor:
                         db=db,
                         request_id=req.request_id,
                         token_address=token_contract.token_address,
-                        currency_code=token_contract.face_value_currency
-                        if type(token_contract) is IbetStraightBondContract
-                        else None,
+                        currency_code=currency_code,
                         some_personal_info_not_registered=True,
                     )
                     req.status = LedgerCreationStatus.COMPLETED
@@ -158,8 +164,8 @@ async def main():
         while not is_shutdown.is_set():
             try:
                 await processor.process()
-            except ServiceUnavailableError:
-                LOG.warning("An external service was unavailable")
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

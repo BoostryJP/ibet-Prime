@@ -17,12 +17,15 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any
 from unittest import mock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import IDXTxData, Token, TokenVersion
+from app.model.db import IDXTxData, Token, TokenType, TokenVersion
 
 
 class TestGetTxData:
@@ -45,9 +48,9 @@ class TestGetTxData:
     }
 
     @staticmethod
-    async def insert_tx_data(session, tx_data):
+    async def insert_tx_data(session: AsyncSession, tx_data: dict[str, Any]):
         tx_model = IDXTxData()
-        tx_model.hash = tx_data.get("hash")
+        tx_model.hash = tx_data.get("hash", "")
         tx_model.block_hash = tx_data.get("block_hash")
         tx_model.block_number = tx_data.get("block_number")
         tx_model.transaction_index = tx_data.get("transaction_index")
@@ -62,12 +65,12 @@ class TestGetTxData:
         await session.commit()
 
     @staticmethod
-    async def insert_token_data(session, token_info):
+    async def insert_token_data(session: AsyncSession, token_info: dict[str, Any]):
         token = Token()
-        token.type = token_info.get("type")
+        token.type = TokenType(token_info.get("type"))
         token.tx_hash = ""
         token.issuer_address = ""
-        token.token_address = token_info.get("token_address")
+        token.token_address = token_info.get("token_address", "")
         token.abi = {}
         token.version = TokenVersion.V_25_09
         session.add(token)
@@ -80,7 +83,7 @@ class TestGetTxData:
     # Normal_1
     # Contract information is not set
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.tx_data)
 
         # Request target API
@@ -112,11 +115,11 @@ class TestGetTxData:
     # Normal_2
     # Contract information is set
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         await self.insert_tx_data(async_db, self.tx_data)
 
         token_info = {
-            "token_address": to_checksum_address(self.tx_data.get("to_address")),
+            "token_address": to_checksum_address(str(self.tx_data.get("to_address"))),
             "type": "IbetShare",
         }
         await self.insert_token_data(async_db, token_info)
@@ -154,7 +157,7 @@ class TestGetTxData:
     # Error_1
     # BC_EXPLORER_ENABLED = False (default)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", False):
             resp = await async_client.get(
@@ -173,7 +176,7 @@ class TestGetTxData:
     # Error_2
     # DataNotExistsError
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         with mock.patch("app.routers.misc.bc_explorer.BC_EXPLORER_ENABLED", True):
             resp = await async_client.get(

@@ -21,15 +21,16 @@ import asyncio
 import json
 import sys
 from datetime import UTC, datetime
-from typing import Sequence
+from typing import Sequence, cast
 
 import uvloop
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from hexbytes import HexBytes
 from pydantic import ValidationError
 from sqlalchemy import and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from web3.types import BlockData
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -151,14 +152,15 @@ class Processor:
         ).all()
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=load_required_token.token_address, abi=load_required_token.abi
+                address=to_checksum_address(load_required_token.token_address),
+                abi=load_required_token.abi,
             )
             self.token_list[load_required_token.token_address] = (
                 AsyncContractEventsView(token_contract.address, token_contract.events)
             )
 
     @staticmethod
-    async def __get_idx_transfer_block_number(db_session: AsyncSession):
+    async def __get_idx_transfer_block_number(db_session: AsyncSession) -> int:
         _idx_transfer_block_number: IDXTransferBlockNumber | None = (
             await db_session.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
@@ -189,6 +191,14 @@ class Processor:
         await self.__sync_force_unlock(db_session, block_from, block_to)
         await self.__sync_force_change_locked_account(db_session, block_from, block_to)
 
+    @staticmethod
+    async def __get_block_timestamp(event: dict[str, object]) -> datetime:
+        block_number = cast(int, event.get("blockNumber"))
+        block: BlockData = await web3.eth.get_block(block_number)
+        block_timestamp = block.get("timestamp")
+        assert block_timestamp is not None
+        return datetime.fromtimestamp(int(block_timestamp), UTC).replace(tzinfo=None)
+
     async def __sync_transfer(
         self, db_session: AsyncSession, block_from: int, block_to: int
     ):
@@ -209,30 +219,26 @@ class Processor:
                 )
                 for event in events:
                     args = event["args"]
-                    if args["value"] > sys.maxsize:
+                    value = args["value"]
+                    if value > sys.maxsize:
                         # If the value is larger than sys.maxsize, skip processing
                         pass
                     else:
                         transaction_hash = event["transactionHash"].to_0x_hex()
-                        block_timestamp = datetime.fromtimestamp(
-                            (await web3.eth.get_block(event["blockNumber"]))[
-                                "timestamp"
-                            ],
-                            UTC,
-                        ).replace(tzinfo=None)
+                        block_timestamp = await self.__get_block_timestamp(event)
 
                         # Judge whether the transfer is a reallocation
                         is_reallocation = False
                         tx = await AsyncContractUtils.get_transaction(transaction_hash)
                         tx_data: HexBytes | None = tx.get("input")
                         # Check if the transaction data contains the reallocation marker("c0ffee00")
-                        if "c0ffee00" in tx_data.hex():
+                        if tx_data is not None and "c0ffee00" in tx_data.hex():
                             try:
                                 raw_call_data = tx_data.hex().split("c0ffee00", 1)[1]
                                 call_data = json.loads(bytes.fromhex(raw_call_data))
                                 if call_data.get("purpose") == "Reallocation":
                                     is_reallocation = True
-                            except (ValueError, json.JSONDecodeError):
+                            except ValueError, json.JSONDecodeError:
                                 pass
                         if is_reallocation:
                             await self.__sink_on_transfer(
@@ -241,7 +247,7 @@ class Processor:
                                 token_address=to_checksum_address(token.address),
                                 from_address=args["from"],
                                 to_address=args["to"],
-                                amount=args["value"],
+                                amount=value,
                                 source_event=IDXTransferSourceEventType.REALLOCATION,
                                 data_str=None,
                                 block_timestamp=block_timestamp,
@@ -253,7 +259,7 @@ class Processor:
                                 token_address=to_checksum_address(token.address),
                                 from_address=args["from"],
                                 to_address=args["to"],
-                                amount=args["value"],
+                                amount=value,
                                 source_event=IDXTransferSourceEventType.TRANSFER,
                                 data_str=None,
                                 block_timestamp=block_timestamp,
@@ -282,11 +288,9 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
-                    block_timestamp = datetime.fromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
-                        UTC,
-                    ).replace(tzinfo=None)
-                    if args["value"] > sys.maxsize:
+                    block_timestamp = await self.__get_block_timestamp(event)
+                    value = args["value"]
+                    if value > sys.maxsize:
                         pass
                     else:
                         from_address = args.get("accountAddress", ZERO_ADDRESS)
@@ -299,7 +303,7 @@ class Processor:
                                 token_address=to_checksum_address(token.address),
                                 from_address=from_address,
                                 to_address=to_address,
-                                amount=args["value"],
+                                amount=value,
                                 source_event=IDXTransferSourceEventType.UNLOCK,
                                 data_str=data_str,
                                 block_timestamp=block_timestamp,
@@ -328,11 +332,9 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
-                    block_timestamp = datetime.fromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
-                        UTC,
-                    ).replace(tzinfo=None)
-                    if args["value"] > sys.maxsize:
+                    block_timestamp = await self.__get_block_timestamp(event)
+                    value = args["value"]
+                    if value > sys.maxsize:
                         pass
                     else:
                         from_address = args.get("accountAddress", ZERO_ADDRESS)
@@ -345,7 +347,7 @@ class Processor:
                                 token_address=to_checksum_address(token.address),
                                 from_address=from_address,
                                 to_address=to_address,
-                                amount=args["value"],
+                                amount=value,
                                 source_event=IDXTransferSourceEventType.FORCE_UNLOCK,
                                 data_str=data_str,
                                 block_timestamp=block_timestamp,
@@ -374,11 +376,9 @@ class Processor:
                 for event in events:
                     args = event["args"]
                     transaction_hash = event["transactionHash"].to_0x_hex()
-                    block_timestamp = datetime.fromtimestamp(
-                        (await web3.eth.get_block(event["blockNumber"]))["timestamp"],
-                        UTC,
-                    ).replace(tzinfo=None)
-                    if args["value"] > sys.maxsize:
+                    block_timestamp = await self.__get_block_timestamp(event)
+                    value = args["value"]
+                    if value > sys.maxsize:
                         pass
                     else:
                         from_address = args.get("beforeAccountAddress", ZERO_ADDRESS)
@@ -391,7 +391,7 @@ class Processor:
                                 token_address=to_checksum_address(token.address),
                                 from_address=from_address,
                                 to_address=to_address,
-                                amount=args["value"],
+                                amount=value,
                                 source_event=IDXTransferSourceEventType.FORCE_CHANGE_LOCKED_ACCOUNT,
                                 data_str=data_str,
                                 block_timestamp=block_timestamp,
@@ -449,8 +449,8 @@ async def main():
     while True:
         try:
             await processor.sync_new_logs()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception:

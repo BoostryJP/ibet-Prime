@@ -20,6 +20,8 @@ SPDX-License-Identifier: Apache-2.0
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import DVPAgentAccount
 
@@ -35,7 +37,7 @@ class TestListAllDVPAgentAccounts:
     # <Normal_1>
     # Data does not exist
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target api
         resp = await async_client.get(self.test_url)
 
@@ -46,17 +48,17 @@ class TestListAllDVPAgentAccounts:
     # <Normal_2>
     # Data exist
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = "0x1234567890123456789012345678900000000000"
-        dvp_agent_account.keyfile = "test_keyfile_0"
+        dvp_agent_account.keyfile = "test_keyfile_0"  # type: ignore
         dvp_agent_account.eoa_password = "test_password_0"
         async_db.add(dvp_agent_account)
 
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = "0x1234567890123456789012345678900000000001"
-        dvp_agent_account.keyfile = "test_keyfile_1"
+        dvp_agent_account.keyfile = "test_keyfile_1"  # type: ignore
         dvp_agent_account.eoa_password = "test_password_1"
         async_db.add(dvp_agent_account)
 
@@ -86,18 +88,18 @@ class TestListAllDVPAgentAccounts:
     @mock.patch(
         "app.routers.misc.settlement_agent.DEDICATED_DVP_AGENT_ID", "test_agent_0"
     )
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = "0x1234567890123456789012345678900000000000"
-        dvp_agent_account.keyfile = "test_keyfile_0"
+        dvp_agent_account.keyfile = "test_keyfile_0"  # type: ignore
         dvp_agent_account.eoa_password = "test_password_0"
         dvp_agent_account.dedicated_agent_id = "test_agent_0"
         async_db.add(dvp_agent_account)
 
         dvp_agent_account = DVPAgentAccount()
         dvp_agent_account.account_address = "0x1234567890123456789012345678900000000001"
-        dvp_agent_account.keyfile = "test_keyfile_1"
+        dvp_agent_account.keyfile = "test_keyfile_1"  # type: ignore
         dvp_agent_account.eoa_password = "test_password_1"
         async_db.add(dvp_agent_account)
 

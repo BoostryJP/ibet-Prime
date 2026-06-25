@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -19,12 +21,14 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import logging
-from typing import Optional, Sequence
+from typing import Any, Sequence
 from unittest.mock import patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
@@ -49,7 +53,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -60,7 +64,7 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 class TestProcessor:
-    account_list = [
+    account_list: list[dict[str, Any]] = [
         {
             "address": default_eth_account("user1")["address"],
             "keyfile": default_eth_account("user1")["keyfile_json"],
@@ -103,11 +107,11 @@ class TestProcessor:
 
     @staticmethod
     async def deploy_share_token_contract(
-        address,
-        private_key,
-        personal_info_contract_address,
-        tradable_exchange_contract_address=None,
-        transfer_approval_required=None,
+        address: str,
+        private_key: bytes,
+        personal_info_contract_address: str,
+        tradable_exchange_contract_address: str | None = None,
+        transfer_approval_required: bool | None = None,
     ):
         arguments = [
             "token.name",
@@ -145,7 +149,10 @@ class TestProcessor:
     # 0 Batch Task
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -154,6 +161,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -192,7 +201,10 @@ class TestProcessor:
     # Multiple upload / Multiple Register
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -201,6 +213,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -299,7 +313,10 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_3(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -309,6 +326,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -460,7 +479,10 @@ class TestProcessor:
     )
     @pytest.mark.asyncio
     async def test_normal_4(
-        self, processor: Processor, async_db, ibet_personal_info_contract
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
         issuer_private_key = decode_keyfile_json(
@@ -470,6 +492,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password")
         account.keyfile = _account["keyfile"]
@@ -609,8 +633,8 @@ class TestProcessor:
     async def test_error_1(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -674,7 +698,7 @@ class TestProcessor:
             mock.assert_not_called()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+            _batch_register_upload: BatchRegisterPersonalInfoUpload | None = (
                 await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
@@ -684,6 +708,7 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _batch_register_upload is not None
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -719,8 +744,8 @@ class TestProcessor:
     async def test_error_2(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -730,6 +755,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
@@ -758,7 +785,7 @@ class TestProcessor:
         async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
-        batch_register_id_list = []
+        batch_register_id_list: list[int] = []
         for i in range(0, 3):
             batch_register = BatchRegisterPersonalInfo()
             batch_register.upload_id = self.upload_id_list[0]
@@ -793,7 +820,7 @@ class TestProcessor:
             async_db.expire_all()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+            _batch_register_upload: BatchRegisterPersonalInfoUpload | None = (
                 await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
@@ -803,6 +830,7 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _batch_register_upload is not None
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -852,8 +880,8 @@ class TestProcessor:
     async def test_error_3(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -863,6 +891,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
@@ -891,7 +921,7 @@ class TestProcessor:
         async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
-        batch_register_id_list = []
+        batch_register_id_list: list[int] = []
         for i in range(0, 3):
             batch_register = BatchRegisterPersonalInfo()
             batch_register.upload_id = self.upload_id_list[0]
@@ -926,7 +956,7 @@ class TestProcessor:
             async_db.expire_all()
 
             # Assertion
-            _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+            _batch_register_upload: BatchRegisterPersonalInfoUpload | None = (
                 await async_db.scalars(
                     select(BatchRegisterPersonalInfoUpload)
                     .where(
@@ -936,6 +966,7 @@ class TestProcessor:
                     .limit(1)
                 )
             ).first()
+            assert _batch_register_upload is not None
             assert (
                 _batch_register_upload.status
                 == BatchRegisterPersonalInfoUploadStatus.FAILED.value
@@ -985,8 +1016,8 @@ class TestProcessor:
     async def test_error_4(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
@@ -996,6 +1027,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _account["address"]
         account.eoa_password = E2EEUtils.encrypt("password_ng")
         account.keyfile = _account["keyfile"]
@@ -1039,7 +1072,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         async_db.add(batch_register_upload)
 
         # Prepare data : BatchRegisterPersonalInfo
-        batch_register_id_list = []
+        batch_register_id_list: list[int] = []
         for i in range(0, 3):
             batch_register = BatchRegisterPersonalInfo()
             batch_register.upload_id = self.upload_id_list[0]
@@ -1067,7 +1100,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         async_db.expire_all()
 
         # Assertion
-        _batch_register_upload: Optional[BatchRegisterPersonalInfoUpload] = (
+        _batch_register_upload: BatchRegisterPersonalInfoUpload | None = (
             await async_db.scalars(
                 select(BatchRegisterPersonalInfoUpload)
                 .where(
@@ -1077,6 +1110,7 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
                 .limit(1)
             )
         ).first()
+        assert _batch_register_upload is not None
         assert (
             _batch_register_upload.status
             == BatchRegisterPersonalInfoUploadStatus.FAILED.value

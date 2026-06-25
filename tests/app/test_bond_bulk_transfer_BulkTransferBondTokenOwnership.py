@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,7 +22,9 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -28,6 +32,7 @@ from app.model.db import (
     BulkTransfer,
     BulkTransferUpload,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -67,9 +72,11 @@ class TestAppRoutersBondBulkTransferPOST:
     # <Normal_1>
     # Authorization by eoa-password
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -155,9 +162,11 @@ class TestAppRoutersBondBulkTransferPOST:
     # <Normal_2>
     # Authorization by auth token
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -255,7 +264,7 @@ class TestAppRoutersBondBulkTransferPOST:
     # RequestValidationError
     # invalid type
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _token_address_int = 10  # integer
         _from_address_long = (
             "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D7811"  # long address
@@ -319,7 +328,7 @@ class TestAppRoutersBondBulkTransferPOST:
     # RequestValidationError
     # invalid type(max values)
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         req_param = {
             "transfer_list": [
@@ -358,7 +367,7 @@ class TestAppRoutersBondBulkTransferPOST:
     # RequestValidationError
     # headers and body required
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.post(self.test_url)
 
@@ -386,7 +395,7 @@ class TestAppRoutersBondBulkTransferPOST:
     # RequestValidationError
     # issuer-address
     @pytest.mark.asyncio
-    async def test_error_1_4(self, async_client, async_db):
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         req_param = {
             "transfer_list": [
@@ -420,7 +429,7 @@ class TestAppRoutersBondBulkTransferPOST:
     # RequestValidationError
     # eoa-password(not decrypt)
     @pytest.mark.asyncio
-    async def test_error_1_5(self, async_client, async_db):
+    async def test_error_1_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         req_param = {
             "transfer_list": [
@@ -456,9 +465,11 @@ class TestAppRoutersBondBulkTransferPOST:
     # InvalidParameterError
     # list length is 0
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -467,7 +478,7 @@ class TestAppRoutersBondBulkTransferPOST:
         await async_db.commit()
 
         # request target API
-        req_param = {"transfer_list": []}
+        req_param: dict[str, list[object]] = {"transfer_list": []}
         resp = await async_client.post(
             self.test_url,
             json=req_param,
@@ -496,7 +507,7 @@ class TestAppRoutersBondBulkTransferPOST:
     # AuthorizationError
     # issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_3_1(self, async_client, async_db):
+    async def test_error_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         req_param = {
             "transfer_list": [
@@ -534,9 +545,11 @@ class TestAppRoutersBondBulkTransferPOST:
     # AuthorizationError
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_3_2(self, async_client, async_db):
+    async def test_error_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -573,9 +586,11 @@ class TestAppRoutersBondBulkTransferPOST:
     # <Error_4>
     # TokenNotExistError
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -612,9 +627,11 @@ class TestAppRoutersBondBulkTransferPOST:
     # <Error_5>
     # NonTransferableTokenError
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.admin_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -627,7 +644,7 @@ class TestAppRoutersBondBulkTransferPOST:
         _token.issuer_address = self.admin_address
         _token.token_address = self.req_tokens[0]
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -662,9 +679,11 @@ class TestAppRoutersBondBulkTransferPOST:
     # <Error_6>
     # MultipleTokenTransferNotAllowedError
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = self.from_address
         account.keyfile = self.admin_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

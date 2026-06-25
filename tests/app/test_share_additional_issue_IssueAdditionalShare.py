@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,16 +20,24 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
+from typing import TypedDict
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import SendTransactionError
-from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
+from app.model.db import Account, AuthToken, Token, TokenStatus, TokenType, TokenVersion
 from app.model.ibet.tx_params.ibet_share import AdditionalIssueParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
+
+
+class AdditionalIssueRequest(TypedDict):
+    account_address: str
+    amount: int
 
 
 class TestIssueAdditionalShare:
@@ -42,7 +52,12 @@ class TestIssueAdditionalShare:
     # Authorization by eoa-password
     @mock.patch("app.model.ibet.token.IbetShareContract.additional_issue")
     @pytest.mark.asyncio
-    async def test_normal_1(self, IbetShareContract_mock, async_client, async_db):
+    async def test_normal_1(
+        self,
+        IbetShareContract_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -50,6 +65,8 @@ class TestIssueAdditionalShare:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -70,7 +87,10 @@ class TestIssueAdditionalShare:
         IbetShareContract_mock.side_effect = [None]
 
         # request target API
-        req_param = {"account_address": _issuer_address, "amount": 10}
+        req_param: AdditionalIssueRequest = {
+            "account_address": _issuer_address,
+            "amount": 10,
+        }
         resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
@@ -94,7 +114,12 @@ class TestIssueAdditionalShare:
     # Authorization by auth-token
     @mock.patch("app.model.ibet.token.IbetShareContract.additional_issue")
     @pytest.mark.asyncio
-    async def test_normal_2(self, IbetShareContract_mock, async_client, async_db):
+    async def test_normal_2(
+        self,
+        IbetShareContract_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -102,6 +127,8 @@ class TestIssueAdditionalShare:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -128,7 +155,10 @@ class TestIssueAdditionalShare:
         IbetShareContract_mock.side_effect = [None]
 
         # request target API
-        req_param = {"account_address": _issuer_address, "amount": 10}
+        req_param: AdditionalIssueRequest = {
+            "account_address": _issuer_address,
+            "amount": 10,
+        }
         resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
@@ -155,7 +185,7 @@ class TestIssueAdditionalShare:
     # <Error_1>
     # RequestValidationError: headers and body required
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _token_address = "token_address_test"
 
         # request target API
@@ -184,7 +214,7 @@ class TestIssueAdditionalShare:
     # <Error_2>
     # RequestValidationError: account_address, amount(min)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -222,7 +252,7 @@ class TestIssueAdditionalShare:
     # <Error_3>
     # RequestValidationError: amount(max)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -253,7 +283,7 @@ class TestIssueAdditionalShare:
     # <Error_4>
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -283,7 +313,7 @@ class TestIssueAdditionalShare:
     # <Error_5>
     # RequestValidationError: eoa-password(not decrypt)
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -327,7 +357,7 @@ class TestIssueAdditionalShare:
     # <Error_6>
     # issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -367,7 +397,7 @@ class TestIssueAdditionalShare:
     # <Error_7>
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_7(self, async_client, async_db):
+    async def test_error_7(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -375,6 +405,8 @@ class TestIssueAdditionalShare:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -402,7 +434,7 @@ class TestIssueAdditionalShare:
     # <Error_8>
     # token not found
     @pytest.mark.asyncio
-    async def test_error_8(self, async_client, async_db):
+    async def test_error_8(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -410,6 +442,8 @@ class TestIssueAdditionalShare:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -437,7 +471,7 @@ class TestIssueAdditionalShare:
     # <Error_9>
     # Processing token
     @pytest.mark.asyncio
-    async def test_error_9(self, async_client, async_db):
+    async def test_error_9(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -445,6 +479,8 @@ class TestIssueAdditionalShare:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -456,7 +492,7 @@ class TestIssueAdditionalShare:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -487,7 +523,7 @@ class TestIssueAdditionalShare:
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
-    async def test_error_10(self, async_client, async_db):
+    async def test_error_10(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -495,6 +531,8 @@ class TestIssueAdditionalShare:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

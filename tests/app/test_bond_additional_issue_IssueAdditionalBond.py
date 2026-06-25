@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,16 +20,24 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
+from typing import TypedDict
 from unittest import mock
 from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import SendTransactionError
 from app.model.db import Account, AuthToken, Token, TokenType, TokenVersion
 from app.model.ibet.tx_params.ibet_straight_bond import AdditionalIssueParams
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
+
+
+class AdditionalIssueRequest(TypedDict):
+    account_address: str
+    amount: int
 
 
 class TestIssueAdditionalBond:
@@ -43,7 +53,10 @@ class TestIssueAdditionalBond:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, IbetStraightBondContract_mock, async_client, async_db
+        self,
+        IbetStraightBondContract_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -52,6 +65,8 @@ class TestIssueAdditionalBond:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -72,7 +87,10 @@ class TestIssueAdditionalBond:
         IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
-        req_param = {"account_address": _issuer_address, "amount": 10}
+        req_param: AdditionalIssueRequest = {
+            "account_address": _issuer_address,
+            "amount": 10,
+        }
         resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
@@ -97,7 +115,10 @@ class TestIssueAdditionalBond:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.additional_issue")
     @pytest.mark.asyncio
     async def test_normal_2(
-        self, IbetStraightBondContract_mock, async_client, async_db
+        self,
+        IbetStraightBondContract_mock: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -106,6 +127,8 @@ class TestIssueAdditionalBond:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -132,7 +155,10 @@ class TestIssueAdditionalBond:
         IbetStraightBondContract_mock.side_effect = [None]
 
         # request target API
-        req_param = {"account_address": _issuer_address, "amount": 10}
+        req_param: AdditionalIssueRequest = {
+            "account_address": _issuer_address,
+            "amount": 10,
+        }
         resp = await async_client.post(
             self.base_url.format(_token_address),
             json=req_param,
@@ -159,7 +185,7 @@ class TestIssueAdditionalBond:
     # <Error_1>
     # RequestValidationError: account_address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -207,7 +233,7 @@ class TestIssueAdditionalBond:
     # <Error_2>
     # RequestValidationError: amount(min)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -255,7 +281,7 @@ class TestIssueAdditionalBond:
     # <Error_3>
     # RequestValidationError: amount(max)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -303,7 +329,7 @@ class TestIssueAdditionalBond:
     # <Error_4>
     # RequestValidationError: headers and body required
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _token_address = "token_address_test"
 
         # request target API
@@ -332,7 +358,7 @@ class TestIssueAdditionalBond:
     # <Error_5>
     # RequestValidationError: issuer-address
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -363,7 +389,7 @@ class TestIssueAdditionalBond:
     # <Error_6>
     # RequestValidationError: eoa-password(not decrypt)
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -371,6 +397,8 @@ class TestIssueAdditionalBond:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -402,7 +430,7 @@ class TestIssueAdditionalBond:
     # <Error_7>
     # issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_7(self, async_client, async_db):
+    async def test_error_7(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -442,7 +470,7 @@ class TestIssueAdditionalBond:
     # <Error_8>
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_8(self, async_client, async_db):
+    async def test_error_8(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -450,6 +478,8 @@ class TestIssueAdditionalBond:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -477,7 +507,7 @@ class TestIssueAdditionalBond:
     # <Error_9>
     # token not found
     @pytest.mark.asyncio
-    async def test_error_9(self, async_client, async_db):
+    async def test_error_9(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -485,6 +515,8 @@ class TestIssueAdditionalBond:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -512,7 +544,7 @@ class TestIssueAdditionalBond:
     # <Error_10>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_10(self, async_client, async_db):
+    async def test_error_10(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -520,6 +552,8 @@ class TestIssueAdditionalBond:
 
         # prepare data¬
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -531,7 +565,9 @@ class TestIssueAdditionalBond:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        from app.model.db import TokenStatus
+
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -562,7 +598,7 @@ class TestIssueAdditionalBond:
         MagicMock(side_effect=SendTransactionError()),
     )
     @pytest.mark.asyncio
-    async def test_error_11(self, async_client, async_db):
+    async def test_error_11(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -570,6 +606,8 @@ class TestIssueAdditionalBond:
 
         # prepare data¬
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import base64
 import binascii
 from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 
 import boto3
 from Crypto.Cipher import PKCS1_OAEP
@@ -52,10 +53,11 @@ class E2EEUtils:
         :return: Base64-encoded encrypted data
         """
         crypto_data = E2EEUtils.__get_crypto_data()
-        if crypto_data.get("public_key") is None:
+        public_key = cast(str | None, crypto_data.get("public_key"))
+        if public_key is None:
             return data
 
-        rsa_key = RSA.importKey(crypto_data.get("public_key"))
+        rsa_key = RSA.importKey(public_key)
         cipher = PKCS1_OAEP.new(rsa_key)
         encrypt_data = cipher.encrypt(data.encode("utf-8"))
         base64_data = base64.encodebytes(encrypt_data)
@@ -68,13 +70,14 @@ class E2EEUtils:
         :param base64_encrypt_data: Base64-encoded encrypted data
         :return: Decrypted data
         """
+        rsa_settings = E2EEUtils.__get_rsa_settings()
         crypto_data = E2EEUtils.__get_crypto_data()
-        if crypto_data.get("private_key") is None:
+        private_key = cast(str | None, crypto_data.get("private_key"))
+        if private_key is None:
             return base64_encrypt_data
 
-        rsa_key = RSA.importKey(
-            crypto_data.get("private_key"), passphrase=E2EE_RSA_PASSPHRASE
-        )
+        _, _, rsa_passphrase = rsa_settings
+        rsa_key = RSA.importKey(private_key, passphrase=rsa_passphrase)
         cipher = PKCS1_OAEP.new(rsa_key)
 
         try:
@@ -87,7 +90,8 @@ class E2EEUtils:
         # the data is requested with the 00 character removed.
         # Since decrypting this data will result in a ValueError (Ciphertext with incorrect length),
         # decrypt the data with 00 added to the beginning.
-        if len(encrypt_data) == (crypto_data.get("encrypted_length") - 1):
+        encrypted_length = cast(int | None, crypto_data.get("encrypted_length"))
+        if encrypted_length is not None and len(encrypt_data) == (encrypted_length - 1):
             hex_fixed = "00" + encrypt_data.hex()
             encrypt_data = base64.b16decode(hex_fixed.upper())
 
@@ -101,12 +105,30 @@ class E2EEUtils:
         :return: Private Key, Public Key
         """
         crypto_data = E2EEUtils.__get_crypto_data()
-        return crypto_data.get("private_key"), crypto_data.get("public_key")
+        return (
+            cast(str | None, crypto_data.get("private_key")),
+            cast(str | None, crypto_data.get("public_key")),
+        )
+
+    @staticmethod
+    def __get_rsa_settings() -> tuple[int, str, str]:
+        if E2EE_RSA_RESOURCE_MODE is None:
+            raise ValueError("E2EE_RSA_RESOURCE_MODE is not configured")
+        if E2EE_RSA_RESOURCE is None:
+            raise ValueError("E2EE_RSA_RESOURCE is not configured")
+        if E2EE_RSA_PASSPHRASE is None:
+            raise ValueError("E2EE_RSA_PASSPHRASE is not configured")
+
+        return (
+            E2EE_RSA_RESOURCE_MODE,
+            E2EE_RSA_RESOURCE,
+            E2EE_RSA_PASSPHRASE,
+        )
 
     @staticmethod
     def __get_crypto_data() -> DictCache:
         if E2EEUtils.cache.get("expiration_datetime") is None:
-            E2EEUtils.cache.update(
+            cast(Any, E2EEUtils.cache).update(
                 **{
                     "private_key": None,
                     "public_key": None,
@@ -115,26 +137,34 @@ class E2EEUtils:
                 }
             )
 
+        rsa_resource_mode, rsa_resource, rsa_passphrase = E2EEUtils.__get_rsa_settings()
+
         # Use Cache
-        if E2EEUtils.cache.get("expiration_datetime") > datetime.now(UTC).replace(
-            tzinfo=None
-        ):
+        expiration_datetime = cast(
+            datetime | None, E2EEUtils.cache.get("expiration_datetime")
+        )
+        if expiration_datetime is not None and expiration_datetime > datetime.now(
+            UTC
+        ).replace(tzinfo=None):
             return E2EEUtils.cache
 
         # Get Private Key
-        private_key = None
-        if E2EE_RSA_RESOURCE_MODE == 0:
-            with open(E2EE_RSA_RESOURCE, "r") as f:
+        private_key: str | None = None
+        if rsa_resource_mode == 0:
+            with open(rsa_resource, "r") as f:
                 private_key = f.read()
-        elif E2EE_RSA_RESOURCE_MODE == 1:
-            secrets_manager = boto3.client(
+        elif rsa_resource_mode == 1:
+            secrets_manager: Any = boto3.client(
                 service_name="secretsmanager", region_name=AWS_REGION_NAME
             )
-            result = secrets_manager.get_secret_value(SecretId=E2EE_RSA_RESOURCE)
-            private_key = result.get("SecretString")
+            result: Any = secrets_manager.get_secret_value(SecretId=rsa_resource)
+            private_key = cast(str | None, result.get("SecretString"))
+
+        if private_key is None:
+            raise ValueError("RSA private key is not configured")
 
         # Get Public Key
-        rsa_key = RSA.importKey(private_key, passphrase=E2EE_RSA_PASSPHRASE)
+        rsa_key = RSA.importKey(private_key, passphrase=rsa_passphrase)
 
         public_key = rsa_key.publickey().exportKey().decode()
 
@@ -143,7 +173,7 @@ class E2EEUtils:
         encrypted_length = len(cipher.encrypt(b""))
 
         # Update Cache(expiration for 1 hour)
-        E2EEUtils.cache.update(
+        cast(Any, E2EEUtils.cache).update(
             **{
                 "private_key": private_key,
                 "public_key": public_key,

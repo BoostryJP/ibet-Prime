@@ -28,7 +28,10 @@ from config import ZERO_ADDRESS
 
 
 def ethereum_address_validator(
-    value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
+    value: Any,
+    handler: ValidatorFunctionWrapHandler,
+    *args: tuple[Any, ...],
+    **kwargs: dict[str, Any],
 ):
     """Validator for ethereum address"""
     if value is not None:
@@ -43,7 +46,10 @@ EthereumAddress = Annotated[str, WrapValidator(ethereum_address_validator)]
 
 
 def checksum_ethereum_address_validator(
-    value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
+    value: Any,
+    handler: ValidatorFunctionWrapHandler,
+    *args: tuple[Any, ...],
+    **kwargs: dict[str, Any],
 ):
     """Validator for ethereum address in checksum format"""
     if value is not None:
@@ -64,7 +70,10 @@ ChecksumEthereumAddress = Annotated[
 
 
 def datetime_string_validator(
-    value: Any, handler: ValidatorFunctionWrapHandler, *args, **kwargs
+    value: Any,
+    handler: ValidatorFunctionWrapHandler,
+    *args: tuple[Any, ...],
+    **kwargs: dict[str, Any],
 ):
     """Validate string datetime format
 

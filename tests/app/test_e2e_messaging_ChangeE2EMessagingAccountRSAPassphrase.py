@@ -23,7 +23,10 @@ from datetime import UTC, datetime
 import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.model.db import E2EMessagingAccount, E2EMessagingAccountRsaKey
 from app.utils.e2ee_utils import E2EEUtils
@@ -106,7 +109,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -122,7 +130,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = user_address_1
+        _rsa_key.transaction_hash = "transaction_hash_1"
         _rsa_key.rsa_private_key = "rsa_private_key_1_1"
+        _rsa_key.rsa_public_key = self.rsa_public_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt("password_1")
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
@@ -130,7 +140,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = user_address_1
+        _rsa_key.transaction_hash = "transaction_hash_2"
         _rsa_key.rsa_private_key = "rsa_private_key_1_2"
+        _rsa_key.rsa_public_key = self.rsa_public_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt("password_2")
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
@@ -138,7 +150,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = user_address_1
+        _rsa_key.transaction_hash = "transaction_hash_3"
         _rsa_key.rsa_private_key = self.rsa_private_key
+        _rsa_key.rsa_public_key = self.rsa_public_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt(old_passphrase)
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
@@ -168,14 +182,14 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         assert len(_rsa_key_list) == 3
         _rsa_key = _rsa_key_list[2]
         assert _rsa_key.rsa_private_key != self.rsa_private_key
-        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == new_passphrase
+        assert E2EEUtils.decrypt(_rsa_key.rsa_passphrase) == new_passphrase  # type: ignore
 
         # test new rsa private key
         test_data = "test_data1234"
         pub_rsa_key = RSA.importKey(self.rsa_public_key)
         pub_cipher = PKCS1_OAEP.new(pub_rsa_key)
         encrypt_data = pub_cipher.encrypt(test_data.encode("utf-8"))
-        pri_rsa_key = RSA.importKey(_rsa_key.rsa_private_key, passphrase=new_passphrase)
+        pri_rsa_key = RSA.importKey(_rsa_key.rsa_private_key, passphrase=new_passphrase)  # type: ignore
         pri_cipher = PKCS1_OAEP.new(pri_rsa_key)
         decrypt_data = pri_cipher.decrypt(encrypt_data).decode()
         assert decrypt_data == test_data
@@ -188,7 +202,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Parameter Error
     # no body
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
@@ -213,13 +229,15 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Parameter Error
     # no required field
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         req_param = {}
         resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
             ),
-            json=req_param,
+            json=req_param,  # type: ignore
         )
 
         # assertion
@@ -246,7 +264,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # Parameter Error
     # not decrypt
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         old_passphrase = "password"
         new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
@@ -290,7 +310,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # no data
     # e2e messaging account
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         old_passphrase = "password"
         new_passphrase = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 *+.\\()?[]^$-|!#%&\"',/:;<=>@_`{}~"
 
@@ -317,8 +339,11 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # rsa key
     @pytest.mark.asyncio
     async def test_normal_2_2(
-        self, async_client, async_db, ibet_e2e_messaging_contract
-    ):
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -353,7 +378,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_3>
     # old password mismatch
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_3(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -369,7 +399,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = user_address_1
+        _rsa_key.transaction_hash = "transaction_hash_4"
         _rsa_key.rsa_private_key = self.rsa_private_key
+        _rsa_key.rsa_public_key = self.rsa_public_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt(old_passphrase)
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)
@@ -395,7 +427,12 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
     # <Normal_4>
     # Passphrase Policy Violation
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db, ibet_e2e_messaging_contract):
+    async def test_normal_4(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_e2e_messaging_contract: Contract,
+    ) -> None:
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -411,7 +448,9 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
 
         _rsa_key = E2EMessagingAccountRsaKey()
         _rsa_key.account_address = user_address_1
+        _rsa_key.transaction_hash = "transaction_hash_5"
         _rsa_key.rsa_private_key = self.rsa_private_key
+        _rsa_key.rsa_public_key = self.rsa_public_key
         _rsa_key.rsa_passphrase = E2EEUtils.encrypt(old_passphrase)
         _rsa_key.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
         async_db.add(_rsa_key)

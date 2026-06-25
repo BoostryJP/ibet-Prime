@@ -18,9 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
+    IDXAvaIbetWSTWhitelist,
     IDXEthIbetWSTWhitelist,
     IDXPersonalInfo,
     PersonalInfoDataSource,
@@ -53,7 +56,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
 
     # <Normal_1>
     # Whitelist account is not registered for the specified WST token address.
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -63,9 +66,11 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
             version=TokenVersion.V_25_09,
             abi={},
             token_status=TokenStatus.SUCCEEDED,
-            ibet_wst_activated=True,
-            ibet_wst_deployed=True,
-            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+        )
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address(
+            "ethereum", to_checksum_address(self.wst_token_address_1)
         )
         async_db.add(token)
 
@@ -92,9 +97,10 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
             "whitelist_accounts": [],
         }
 
-    # <Normal_2>
+    # <Normal_2_1>
     # Whitelist accounts are registered for the specified WST token address.
-    async def test_normal_2(self, async_db, async_client):
+    # - blockchain_platform = "ethereum" (default)
+    async def test_normal_2_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare test data
         token = Token(
             type=TokenType.IBET_STRAIGHT_BOND,
@@ -104,9 +110,11 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
             version=TokenVersion.V_25_09,
             abi={},
             token_status=TokenStatus.SUCCEEDED,
-            ibet_wst_activated=True,
-            ibet_wst_deployed=True,
-            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+        )
+        token.set_ibet_wst_activated("ethereum", True)
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address(
+            "ethereum", to_checksum_address(self.wst_token_address_1)
         )
         async_db.add(token)
 
@@ -178,6 +186,96 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
             ],
         }
 
+    # <Normal_2_2>
+    # Whitelist accounts are registered for the specified WST token address.
+    # - blockchain_platform = "avalanche"
+    async def test_normal_2_2(self, async_db: AsyncSession, async_client: AsyncClient):
+        # Prepare test data
+        token = Token(
+            type=TokenType.IBET_STRAIGHT_BOND,
+            tx_hash="0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            issuer_address=self.issuer["address"],
+            token_address=to_checksum_address(self.token_address_1),
+            version=TokenVersion.V_25_09,
+            abi={},
+            token_status=TokenStatus.SUCCEEDED,
+        )
+        token.set_ibet_wst_activated("avalanche", True)
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address(
+            "avalanche", to_checksum_address(self.wst_token_address_1)
+        )
+        async_db.add(token)
+
+        whitelist_1 = IDXAvaIbetWSTWhitelist(
+            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+            st_account_address=self.user1["address"],
+            sc_account_address_in=self.user1["address"],
+            sc_account_address_out=self.user1["address"],
+        )
+        whitelist_2 = IDXAvaIbetWSTWhitelist(
+            ibet_wst_address=to_checksum_address(self.wst_token_address_1),
+            st_account_address=self.user2["address"],
+            sc_account_address_in=self.user2["address"],
+            sc_account_address_out=self.user2["address"],
+        )
+        async_db.add(whitelist_1)
+        async_db.add(whitelist_2)
+
+        user1_personal_info = IDXPersonalInfo(
+            account_address=self.user1["address"],
+            issuer_address=self.issuer["address"],
+            _personal_info={
+                "key_manager": "test_key_manager",
+                "name": "User One",
+                "postal_code": "1234567",
+                "address": "123 User Street",
+                "email": "test@example.com",
+                "birth": "19900101",
+                "is_corporate": False,
+                "tax_category": 0,
+            },
+            data_source=PersonalInfoDataSource.OFF_CHAIN,
+        )
+        async_db.add(user1_personal_info)
+
+        await async_db.commit()
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url.format(token_address=self.token_address_1),
+            headers={"issuer-address": self.issuer["address"]},
+            params={"blockchain_platform": "avalanche"},
+        )
+
+        # Check response
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "whitelist_accounts": [
+                {
+                    "st_account_address": self.user2["address"],
+                    "st_account_personal_info": None,
+                    "sc_account_address_in": self.user2["address"],
+                    "sc_account_address_out": self.user2["address"],
+                },
+                {
+                    "st_account_address": self.user1["address"],
+                    "st_account_personal_info": {
+                        "key_manager": "test_key_manager",
+                        "name": "User One",
+                        "postal_code": "1234567",
+                        "address": "123 User Street",
+                        "email": "test@example.com",
+                        "birth": "19900101",
+                        "is_corporate": False,
+                        "tax_category": 0,
+                    },
+                    "sc_account_address_in": self.user1["address"],
+                    "sc_account_address_out": self.user1["address"],
+                },
+            ],
+        }
+
     ###########################################################################
     # Error
     ###########################################################################
@@ -185,7 +283,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Error_1>
     # Request without issuer address
     # - Expected to return 422
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request without issuer address in header
         resp = await async_client.get(
             self.api_url.format(token_address=self.token_address_1),
@@ -208,7 +306,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Error_2>
     # Invalid token address format
     # - Expected to return 422
-    async def test_error_2(self, async_client):
+    async def test_error_2(self, async_client: AsyncClient):
         # Send request with invalid token address format
         resp = await async_client.get(
             self.api_url.format(token_address="invalid_address"),
@@ -233,7 +331,7 @@ class TestRetrieveIbetWSTWhitelistAccountsWithPersonalInfo:
     # <Error_3>
     # Token not found for the specified address
     # - Expected to return 404
-    async def test_error_3(self, async_client):
+    async def test_error_3(self, async_client: AsyncClient):
         # Send request with a token address that does not exist
         resp = await async_client.get(
             self.api_url.format(token_address=self.token_address_1),

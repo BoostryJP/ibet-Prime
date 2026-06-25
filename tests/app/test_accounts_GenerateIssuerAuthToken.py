@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -21,7 +23,10 @@ import hashlib
 from datetime import datetime
 
 import pytest
+from freezegun.api import FrozenDateTimeFactory
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
@@ -42,11 +47,18 @@ class TestGenerateIssuerAuthToken:
     # Normal_1
     # New token
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, freezer):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -62,13 +74,14 @@ class TestGenerateIssuerAuthToken:
         )
 
         # assertion
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
                 .limit(1)
             )
         ).first()
+        assert auth_token is not None
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
         assert auth_token.valid_duration == 120
@@ -85,11 +98,18 @@ class TestGenerateIssuerAuthToken:
     # Normal_2
     # Update token
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, freezer):
+    async def test_normal_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -115,13 +135,14 @@ class TestGenerateIssuerAuthToken:
         )
 
         # assertion
-        auth_token: AuthToken = (
+        auth_token = (
             await async_db.scalars(
                 select(AuthToken)
                 .where(AuthToken.issuer_address == test_account["address"])
                 .limit(1)
             )
         ).first()
+        assert auth_token is not None
         assert auth_token.issuer_address == test_account["address"]
         assert auth_token.usage_start == datetime(2022, 7, 15, 12, 34, 56)
         assert auth_token.valid_duration == 120
@@ -143,11 +164,18 @@ class TestGenerateIssuerAuthToken:
     # RequestValidationError
     # [header] missing
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db, freezer):
+    async def test_error_1_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -188,11 +216,18 @@ class TestGenerateIssuerAuthToken:
     # RequestValidationError
     # [body] missing
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db, freezer):
+    async def test_error_1_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -234,11 +269,18 @@ class TestGenerateIssuerAuthToken:
     # RequestValidationError
     # issuer-address is not a valid address
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db, freezer):
+    async def test_error_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -281,11 +323,18 @@ class TestGenerateIssuerAuthToken:
     # RequestValidationError
     # [header] eoa-password is not a Base64-encoded encrypted data
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, freezer):
+    async def test_error_3(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -330,11 +379,18 @@ class TestGenerateIssuerAuthToken:
     # RequestValidationError
     # [body] type error
     @pytest.mark.asyncio
-    async def test_error_4_1(self, async_client, async_db, freezer):
+    async def test_error_4_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -378,11 +434,18 @@ class TestGenerateIssuerAuthToken:
     # RequestValidationError
     # [body] valid_duration is greater than or equal to 0
     @pytest.mark.asyncio
-    async def test_error_4_2(self, async_client, async_db, freezer):
+    async def test_error_4_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -425,11 +488,18 @@ class TestGenerateIssuerAuthToken:
     # Error_5
     # AuthorizationError
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db, freezer):
+    async def test_error_5(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -467,11 +537,18 @@ class TestGenerateIssuerAuthToken:
     # AuthTokenAlreadyExistsError
     # valid_duration = 0
     @pytest.mark.asyncio
-    async def test_error_6_1(self, async_client, async_db, freezer):
+    async def test_error_6_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)
@@ -505,11 +582,18 @@ class TestGenerateIssuerAuthToken:
     # AuthTokenAlreadyExistsError
     # valid token already exists
     @pytest.mark.asyncio
-    async def test_error_6_2(self, async_client, async_db, freezer):
+    async def test_error_6_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        freezer: FrozenDateTimeFactory,
+    ):
         test_account = default_eth_account("user1")
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = test_account["address"]
         account.keyfile = test_account["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt(self.eoa_password)

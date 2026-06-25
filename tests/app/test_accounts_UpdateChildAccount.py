@@ -1,3 +1,7 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+from tests.account_config import default_eth_account
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,7 +24,9 @@ SPDX-License-Identifier: Apache-2.0
 import datetime
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -46,9 +52,13 @@ class TestUpdateChildAccount:
     # <Normal_1>
     @pytest.mark.freeze_time("2024-09-28 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -108,6 +118,7 @@ class TestUpdateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _off_personal_info_af is not None
         assert _off_personal_info.personal_info == {
             "key_manager": "SELF",
             "name": "name_test_af",
@@ -126,6 +137,7 @@ class TestUpdateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _personal_info_history is not None
         assert _personal_info_history.issuer_address == self.issuer_address
         assert _personal_info_history.account_address == self.child_account_address
         assert _personal_info_history.event_type == PersonalInfoEventType.MODIFY
@@ -142,7 +154,7 @@ class TestUpdateChildAccount:
     # RequestValidationError
     # - Missing body
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Call API
         resp = await async_client.post(
             self.base_url.format(self.issuer_address, 1), json={}
@@ -165,7 +177,7 @@ class TestUpdateChildAccount:
     # <Error_2>
     # 404: Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Call API
         resp = await async_client.post(
             self.base_url.format(self.issuer_address, 1),
@@ -192,9 +204,13 @@ class TestUpdateChildAccount:
     # <Error_3>
     # 404: Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
         await async_db.commit()
@@ -225,9 +241,13 @@ class TestUpdateChildAccount:
     # <Error_4>
     # PersonalInfoExceedsSizeLimit
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 

@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import JSON, BigInteger, Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -51,7 +52,7 @@ class IDXLock(Base):
     # Lock Amount
     value: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # Message at Lock
-    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # Lock Datetime
     block_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     # Whether the lock is forced or not
@@ -88,7 +89,7 @@ class IDXUnlock(Base):
     # Unlock Amount
     value: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # Message at Unlock
-    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # Unlock Datetime
     block_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     # Whether the unlock is forced or not

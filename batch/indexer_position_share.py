@@ -24,15 +24,16 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from itertools import groupby
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence, TypedDict
 
 import uvloop
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
 from pydantic import BaseModel
 from sqlalchemy import and_, select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import AsyncContract
+from web3.types import BlockData
 
 from app.database import BatchAsyncSessionLocal
 from app.exceptions import ServiceUnavailableError
@@ -84,6 +85,11 @@ class NotificationEvent(BaseModel):
     issuer_address: str
     token_address: str
     event_args: NotificationEventArgs
+
+
+class PositionAccount(TypedDict):
+    token_address: str
+    account_address: str
 
 
 class Processor:
@@ -202,14 +208,15 @@ class Processor:
 
         for load_required_token in load_required_token_list:
             token_contract = web3.eth.contract(
-                address=load_required_token.token_address, abi=load_required_token.abi
+                address=to_checksum_address(load_required_token.token_address),
+                abi=load_required_token.abi,
             )
             self.token_list[load_required_token.token_address] = token_contract
             self.init_position_synced[load_required_token.token_address] = (
                 load_required_token.initial_position_synced
             )
 
-        _exchange_list_tmp = []
+        _exchange_list_tmp: list[str] = []
         for token_contract in self.token_list.values():
             share_token = IbetShareContract(token_contract.address)
             await share_token.get()
@@ -222,7 +229,7 @@ class Processor:
         self.exchange_address_list = list(set(_exchange_list_tmp))
 
     @staticmethod
-    async def __get_idx_position_block_number(db_session: AsyncSession):
+    async def __get_idx_position_block_number(db_session: AsyncSession) -> int:
         _idx_position_block_number: IDXPositionShareBlockNumber | None = (
             await db_session.scalars(select(IDXPositionShareBlockNumber).limit(1))
         ).first()
@@ -397,7 +404,7 @@ class Processor:
 
                 # Update locked positions
                 try:
-                    lock_map: dict[str, dict[str, True]] = {}
+                    lock_map: dict[str, dict[str, bool]] = {}
                     for event in events:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
@@ -406,7 +413,8 @@ class Processor:
                         data = args.get("data", "")
                         event_created = await self.__gen_block_timestamp(event=event)
                         tx = await web3.eth.get_transaction(event["transactionHash"])
-                        msg_sender = tx["from"]
+                        msg_sender = tx.get("from")
+                        assert msg_sender is not None
 
                         # Index Lock event
                         await self.__insert_lock_idx(
@@ -502,7 +510,7 @@ class Processor:
 
                 # Update locked positions
                 try:
-                    lock_map: dict[str, dict[str, True]] = {}
+                    lock_map: dict[str, dict[str, bool]] = {}
                     for event in events:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
@@ -511,7 +519,8 @@ class Processor:
                         data = args.get("data", "")
                         event_created = await self.__gen_block_timestamp(event=event)
                         tx = await web3.eth.get_transaction(event["transactionHash"])
-                        msg_sender = tx["from"]
+                        msg_sender = tx.get("from")
+                        assert msg_sender is not None
 
                         # Index Lock event
                         await self.__insert_lock_idx(
@@ -608,7 +617,7 @@ class Processor:
 
                 # Update locked positions
                 try:
-                    lock_map: dict[str, dict[str, True]] = {}
+                    lock_map: dict[str, dict[str, bool]] = {}
                     for event in events:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
@@ -618,7 +627,8 @@ class Processor:
                         data = args.get("data", "")
                         event_created = await self.__gen_block_timestamp(event=event)
                         tx = await web3.eth.get_transaction(event["transactionHash"])
-                        msg_sender = tx["from"]
+                        msg_sender = tx.get("from")
+                        assert msg_sender is not None
 
                         # Index Unlock event
                         await self.__insert_unlock_idx(
@@ -716,7 +726,7 @@ class Processor:
 
                 # Update locked positions
                 try:
-                    lock_map: dict[str, dict[str, True]] = {}
+                    lock_map: dict[str, dict[str, bool]] = {}
                     for event in events:
                         args = event["args"]
                         account_address = args.get("accountAddress", "")
@@ -726,7 +736,8 @@ class Processor:
                         data = args.get("data", "")
                         event_created = await self.__gen_block_timestamp(event=event)
                         tx = await web3.eth.get_transaction(event["transactionHash"])
-                        msg_sender = tx["from"]
+                        msg_sender = tx.get("from")
+                        assert msg_sender is not None
 
                         # Index Unlock event
                         await self.__insert_unlock_idx(
@@ -823,7 +834,7 @@ class Processor:
                     block_to=block_to,
                 )
                 try:
-                    lock_map: dict[str, dict[str, True]] = {}
+                    lock_map: dict[str, dict[str, bool]] = {}
                     # Insert Lock and Unlock indexes
                     for event in events:
                         args = event["args"]
@@ -834,7 +845,8 @@ class Processor:
                         data = args.get("data", "")
                         event_created = await self.__gen_block_timestamp(event=event)
                         tx = await web3.eth.get_transaction(event["transactionHash"])
-                        msg_sender = tx["from"]
+                        msg_sender = tx.get("from")
+                        assert msg_sender is not None
 
                         # Index Unlock event
                         # - Set after_account as recipient
@@ -1107,7 +1119,7 @@ class Processor:
                     "IbetExchange", exchange_address
                 )
 
-                account_list_tmp = []
+                account_list_tmp: list[PositionAccount] = []
 
                 # NewOrder event
                 _event_list = await AsyncContractUtils.get_event_logs(
@@ -1237,13 +1249,13 @@ class Processor:
                 account_list_tmp.sort(
                     key=lambda x: (x["token_address"], x["account_address"])
                 )
-                account_list = []
-                for k, g in groupby(
+                account_list: list[PositionAccount] = []
+                for key, _ in groupby(
                     account_list_tmp,
                     lambda x: (x["token_address"], x["account_address"]),
                 ):
                     account_list.append(
-                        {"token_address": k[0], "account_address": k[1]}
+                        {"token_address": key[0], "account_address": key[1]}
                     )
 
                 # Update position
@@ -1286,7 +1298,7 @@ class Processor:
                     "IbetSecurityTokenEscrow", exchange_address
                 )
 
-                account_list_tmp = []
+                account_list_tmp: list[PositionAccount] = []
 
                 # EscrowCreated event
                 _event_list = await AsyncContractUtils.get_event_logs(
@@ -1347,13 +1359,13 @@ class Processor:
                 account_list_tmp.sort(
                     key=lambda x: (x["token_address"], x["account_address"])
                 )
-                account_list = []
-                for k, g in groupby(
+                account_list: list[PositionAccount] = []
+                for key, _ in groupby(
                     account_list_tmp,
                     lambda x: (x["token_address"], x["account_address"]),
                 ):
                     account_list.append(
-                        {"token_address": k[0], "account_address": k[1]}
+                        {"token_address": key[0], "account_address": key[1]}
                     )
 
                 # Update position
@@ -1396,7 +1408,7 @@ class Processor:
                     "IbetSecurityTokenDVP", exchange_address
                 )
 
-                account_list_tmp = []
+                account_list_tmp: list[PositionAccount] = []
 
                 # DeliveryCreated event
                 _event_list = await AsyncContractUtils.get_event_logs(
@@ -1474,13 +1486,13 @@ class Processor:
                 account_list_tmp.sort(
                     key=lambda x: (x["token_address"], x["account_address"])
                 )
-                account_list = []
-                for k, g in groupby(
+                account_list: list[PositionAccount] = []
+                for key, _ in groupby(
                     account_list_tmp,
                     lambda x: (x["token_address"], x["account_address"]),
                 ):
                     account_list.append(
-                        {"token_address": k[0], "account_address": k[1]}
+                        {"token_address": key[0], "account_address": key[1]}
                     )
 
                 # Update position
@@ -1708,7 +1720,9 @@ class Processor:
             db_session.add(locked)
 
     @staticmethod
-    async def __get_account_balance_all(token_contract, account_address: str):
+    async def __get_account_balance_all(
+        token_contract: AsyncContract, account_address: str
+    ):
         """Get balance"""
 
         exchange_balance = 0
@@ -1736,14 +1750,15 @@ class Processor:
         except ExceptionGroup:
             raise ServiceUnavailableError
 
-        share_token = IbetShareContract(token_contract.address)
+        token_address = str(token_contract.address)
+        share_token = IbetShareContract(token_address)
         await share_token.get()
         tradable_exchange_address = share_token.tradable_exchange_contract_address
 
         if tradable_exchange_address != ZERO_ADDRESS:
             exchange_contract = IbetExchangeInterface(tradable_exchange_address)
             exchange_contract_balance = await exchange_contract.get_account_balance(
-                account_address=account_address, token_address=token_contract.address
+                account_address=account_address, token_address=token_address
             )
             exchange_balance = exchange_contract_balance["balance"]
             exchange_commitment = exchange_contract_balance["commitment"]
@@ -1751,7 +1766,9 @@ class Processor:
         return balance, pending_transfer, exchange_balance, exchange_commitment
 
     @staticmethod
-    async def __get_account_balance_token(token_contract, account_address: str):
+    async def __get_account_balance_token(
+        token_contract: AsyncContract, account_address: str
+    ):
         """Get balance on token"""
 
         try:
@@ -1778,7 +1795,7 @@ class Processor:
 
     @staticmethod
     async def __get_account_locked_token(
-        token_contract, lock_address: str, account_address: str
+        token_contract: AsyncContract, lock_address: str, account_address: str
     ):
         """Get locked balance on token"""
         value = await AsyncContractUtils.call_function(
@@ -1808,10 +1825,13 @@ class Processor:
         )
 
     @staticmethod
-    async def __gen_block_timestamp(event):
-        return datetime.fromtimestamp(
-            (await web3.eth.get_block(event["blockNumber"]))["timestamp"], UTC
-        )
+    async def __gen_block_timestamp(event: dict[str, Any]) -> datetime:
+        block_number = event.get("blockNumber")
+        assert block_number is not None
+        block: BlockData = await web3.eth.get_block(block_number)
+        block_timestamp = block.get("timestamp")
+        assert block_timestamp is not None
+        return datetime.fromtimestamp(int(block_timestamp), UTC)
 
     async def __insert_notification_events(self, db_session: AsyncSession):
         """
@@ -1837,7 +1857,7 @@ class Processor:
                     token_type=TokenType.IBET_SHARE,
                     account_address=event.event_args.account_address,
                     lock_address=event.event_args.lock_address,
-                    recipient_address=event.event_args.recipient_address,
+                    recipient_address=event.event_args.recipient_address or "",
                     value=event.event_args.value,
                     data_str=event.event_args.data,
                 )
@@ -1918,8 +1938,8 @@ async def main():
     while True:
         try:
             await processor.sync_new_logs()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception:

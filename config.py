@@ -20,6 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import configparser
 import os
 import sys
+from typing import Literal
 
 from dotenv import load_dotenv
 
@@ -40,24 +41,14 @@ TZ = os.environ.get("TZ") or "Asia/Tokyo"
 # Default currency code
 DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY") or "JPY"
 
-# Blockchain network
-NETWORK = os.environ.get("NETWORK") or "IBET"  # IBET or IBETFIN
-
 # Environment-specific settings
-APP_ENV = os.environ.get("APP_ENV") or "local"
-if APP_ENV != "live":
-    INI_FILE = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), f"conf/{APP_ENV}.ini"
-    )
-else:
-    if NETWORK == "IBET":  # ibet
-        INI_FILE = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "conf/live.ini"
-        )
-    else:  # ibet for Fin
-        INI_FILE = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "conf/live_fin.ini"
-        )
+_app_env = os.environ.get("APP_ENV") or "local"
+if _app_env not in ("local", "dev", "live"):
+    raise ValueError(f"Invalid APP_ENV: {_app_env}")
+APP_ENV: Literal["local", "dev", "live"] = _app_env
+config_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "conf")
+ini_file_name = f"{APP_ENV}.ini"
+INI_FILE = os.path.join(config_dir, ini_file_name)
 CONFIG = configparser.ConfigParser()
 CONFIG.read(INI_FILE)
 
@@ -77,18 +68,15 @@ PROFILING_MODE = True if os.environ.get("PROFILING_MODE") == "1" else False
 ####################################################
 
 # Database
-if "pytest" in sys.modules:  # for unit test
-    DATABASE_URL = (
-        os.environ.get("TEST_DATABASE_URL")
-        or "postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test"
-    )
-else:
-    DATABASE_URL = (
-        os.environ.get("DATABASE_URL")
-        or "postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb"
-    )
-ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://")
+database_url = (
+    os.environ.get("TEST_DATABASE_URL")
+    or "postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb_test"
+    if "pytest" in sys.modules
+    else os.environ.get("DATABASE_URL")
+    or "postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb"
+)
+ASYNC_DATABASE_URL = database_url.replace("postgresql://", "postgresql+asyncpg://")
+DATABASE_URL = database_url.replace("postgresql://", "postgresql+psycopg://")
 
 DATABASE_SCHEMA = os.environ.get("DATABASE_SCHEMA")
 DB_ECHO = True if CONFIG["database"]["echo"] == "yes" else False
@@ -103,16 +91,12 @@ ACCESS_LOGFILE = os.environ.get("ACCESS_LOGFILE") or "/dev/stdout"
 # Blockchain monitoring settings (ibet network)
 ####################################################
 # Block synchronization monitoring interval [sec]
-BLOCK_SYNC_STATUS_SLEEP_INTERVAL = (
-    int(os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL"))
-    if os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL")
-    else 3
+BLOCK_SYNC_STATUS_SLEEP_INTERVAL = int(
+    os.environ.get("BLOCK_SYNC_STATUS_SLEEP_INTERVAL") or 3
 )
 # Number of monitoring data period
-BLOCK_SYNC_STATUS_CALC_PERIOD = (
-    int(os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD"))
-    if os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD")
-    else 3
+BLOCK_SYNC_STATUS_CALC_PERIOD = int(
+    os.environ.get("BLOCK_SYNC_STATUS_CALC_PERIOD") or 3
 )
 # Threshold for remaining block synchronization
 # - Threshold for difference between highestBlock and currentBlock
@@ -120,18 +104,11 @@ BLOCK_SYNC_REMAINING_THRESHOLD = int(
     os.environ.get("BLOCK_SYNC_REMAINING_THRESHOLD", 2)
 )
 # Threshold of block generation speed for judging synchronous stop [%]
-if APP_ENV == "local":
-    BLOCK_GENERATION_SPEED_THRESHOLD = (
-        int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD"))
-        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")
-        else 0
-    )
-else:
-    BLOCK_GENERATION_SPEED_THRESHOLD = (
-        int(os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD"))
-        if os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")
-        else 20
-    )
+default_block_generation_speed_threshold = 0 if APP_ENV == "local" else 20
+BLOCK_GENERATION_SPEED_THRESHOLD = int(
+    os.environ.get("BLOCK_GENERATION_SPEED_THRESHOLD")
+    or str(default_block_generation_speed_threshold)
+)
 # Average block generation interval
 EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 0.1))
 
@@ -141,30 +118,21 @@ EXPECTED_BLOCKS_PER_SEC = float(os.environ.get("EXPECTED_BLOCKS_PER_SEC", 0.1))
 ####################################################
 # Provider
 WEB3_HTTP_PROVIDER = os.environ.get("WEB3_HTTP_PROVIDER") or "http://localhost:8545"
+web3_http_provider_standby = os.environ.get("WEB3_HTTP_PROVIDER_STANDBY")
 WEB3_HTTP_PROVIDER_STANDBY = (
-    [node.strip() for node in os.environ.get("WEB3_HTTP_PROVIDER_STANDBY").split(",")]
-    if os.environ.get("WEB3_HTTP_PROVIDER_STANDBY")
+    [node.strip() for node in web3_http_provider_standby.split(",")]
+    if web3_http_provider_standby
     else []
 )
 
 # Chain ID
-CHAIN_ID = int(os.environ.get("CHAIN_ID")) if os.environ.get("CHAIN_ID") else 2017
+CHAIN_ID = int(os.environ.get("CHAIN_ID") or 2017)
 
 # Gas limit
-TX_GAS_LIMIT = (
-    int(os.environ.get("TX_GAS_LIMIT")) if os.environ.get("TX_GAS_LIMIT") else 6000000
-)
+TX_GAS_LIMIT = int(os.environ.get("TX_GAS_LIMIT") or 6000000)
 
-WEB3_REQUEST_RETRY_COUNT = (
-    int(os.environ.get("WEB3_REQUEST_RETRY_COUNT"))
-    if os.environ.get("WEB3_REQUEST_RETRY_COUNT")
-    else 3
-)
-WEB3_REQUEST_WAIT_TIME = (
-    int(os.environ.get("WEB3_REQUEST_WAIT_TIME"))
-    if os.environ.get("WEB3_REQUEST_WAIT_TIME")
-    else 3
-)
+WEB3_REQUEST_RETRY_COUNT = int(os.environ.get("WEB3_REQUEST_RETRY_COUNT") or 3)
+WEB3_REQUEST_WAIT_TIME = int(os.environ.get("WEB3_REQUEST_WAIT_TIME") or 3)
 
 
 ####################################################
@@ -178,16 +146,8 @@ E2E_MESSAGING_CONTRACT_ADDRESS = os.environ.get("E2E_MESSAGING_CONTRACT_ADDRESS"
 
 # Token data cache
 TOKEN_CACHE = False if os.environ.get("TOKEN_CACHE") == "0" else True
-TOKEN_CACHE_TTL = (
-    int(os.environ.get("TOKEN_CACHE_TTL"))
-    if os.environ.get("TOKEN_CACHE_TTL")
-    else 43200
-)
-TOKEN_CACHE_TTL_JITTER = (
-    int(os.environ.get("TOKEN_CACHE_TTL_JITTER"))
-    if os.environ.get("TOKEN_CACHE_TTL_JITTER")
-    else 21600
-)
+TOKEN_CACHE_TTL = int(os.environ.get("TOKEN_CACHE_TTL") or 43200)
+TOKEN_CACHE_TTL_JITTER = int(os.environ.get("TOKEN_CACHE_TTL_JITTER") or 21600)
 
 ####################################################
 # Batch settings
@@ -197,10 +157,8 @@ TOKEN_CACHE_TTL_JITTER = (
 # Indexer
 # =============================
 INDEXER_SYNC_INTERVAL = 10
-INDEXER_BLOCK_LOT_MAX_SIZE = (
-    int(os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE"))
-    if os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE")
-    else 1000000
+INDEXER_BLOCK_LOT_MAX_SIZE = int(
+    os.environ.get("INDEXER_BLOCK_LOT_MAX_SIZE") or 1000000
 )
 
 # =============================
@@ -208,82 +166,44 @@ INDEXER_BLOCK_LOT_MAX_SIZE = (
 # =============================
 
 # Bulk Tx
-BULK_TX_LOT_SIZE = (
-    int(os.environ.get("BULK_TX_LOT_SIZE"))
-    if os.environ.get("BULK_TX_LOT_SIZE")
-    else 100
-)
+BULK_TX_LOT_SIZE = int(os.environ.get("BULK_TX_LOT_SIZE") or 100)
 
 # Bulk Transfer
-BULK_TRANSFER_INTERVAL = (
-    int(os.environ.get("BULK_TRANSFER_INTERVAL"))
-    if os.environ.get("BULK_TRANSFER_INTERVAL")
-    else 10
-)
-BULK_TRANSFER_WORKER_COUNT = (
-    int(os.environ.get("BULK_TRANSFER_WORKER_COUNT"))
-    if os.environ.get("BULK_TRANSFER_WORKER_COUNT")
-    else 5
-)
-BULK_TRANSFER_WORKER_LOT_SIZE = (
-    int(os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE"))
-    if os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE")
-    else 5
+BULK_TRANSFER_INTERVAL = int(os.environ.get("BULK_TRANSFER_INTERVAL") or 10)
+BULK_TRANSFER_WORKER_COUNT = int(os.environ.get("BULK_TRANSFER_WORKER_COUNT") or 5)
+BULK_TRANSFER_WORKER_LOT_SIZE = int(
+    os.environ.get("BULK_TRANSFER_WORKER_LOT_SIZE") or 5
 )
 
 # Batch Register Personal Info
-BATCH_REGISTER_PERSONAL_INFO_INTERVAL = (
-    int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_INTERVAL"))
-    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_INTERVAL")
-    else 60
+BATCH_REGISTER_PERSONAL_INFO_INTERVAL = int(
+    os.environ.get("BATCH_REGISTER_PERSONAL_INFO_INTERVAL") or 60
 )
-BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT = (
-    int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT"))
-    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT")
-    else 1
+BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT = int(
+    os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_COUNT") or 1
 )
-BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE = (
-    int(os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE"))
-    if os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE")
-    else 2
+BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE = int(
+    os.environ.get("BATCH_REGISTER_PERSONAL_INFO_WORKER_LOT_SIZE") or 2
 )
 
 # Scheduled Events
-SCHEDULED_EVENTS_INTERVAL = (
-    int(os.environ.get("SCHEDULED_EVENTS_INTERVAL"))
-    if os.environ.get("SCHEDULED_EVENTS_INTERVAL")
-    else 60
-)
-SCHEDULED_EVENTS_WORKER_COUNT = (
-    int(os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT"))
-    if os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT")
-    else 5
+SCHEDULED_EVENTS_INTERVAL = int(os.environ.get("SCHEDULED_EVENTS_INTERVAL") or 60)
+SCHEDULED_EVENTS_WORKER_COUNT = int(
+    os.environ.get("SCHEDULED_EVENTS_WORKER_COUNT") or 5
 )
 
 # Update Token
-UPDATE_TOKEN_INTERVAL = (
-    int(os.environ.get("UPDATE_TOKEN_INTERVAL"))
-    if os.environ.get("UPDATE_TOKEN_INTERVAL")
-    else 10
-)
+UPDATE_TOKEN_INTERVAL = int(os.environ.get("UPDATE_TOKEN_INTERVAL") or 10)
 
 # Create UTXO
-CREATE_UTXO_INTERVAL = (
-    int(os.environ.get("CREATE_UTXO_INTERVAL"))
-    if os.environ.get("CREATE_UTXO_INTERVAL")
-    else 600
-)
-CREATE_UTXO_BLOCK_LOT_MAX_SIZE = (
-    int(os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE"))
-    if os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE")
-    else 10000
+CREATE_UTXO_INTERVAL = int(os.environ.get("CREATE_UTXO_INTERVAL") or 600)
+CREATE_UTXO_BLOCK_LOT_MAX_SIZE = int(
+    os.environ.get("CREATE_UTXO_BLOCK_LOT_MAX_SIZE") or 10000
 )
 
 # Rotate E2E Messaging RSA Key
-ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = (
-    int(os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL"))
-    if os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL")
-    else 10
+ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL = int(
+    os.environ.get("ROTATE_E2E_MESSAGING_RSA_KEY_INTERVAL") or 10
 )
 
 ####################################################
@@ -341,15 +261,20 @@ if (
     or APP_ENV == "local"
 ):
     # For unit test / migration / local development
-    E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE", 0))
-    E2EE_RSA_RESOURCE = (
+    e2ee_rsa_resource_mode = os.environ.get("E2EE_RSA_RESOURCE_MODE") or "0"
+    e2ee_rsa_resource = (
         os.environ.get("E2EE_RSA_RESOURCE") or "tests/data/rsa_private.pem"
     )
-    E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE") or "password"
+    e2ee_rsa_passphrase = os.environ.get("E2EE_RSA_PASSPHRASE") or "password"
 else:
-    E2EE_RSA_RESOURCE_MODE = int(os.environ.get("E2EE_RSA_RESOURCE_MODE"))
-    E2EE_RSA_RESOURCE = os.environ.get("E2EE_RSA_RESOURCE")
-    E2EE_RSA_PASSPHRASE = os.environ.get("E2EE_RSA_PASSPHRASE")
+    e2ee_rsa_resource_mode = os.environ.get("E2EE_RSA_RESOURCE_MODE")
+    e2ee_rsa_resource = os.environ.get("E2EE_RSA_RESOURCE")
+    e2ee_rsa_passphrase = os.environ.get("E2EE_RSA_PASSPHRASE")
+E2EE_RSA_RESOURCE_MODE = (
+    int(e2ee_rsa_resource_mode) if e2ee_rsa_resource_mode is not None else None
+)
+E2EE_RSA_RESOURCE = e2ee_rsa_resource
+E2EE_RSA_PASSPHRASE = e2ee_rsa_passphrase
 E2EE_REQUEST_ENABLED = False if os.environ.get("E2EE_REQUEST_ENABLED") == "0" else True
 
 
@@ -403,20 +328,18 @@ DVP_DATA_ENCRYPTION_KEY = os.environ.get("DVP_DATA_ENCRYPTION_KEY") or None
 ####################################################
 # Settings for the "IbetWST" feature
 ####################################################
-IBET_WST_FEATURE_ENABLED = (
-    True if os.environ.get("IBET_WST_FEATURE_ENABLED") == "1" else False
+IBET_WST_ETH_FEATURE_ENABLED = (
+    True if os.environ.get("IBET_WST_ETH_FEATURE_ENABLED") == "1" else False
 )
+IBET_WST_AVA_FEATURE_ENABLED = (
+    True if os.environ.get("IBET_WST_AVA_FEATURE_ENABLED") == "1" else False
+)
+IBET_WST_FEATURE_ENABLED = IBET_WST_ETH_FEATURE_ENABLED or IBET_WST_AVA_FEATURE_ENABLED
 
 # IbetWST Bridge
-IBET_WST_BRIDGE_INTERVAL = (
-    int(os.environ.get("IBET_WST_BRIDGE_INTERVAL"))
-    if os.environ.get("IBET_WST_BRIDGE_INTERVAL")
-    else 10
-)
-IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE = (
-    int(os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE"))
-    if os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE")
-    else 10000
+IBET_WST_BRIDGE_INTERVAL = int(os.environ.get("IBET_WST_BRIDGE_INTERVAL") or 10)
+IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE = int(
+    os.environ.get("IBET_WST_BRIDGE_BLOCK_LOT_MAX_SIZE") or 10000
 )
 
 ######################################################
@@ -443,8 +366,4 @@ PERSONAL_INFO_MESSAGE_SIZE_LIMIT = int((10240 / 8) - (2 * 20 + 2))
 
 # File Upload
 # NOTE: (Reference information) WSGI server and app used by ibet-Prime has no request body size limit.
-MAX_UPLOAD_FILE_SIZE = (
-    int(os.environ.get("MAX_UPLOAD_FILE_SIZE"))
-    if os.environ.get("MAX_UPLOAD_FILE_SIZE")
-    else 100_000_000
-)
+MAX_UPLOAD_FILE_SIZE = int(os.environ.get("MAX_UPLOAD_FILE_SIZE") or 100_000_000)

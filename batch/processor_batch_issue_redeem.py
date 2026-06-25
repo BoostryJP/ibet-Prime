@@ -24,13 +24,17 @@ from asyncio import Event
 from typing import Sequence
 
 import uvloop
-from eth_keyfile import decode_keyfile_json
-from sqlalchemy import and_, select
+from eth_keyfile.keyfile import decode_keyfile_json
+from sqlalchemy import Nullable, and_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import BatchAsyncSessionLocal
-from app.exceptions import ContractRevertError, SendTransactionError
+from app.exceptions import (
+    ContractRevertError,
+    SendTransactionError,
+    ServiceUnavailableError,
+)
 from app.model.db import (
     Account,
     BatchIssueRedeem,
@@ -43,13 +47,9 @@ from app.model.db import (
     TokenVersion,
 )
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
-from app.model.ibet.tx_params.ibet_share import (
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    RedeemParams as IbetShareRedeemParams,
-)
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    RedeemParams as IbetStraightBondRedeemParams,
+from app.model.ibet.tx_params.ibet_security_token import (
+    AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
+    RedeemParams as IbetSecurityTokenRedeemParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch import free_malloc
@@ -79,7 +79,7 @@ class Processor:
             ] = (
                 (
                     await db_session.execute(
-                        select(BatchIssueRedeemUpload, Token.version)
+                        select(BatchIssueRedeemUpload, Nullable(Token.version))
                         .outerjoin(
                             Token,
                             and_(
@@ -136,7 +136,7 @@ class Processor:
                             "utf-8"
                         ),
                     )
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     LOG.exception("Failed to decode keyfile")
                     await self.__sink_on_notification(
                         db_session=db_session,
@@ -233,7 +233,7 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).additional_issue(
-                            tx_params=IbetStraightBondAdditionalIssueParams(
+                            tx_params=IbetSecurityTokenAdditionalIssueParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
@@ -247,7 +247,7 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).redeem(
-                            tx_params=IbetStraightBondRedeemParams(
+                            tx_params=IbetSecurityTokenRedeemParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
@@ -262,7 +262,7 @@ class Processor:
                         tx_hash = await IbetShareContract(
                             upload.token_address
                         ).additional_issue(
-                            tx_params=IbetShareAdditionalIssueParams(
+                            tx_params=IbetSecurityTokenAdditionalIssueParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
@@ -274,7 +274,7 @@ class Processor:
                         == BatchIssueRedeemProcessingCategory.REDEEM.value
                     ):
                         tx_hash = await IbetShareContract(upload.token_address).redeem(
-                            tx_params=IbetShareRedeemParams(
+                            tx_params=IbetSecurityTokenRedeemParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             ),
@@ -330,8 +330,10 @@ class Processor:
                         upload.category
                         == BatchIssueRedeemProcessingCategory.ISSUE.value
                     ):
-                        tx_data: list[IbetStraightBondAdditionalIssueParams] = [
-                            IbetStraightBondAdditionalIssueParams(
+                        bond_issu_tx_data: list[
+                            IbetSecurityTokenAdditionalIssueParams
+                        ] = [
+                            IbetSecurityTokenAdditionalIssueParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             )
@@ -340,7 +342,7 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).bulk_additional_issue(
-                            tx_params=tx_data,
+                            tx_params=bond_issu_tx_data,
                             tx_sender=upload.issuer_address,
                             tx_sender_key=issuer_pk,
                         )
@@ -348,8 +350,8 @@ class Processor:
                         upload.category
                         == BatchIssueRedeemProcessingCategory.REDEEM.value
                     ):
-                        tx_data: list[IbetStraightBondRedeemParams] = [
-                            IbetStraightBondRedeemParams(
+                        bond_redeem_tx_data: list[IbetSecurityTokenRedeemParams] = [
+                            IbetSecurityTokenRedeemParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             )
@@ -358,7 +360,7 @@ class Processor:
                         tx_hash = await IbetStraightBondContract(
                             upload.token_address
                         ).bulk_redeem(
-                            tx_params=tx_data,
+                            tx_params=bond_redeem_tx_data,
                             tx_sender=upload.issuer_address,
                             tx_sender_key=issuer_pk,
                         )
@@ -367,8 +369,10 @@ class Processor:
                         upload.category
                         == BatchIssueRedeemProcessingCategory.ISSUE.value
                     ):
-                        tx_data: list[IbetShareAdditionalIssueParams] = [
-                            IbetShareAdditionalIssueParams(
+                        share_issue_tx_data: list[
+                            IbetSecurityTokenAdditionalIssueParams
+                        ] = [
+                            IbetSecurityTokenAdditionalIssueParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             )
@@ -377,7 +381,7 @@ class Processor:
                         tx_hash = await IbetShareContract(
                             upload.token_address
                         ).bulk_additional_issue(
-                            tx_params=tx_data,
+                            tx_params=share_issue_tx_data,
                             tx_sender=upload.issuer_address,
                             tx_sender_key=issuer_pk,
                         )
@@ -385,8 +389,8 @@ class Processor:
                         upload.category
                         == BatchIssueRedeemProcessingCategory.REDEEM.value
                     ):
-                        tx_data: list[IbetShareRedeemParams] = [
-                            IbetShareRedeemParams(
+                        share_redeem_tx_data: list[IbetSecurityTokenRedeemParams] = [
+                            IbetSecurityTokenRedeemParams(
                                 account_address=batch_data.account_address,
                                 amount=batch_data.amount,
                             )
@@ -395,7 +399,7 @@ class Processor:
                         tx_hash = await IbetShareContract(
                             upload.token_address
                         ).bulk_redeem(
-                            tx_params=tx_data,
+                            tx_params=share_redeem_tx_data,
                             tx_sender=upload.issuer_address,
                             tx_sender_key=issuer_pk,
                         )
@@ -455,6 +459,8 @@ async def main():
         while not is_shutdown.is_set():
             try:
                 await processor.process()
+            except ServiceUnavailableError as ex:
+                LOG.error(f"All blockchain nodes are unavailable: {ex}")
             except SQLAlchemyError as sa_err:
                 LOG.error(
                     f"A database error has occurred: code={sa_err.code}\n{sa_err}"

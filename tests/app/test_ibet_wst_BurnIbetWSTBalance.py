@@ -22,10 +22,13 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils.address import to_checksum_address
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
+    AvaIbetWSTTx,
     EthIbetWSTTx,
     IbetWSTTxStatus,
     IbetWSTTxType,
@@ -34,7 +37,8 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.model.eth import IbetWST, IbetWSTDigestHelper
+from app.model.wst import AvalancheIbetWST, EthereumIbetWST, IbetWSTDigestHelper
+from app.utils.ava_contract_utils import AvaWeb3
 from app.utils.eth_contract_utils import EthWeb3
 from tests.account_config import default_eth_account
 
@@ -56,14 +60,16 @@ class TestBurnIbetWSTBalance:
 
     # <Normal_1>
     # Burn WST balance
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.balance_of", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
+        AsyncMock(return_value=1000),
     )
     @mock.patch(
         "app.routers.misc.ibet_wst.ETH_MASTER_ACCOUNT_ADDRESS",
         relayer["address"],
     )
-    async def test_normal_1(self, async_db, async_client):
+    async def test_normal_1(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_wst_address
@@ -72,8 +78,8 @@ class TestBurnIbetWSTBalance:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
         await async_db.commit()
 
@@ -81,7 +87,7 @@ class TestBurnIbetWSTBalance:
         nonce = secrets.token_bytes(32)
 
         # Get domain separator
-        token_st = IbetWST(self.ibet_wst_address)
+        token_st = EthereumIbetWST(self.ibet_wst_address)
         domain_separator = await token_st.domain_separator()
 
         # Generate digest
@@ -122,6 +128,97 @@ class TestBurnIbetWSTBalance:
 
         # Check transaction creation
         wst_tx = (await async_db.scalars(select(EthIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
+        assert wst_tx.tx_type == IbetWSTTxType.BURN
+        assert wst_tx.version == IbetWSTVersion.V_1
+        assert wst_tx.status == IbetWSTTxStatus.PENDING
+        assert wst_tx.ibet_wst_address == self.ibet_wst_address
+        assert wst_tx.tx_params == {
+            "from_address": self.user1["address"],
+            "value": 1000,
+        }
+        assert wst_tx.tx_sender == self.relayer["address"]
+        assert wst_tx.authorizer == self.user1["address"]
+        assert wst_tx.authorization == {
+            "nonce": nonce.hex(),
+            "v": signature.v,
+            "r": signature.r.to_bytes(32).hex(),
+            "s": signature.s.to_bytes(32).hex(),
+        }
+        assert wst_tx.client_ip == "127.0.0.1"
+
+    # <Normal_2>
+    # Burn WST balance
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheIbetWST.balance_of",
+        AsyncMock(return_value=1000),
+    )
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AVA_MASTER_ACCOUNT_ADDRESS",
+        relayer["address"],
+    )
+    async def test_normal_2(self, async_db: AsyncSession, async_client: AsyncClient):
+        # Prepare data: Token
+        token = Token()
+        token.token_address = self.ibet_wst_address
+        token.issuer_address = self.issuer["address"]
+        token.type = TokenType.IBET_STRAIGHT_BOND
+        token.tx_hash = ""
+        token.abi = {}
+        token.version = TokenVersion.V_25_09
+        token.set_ibet_wst_deployed("avalanche", True)
+        token.set_ibet_wst_address("avalanche", self.ibet_wst_address)
+        async_db.add(token)
+        await async_db.commit()
+
+        # Generate nonce
+        nonce = secrets.token_bytes(32)
+
+        # Get domain separator
+        token_st = AvalancheIbetWST(self.ibet_wst_address)
+        domain_separator = await token_st.domain_separator()
+
+        # Generate digest
+        digest = IbetWSTDigestHelper.generate_burn_digest(
+            domain_separator=domain_separator,
+            from_address=self.user1["address"],
+            value=1000,
+            nonce=nonce,
+        )
+
+        # Sign the digest from the authorizer's private key
+        signature = AvaWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(self.user1["private_key"])
+        )
+
+        # Send request
+        resp = await async_client.post(
+            self.api_url.format(
+                account_address=self.user1["address"],
+                ibet_wst_address=self.ibet_wst_address,
+            ),
+            json={
+                "from_address": self.user1["address"],
+                "value": 1000,
+                "authorizer": self.user1["address"],
+                "authorization": {
+                    "nonce": nonce.hex(),
+                    "v": signature.v,
+                    "r": signature.r.to_bytes(32).hex(),
+                    "s": signature.s.to_bytes(32).hex(),
+                },
+                "blockchain_platform": "avalanche",
+            },
+        )
+
+        # Check response status code and content
+        assert resp.status_code == 200
+        assert resp.json() == {"tx_id": mock.ANY}
+
+        # Check transaction creation
+        wst_tx = (await async_db.scalars(select(AvaIbetWSTTx).limit(1))).first()
+        assert wst_tx is not None
         assert wst_tx.tx_type == IbetWSTTxType.BURN
         assert wst_tx.version == IbetWSTVersion.V_1
         assert wst_tx.status == IbetWSTTxStatus.PENDING
@@ -146,7 +243,7 @@ class TestBurnIbetWSTBalance:
 
     # <Error_1>
     # Missing required fields in request body
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.post(
             self.api_url.format(
@@ -184,7 +281,7 @@ class TestBurnIbetWSTBalance:
 
     # <Error_2>
     # Input value validations
-    async def test_error_2(self, async_client):
+    async def test_error_2(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.post(
             self.api_url.format(
@@ -227,12 +324,12 @@ class TestBurnIbetWSTBalance:
 
     # <Error_3>
     # IbetWST token not found
-    async def test_error_3(self, async_db, async_client):
+    async def test_error_3(self, async_db: AsyncSession, async_client: AsyncClient):
         # Generate nonce
         nonce = secrets.token_bytes(32)
 
         # Get domain separator
-        token_st = IbetWST(self.ibet_wst_address)
+        token_st = EthereumIbetWST(self.ibet_wst_address)
         domain_separator = await token_st.domain_separator()
 
         # Generate digest
@@ -277,9 +374,10 @@ class TestBurnIbetWSTBalance:
     # <Error_4>
     # Insufficient WST balance
     @mock.patch(
-        "app.routers.misc.ibet_wst.IbetWST.balance_of", AsyncMock(return_value=999)
+        "app.routers.misc.ibet_wst.EthereumIbetWST.balance_of",
+        AsyncMock(return_value=999),
     )
-    async def test_error_4(self, async_db, async_client):
+    async def test_error_4(self, async_db: AsyncSession, async_client: AsyncClient):
         # Prepare data: Token
         token = Token()
         token.token_address = self.ibet_wst_address
@@ -288,8 +386,8 @@ class TestBurnIbetWSTBalance:
         token.tx_hash = ""
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = self.ibet_wst_address
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", self.ibet_wst_address)
         async_db.add(token)
         await async_db.commit()
 
@@ -297,7 +395,7 @@ class TestBurnIbetWSTBalance:
         nonce = secrets.token_bytes(32)
 
         # Get domain separator
-        token_st = IbetWST(self.ibet_wst_address)
+        token_st = EthereumIbetWST(self.ibet_wst_address)
         domain_separator = await token_st.domain_separator()
 
         # Generate digest

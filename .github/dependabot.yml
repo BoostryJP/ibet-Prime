@@ -37,15 +37,3 @@ updates:
       all-dependencies:
         patterns:
           - "*"
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    allow:
-      - dependency-name: "*"
-        dependency-type: "direct"
-    groups:
-      all-dependencies:
-        patterns:
-          - "*"

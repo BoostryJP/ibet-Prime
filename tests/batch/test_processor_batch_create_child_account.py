@@ -1,3 +1,7 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+from tests.account_config import default_eth_account
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -22,9 +26,10 @@ import logging
 import secrets
 
 import pytest
-from coincurve import PublicKey
-from eth_utils import keccak, to_checksum_address
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -35,11 +40,12 @@ from app.model.db import (
     PersonalInfoEventType,
     TmpChildAccountBatchCreate,
 )
+from app.utils.secp256k1_utils import combine_public_keys, private_key_to_public_key
 from batch.processor_batch_create_child_account import LOG, Processor
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -53,20 +59,20 @@ def processor(async_db):
 
 class TestProcessor:
     sk_1 = secrets.token_bytes(32)
-    pk_1 = PublicKey.from_valid_secret(sk_1)
+    pk_1 = private_key_to_public_key(sk_1)
 
-    issuer_pub_key = pk_1.format().hex()
+    issuer_pub_key = pk_1.hex()
     issuer_address = to_checksum_address(
-        keccak(pk_1.format(compressed=False)[1:])[-20:]
+        keccak(private_key_to_public_key(sk_1, compressed=False)[1:])[-20:]
     )
 
     index = 1
     sk_2 = int(index).to_bytes(32)
-    pk_2 = PublicKey.from_valid_secret(sk_2)
+    pk_2 = private_key_to_public_key(sk_2)
 
-    child_1_pub_key = PublicKey.combine_keys([pk_1, pk_2])
+    child_1_pub_key = combine_public_keys([pk_1, pk_2])
     child_1_address = to_checksum_address(
-        keccak(child_1_pub_key.format(compressed=False)[1:])[-20:]
+        keccak(combine_public_keys([pk_1, pk_2], compressed=False)[1:])[-20:]
     )
 
     ###########################################################################
@@ -75,7 +81,12 @@ class TestProcessor:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db, caplog):
+    async def test_normal_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         for i in range(3):
             _tmp_data = TmpChildAccountBatchCreate()
@@ -94,6 +105,10 @@ class TestProcessor:
             async_db.add(_tmp_data)
 
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
         async_db.add(_account)
@@ -164,7 +179,12 @@ class TestProcessor:
     # Issuer account not found
     # - Account is None
     @pytest.mark.asyncio
-    async def test_error_1_1(self, processor, async_db, caplog):
+    async def test_error_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _tmp_data = TmpChildAccountBatchCreate()
         _tmp_data.issuer_address = self.issuer_address
@@ -224,7 +244,12 @@ class TestProcessor:
     # Issuer account not found
     # - Account.public_key is None
     @pytest.mark.asyncio
-    async def test_error_1_2(self, processor, async_db, caplog):
+    async def test_error_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Prepare data
         _tmp_data = TmpChildAccountBatchCreate()
         _tmp_data.issuer_address = self.issuer_address
@@ -242,6 +267,10 @@ class TestProcessor:
         async_db.add(_tmp_data)
 
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = None
         async_db.add(_account)

@@ -326,6 +326,95 @@ class EthIbetWSTTx(Base):
     ] = mapped_column(JSON, nullable=True, default=None)
 
 
+class AvaIbetWSTTx(Base):
+    """Avalanche IbetWST Transaction Management"""
+
+    __tablename__ = "ava_ibet_wst_tx"
+
+    # Transaction ID
+    # - Unique identifier for the transaction
+    # - Format: UUID4
+    tx_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    # Transaction Type
+    tx_type: Mapped[IbetWSTTxType] = mapped_column(String(20), nullable=False)
+    # IbetWST Version
+    # - Version of the IbetWST contract used for the transaction
+    version: Mapped[IbetWSTVersion] = mapped_column(String(2), nullable=False)
+    # Transaction status
+    # - PENDING: Transaction is created but not yet sent
+    # - SENT: Transaction is sent to the Avalanche network
+    # - SUCCEEDED: Transaction is mined and succeeded
+    # - FAILED: Transaction failed (e.g., due to insufficient gas or revert)
+    status: Mapped[IbetWSTTxStatus] = mapped_column(Integer, nullable=False)
+    # IbetWST contract address
+    # - Address of the IbetWST contract on the Avalanche network
+    # - For deploy transactions: The contract address is set when the contract is deployed.
+    # - For other transactions: The contract address is set at the time the transaction is instructed
+    ibet_wst_address: Mapped[str | None] = mapped_column(String(42), nullable=True)
+    # Transaction parameters
+    # - JSON object containing the parameters for the transaction
+    tx_params: Mapped[
+        IbetWSTTxParamsDeploy
+        | IbetWSTTxParamsAddAccountWhiteList
+        | IbetWSTTxParamsDeleteAccountWhiteList
+        | IbetWSTTxParamsTransfer
+        | IbetWSTTxParamsMint
+        | IbetWSTTxParamsBurn
+        | IbetWSTTxParamsForceBurn
+        | IbetWSTTxParamsRequestTrade
+        | IbetWSTTxParamsCancelTrade
+        | IbetWSTTxParamsAcceptTrade
+        | IbetWSTTxParamsRejectTrade
+    ] = mapped_column(JSON, nullable=False)
+    # Transaction sender
+    # - Address of the sender who initiated the transaction
+    tx_sender: Mapped[str] = mapped_column(String(42), nullable=False)
+    # Authorizer
+    # - Address of the authorizer who created the authorization for the transaction
+    # - This field is set if the transaction requires authorization
+    authorizer: Mapped[str | None] = mapped_column(String(42), nullable=True)
+    # Authorization data
+    # - JSON object containing additional data for authorization
+    # - This field is set if the transaction requires authorization
+    authorization: Mapped[IbetWSTAuthorization | None] = mapped_column(
+        JSON, nullable=True, default=None
+    )
+    # Client IP address
+    # - IP address of the client who initiated the transaction
+    # - This field is set when the transaction is executed directly via API call.
+    client_ip: Mapped[str | None] = mapped_column(String(40))
+    # Transaction nonce
+    # - Nonce of the transaction on the Avalanche network
+    tx_nonce: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Transaction hash
+    # - Hash of the transaction on the Avalanche network
+    # - Set to None if the transaction is not yet sent
+    tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
+    # Block number
+    # - Block number when the transaction was mined
+    block_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Gas used
+    gas_used: Mapped[int | None] = mapped_column(BigInteger)
+    # Block finalized
+    # - True if the block is finalized, False otherwise
+    finalized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Event log of the transaction
+    # - Set if the transaction emits events and the block is finalized
+    # - Not set if the tx_type is "DEPLOY"
+    event_log: Mapped[
+        IbetWSTEventLogMint
+        | IbetWSTEventLogBurn
+        | IbetWSTEventLogAccountWhiteListAdded
+        | IbetWSTEventLogAccountWhiteListDeleted
+        | IbetWSTEventLogTransfer
+        | IbetWSTEventLogTradeRequested
+        | IbetWSTEventLogTradeCancelled
+        | IbetWSTEventLogTradeAccepted
+        | IbetWSTEventLogTradeRejected
+        | None
+    ] = mapped_column(JSON, nullable=True, default=None)
+
+
 ############################################################
 # Trade Management
 ############################################################
@@ -337,10 +426,21 @@ class IDXEthIbetWSTTradeBlockNumber(Base):
     # Record ID
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # Synchronized block number
-    latest_block_number: Mapped[int | None] = mapped_column(BigInteger)
+    latest_block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
-class IDXEthIbetWSTTradeState(StrEnum):
+class IDXAvaIbetWSTTradeBlockNumber(Base):
+    """Synchronized blockNumber of IDXAvaIbetWSTTrade"""
+
+    __tablename__ = "idx_ava_ibet_wst_trade_block_number"
+
+    # Record ID
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # Synchronized block number
+    latest_block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+class IDXIbetWSTTradeState(StrEnum):
     """IbetWST Trade State"""
 
     PENDING = "Pending"
@@ -384,7 +484,48 @@ class IDXEthIbetWSTTrade(Base):
     # NOTE: On-chain this is handled as uint256, so it supports up to 78 decimal digits.
     sc_value: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False)
     # Trade state
-    state: Mapped[IDXEthIbetWSTTradeState] = mapped_column(
+    state: Mapped[IDXIbetWSTTradeState] = mapped_column(
+        String(20), nullable=False, index=True
+    )
+    # Memo
+    memo: Mapped[str] = mapped_column(Text)
+
+
+class IDXAvaIbetWSTTrade(Base):
+    """INDEX IbetWST Trade (Avalanche)"""
+
+    __tablename__ = "idx_ava_ibet_wst_trade"
+
+    # IbetWST contract address
+    ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # Index of the trade
+    index: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # Seller's IbetWST account address
+    seller_st_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # Buyer's IbetWST account address
+    buyer_st_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # StableCoin contract address
+    sc_token_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # Seller's StableCoin account address
+    seller_sc_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # Buyer's StableCoin account address
+    buyer_sc_account_address: Mapped[str] = mapped_column(
+        String(42), nullable=False, index=True
+    )
+    # IbetWST trade amount
+    st_value: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # StableCoin trade amount
+    sc_value: Mapped[Decimal] = mapped_column(Numeric(78, 0), nullable=False)
+    # Trade state
+    state: Mapped[IDXIbetWSTTradeState] = mapped_column(
         String(20), nullable=False, index=True
     )
     # Memo
@@ -401,7 +542,7 @@ class IbetWSTBridgeSyncedBlockNumber(Base):
 
     # Network name
     # - Used to identify the network
-    network: Mapped[Literal["ethereum", "ibetfin"]] = mapped_column(
+    network: Mapped[Literal["ethereum", "avalanche", "ibetfin"]] = mapped_column(
         String(20), primary_key=True
     )
     # Synchronized block number
@@ -415,7 +556,7 @@ class IbetBridgeTxParamsForceUnlock(TypedDict):
     account_address: str  # Address of the account to be unlocked
     recipient_address: str  # Address to receive the unlocked tokens
     value: int  # Amount to be unlocked
-    data: dict  # Additional data for the transaction
+    data: dict[str, str]  # Additional data for the transaction
 
 
 class IbetBridgeTxParamsForceChangeLockedAccount(TypedDict):
@@ -425,17 +566,17 @@ class IbetBridgeTxParamsForceChangeLockedAccount(TypedDict):
     before_account_address: str  # Address of the account before change
     after_account_address: str  # Address of the account after change
     value: int  # Amount to be changed
-    data: dict  # Additional data for the transaction
+    data: dict[str, str]  # Additional data for the transaction
 
 
-class EthToIbetBridgeTxType(StrEnum):
+class ToIbetBridgeTxType(StrEnum):
     """Ethereum to Ibet Bridge Transaction Type"""
 
     FORCE_UNLOCK = "force_unlock"
     FORCE_CHANGE_LOCKED_ACCOUNT = "force_change_locked_account"
 
 
-class EthToIbetBridgeTxStatus(IntEnum):
+class ToIbetBridgeTxStatus(IntEnum):
     """Ethereum to Ibet Bridge Transaction Status"""
 
     PENDING = 0
@@ -454,9 +595,39 @@ class EthToIbetBridgeTx(Base):
     # - Token address on the ibetfin network
     token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # Transaction type
-    tx_type: Mapped[EthToIbetBridgeTxType] = mapped_column(String(30), nullable=False)
+    tx_type: Mapped[ToIbetBridgeTxType] = mapped_column(String(30), nullable=False)
     # Transaction status
-    status: Mapped[EthToIbetBridgeTxStatus] = mapped_column(Integer, nullable=False)
+    status: Mapped[ToIbetBridgeTxStatus] = mapped_column(Integer, nullable=False)
+    # Transaction parameters
+    # - JSON object containing the parameters for the transaction
+    tx_params: Mapped[
+        IbetBridgeTxParamsForceUnlock | IbetBridgeTxParamsForceChangeLockedAccount
+    ] = mapped_column(JSON, nullable=False)
+    # Transaction sender
+    # - Address of the sender who initiated the transaction
+    tx_sender: Mapped[str] = mapped_column(String(42), nullable=False)
+    # ibet transaction hash
+    # - Hash of the transaction on the Ibet network
+    # - Set to None if the transaction is not yet sent or not applicable
+    tx_hash: Mapped[str | None] = mapped_column(String(66), nullable=True)
+    # Block number
+    block_number: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+
+class AvaToIbetBridgeTx(Base):
+    """Avalanche to Ibet Bridge Transaction Management"""
+
+    __tablename__ = "ava_to_ibet_bridge_tx"
+
+    # Transaction ID
+    tx_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    # Token address
+    # - Token address on the ibetfin network
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
+    # Transaction type
+    tx_type: Mapped[ToIbetBridgeTxType] = mapped_column(String(30), nullable=False)
+    # Transaction status
+    status: Mapped[ToIbetBridgeTxStatus] = mapped_column(Integer, nullable=False)
     # Transaction parameters
     # - JSON object containing the parameters for the transaction
     tx_params: Mapped[
@@ -480,6 +651,21 @@ class IDXEthIbetWSTWhitelist(Base):
     """INDEX IbetWST Whitelist (Ethereum)"""
 
     __tablename__ = "idx_eth_ibet_wst_whitelist"
+
+    # IbetWST contract address
+    ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # ST account address
+    st_account_address: Mapped[str] = mapped_column(String(42), primary_key=True)
+    # SC account address for deposits
+    sc_account_address_in: Mapped[str] = mapped_column(String(42), nullable=False)
+    # SC account address for withdrawals
+    sc_account_address_out: Mapped[str] = mapped_column(String(42), nullable=False)
+
+
+class IDXAvaIbetWSTWhitelist(Base):
+    """INDEX IbetWST Whitelist (Avalanche)"""
+
+    __tablename__ = "idx_ava_ibet_wst_whitelist"
 
     # IbetWST contract address
     ibet_wst_address: Mapped[str] = mapped_column(String(42), primary_key=True)

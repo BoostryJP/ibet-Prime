@@ -19,11 +19,13 @@ SPDX-License-Identifier: Apache-2.0
 
 from datetime import UTC, datetime
 from unittest import mock
-from unittest.mock import ANY
+from unittest.mock import ANY, MagicMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import IDXLock, IDXUnlock, Token, TokenType, TokenVersion
+from app.model.db import IDXLock, IDXUnlock, Token, TokenStatus, TokenType, TokenVersion
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 
 
@@ -38,7 +40,7 @@ class TestListAccountLockUnlockEvents:
     # Normal_1
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # prepare data: Token
@@ -75,7 +77,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_2_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -181,7 +186,12 @@ class TestListAccountLockUnlockEvents:
     # Share
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_2_2(
+        self,
+        mock_IbetShareContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
         account_address = "0x1234567890123456789012345678900000000000"
@@ -286,7 +296,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -359,7 +372,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_3_2(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -378,7 +394,7 @@ class TestListAccountLockUnlockEvents:
         _token.type = TokenType.IBET_STRAIGHT_BOND
         _token.tx_hash = ""
         _token.abi = {}
-        _token.token_status = 2
+        _token.token_status = TokenStatus.FAILED
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -432,7 +448,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_4(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
         other_issuer_address = "0x1234567890123456789012345678900000000200"
@@ -574,7 +593,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -664,7 +686,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_2(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -764,7 +789,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_3(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -864,7 +892,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_4(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -907,7 +938,6 @@ class TestListAccountLockUnlockEvents:
         _lock.token_address = token_address_1
         _lock.lock_address = lock_address_2  # lock address 2
         _lock.account_address = account_address
-        _lock.recipient_address = lock_address_2
         _lock.value = 1
         _lock.data = {"message": "unlocked_2"}
         _lock.block_timestamp = datetime.now(UTC).replace(tzinfo=None)
@@ -955,7 +985,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_5(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -1044,7 +1077,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_5_6(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -1136,7 +1172,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_6(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -1297,7 +1336,10 @@ class TestListAccountLockUnlockEvents:
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
     async def test_normal_7(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer_address = "0x1234567890123456789012345678900000000100"
 
@@ -1392,6 +1434,107 @@ class TestListAccountLockUnlockEvents:
             ],
         }
 
+    # Normal_8
+    # Pagination with same block_timestamp
+    @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
+    @pytest.mark.asyncio
+    async def test_normal_8(
+        self,
+        mock_IbetStraightBondContract_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        issuer_address = "0x1234567890123456789012345678900000000100"
+        account_address = "0x1234567890123456789012345678900000000000"
+        other_account_address_1 = "0x1234567890123456789012345678911111111111"
+        other_account_address_2 = "0x1234567890123456789012345678922222222222"
+        lock_address_1 = "0x1234567890123456789012345678900000000001"
+        token_address_1 = "0x1234567890123456789012345678900000000010"
+        token_name_1 = "test_bond_1"
+
+        # prepare data: Token
+        _token = Token()
+        _token.token_address = token_address_1
+        _token.issuer_address = issuer_address
+        _token.type = TokenType.IBET_STRAIGHT_BOND
+        _token.tx_hash = ""
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        same_timestamp = datetime(2024, 1, 1, tzinfo=UTC).replace(tzinfo=None)
+
+        _lock = IDXLock()
+        _lock.transaction_hash = "tx_hash_1"
+        _lock.msg_sender = account_address
+        _lock.block_number = 1
+        _lock.token_address = token_address_1
+        _lock.lock_address = lock_address_1
+        _lock.account_address = account_address
+        _lock.value = 1
+        _lock.data = {"message": "locked_1"}
+        _lock.block_timestamp = same_timestamp
+        async_db.add(_lock)
+
+        _unlock = IDXUnlock()
+        _unlock.transaction_hash = "tx_hash_2"
+        _unlock.msg_sender = lock_address_1
+        _unlock.block_number = 2
+        _unlock.token_address = token_address_1
+        _unlock.lock_address = lock_address_1
+        _unlock.account_address = account_address
+        _unlock.recipient_address = other_account_address_1
+        _unlock.value = 1
+        _unlock.data = {"message": "unlocked_1"}
+        _unlock.block_timestamp = same_timestamp
+        async_db.add(_unlock)
+
+        _unlock = IDXUnlock()
+        _unlock.transaction_hash = "tx_hash_3"
+        _unlock.msg_sender = lock_address_1
+        _unlock.block_number = 3
+        _unlock.token_address = token_address_1
+        _unlock.lock_address = lock_address_1
+        _unlock.account_address = account_address
+        _unlock.recipient_address = other_account_address_2
+        _unlock.value = 1
+        _unlock.data = {"message": "unlocked_2"}
+        _unlock.block_timestamp = same_timestamp
+        async_db.add(_unlock)
+
+        await async_db.commit()
+
+        bond_1 = IbetStraightBondContract()
+        bond_1.name = token_name_1
+        mock_IbetStraightBondContract_get.return_value = bond_1
+
+        returned_events: list[tuple[str, str]] = []
+        for offset in range(0, 3):
+            resp = await async_client.get(
+                self.base_url.format(account_address=account_address),
+                params={"offset": offset, "limit": 1},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["result_set"] == {
+                "count": 3,
+                "offset": offset,
+                "limit": 1,
+                "total": 3,
+            }
+            returned_events.append(
+                (
+                    body["events"][0]["category"],
+                    body["events"][0]["transaction_hash"],
+                )
+            )
+
+        assert returned_events == [
+            ("Unlock", "tx_hash_3"),
+            ("Unlock", "tx_hash_2"),
+            ("Lock", "tx_hash_1"),
+        ]
+
     # ###########################################################################
     # # Error Case
     # ###########################################################################
@@ -1400,7 +1543,7 @@ class TestListAccountLockUnlockEvents:
     # RequestValidationError
     # header
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api
@@ -1429,7 +1572,7 @@ class TestListAccountLockUnlockEvents:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         account_address = "0x1234567890123456789012345678900000000000"
 
         # request target api

@@ -21,6 +21,8 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.mark.asyncio
@@ -32,12 +34,14 @@ class TestGetERC20Balance:
     # Normal
     ###########################################################################
 
-    # <Normal_1>
+    # <Normal_1_1>
     # Return balance of account
+    # - blockchain_platform = "ethereum" (default)
     @mock.patch(
-        "app.routers.misc.ibet_wst.ERC20.balance_of", AsyncMock(return_value=1000)
+        "app.routers.misc.ibet_wst.EthereumERC20.balance_of",
+        AsyncMock(return_value=1000),
     )
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
         token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
@@ -55,9 +59,35 @@ class TestGetERC20Balance:
         assert resp.status_code == 200
         assert resp.json() == {"balance": 1000}
 
+    # <Normal_1_2>
+    # Return balance of account
+    # - blockchain_platform = "avalanche"
+    @mock.patch(
+        "app.routers.misc.ibet_wst.AvalancheERC20.balance_of",
+        AsyncMock(return_value=1000),
+    )
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
+        # Define parameters
+        account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
+        token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
+
+        # Send request
+        resp = await async_client.get(
+            self.api_url,
+            params={
+                "token_address": token_address,
+                "account_address": account_address,
+                "blockchain_platform": "avalanche",
+            },
+        )
+
+        # Check response status code
+        assert resp.status_code == 200
+        assert resp.json() == {"balance": 1000}
+
     # <Normal_2>
     # Return 0 balance if token does not exist
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Define parameters
         account_address = "0x234567890abCDEf1234567890aBCdEf123456789"
         token_address = "0xbCDEfAbcDefaBcDEfaBcdEfABcdEFAbcDefAbCdE"
@@ -82,7 +112,7 @@ class TestGetERC20Balance:
     # <Error_1>
     # Missing parameters
     # - Return 422 error
-    async def test_error_1(self, async_client):
+    async def test_error_1(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.get(
             self.api_url,
@@ -98,13 +128,13 @@ class TestGetERC20Balance:
                     "type": "missing",
                     "loc": ["query", "token_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
                 {
                     "type": "missing",
                     "loc": ["query", "account_address"],
                     "msg": "Field required",
-                    "input": {},
+                    "input": {"blockchain_platform": "ethereum"},
                 },
             ],
         }
@@ -112,7 +142,7 @@ class TestGetERC20Balance:
     # <Error_2>
     # Invalid addresses
     # - Return 422 error
-    async def test_error_2(self, async_client):
+    async def test_error_2(self, async_client: AsyncClient):
         # Send request
         resp = await async_client.get(
             self.api_url,

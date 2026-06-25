@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,9 +22,11 @@ SPDX-License-Identifier: Apache-2.0
 import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, AccountRsaStatus
+from app.model.db import Account
 from app.utils.e2ee_utils import E2EEUtils
 from config import PERSONAL_INFO_RSA_PASSPHRASE_PATTERN_MSG
 from tests.account_config import default_eth_account
@@ -41,7 +45,7 @@ class TestChangeIssuerRSAPassphrase:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
@@ -51,6 +55,9 @@ class TestChangeIssuerRSAPassphrase:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.rsa_private_key = _old_rsa_private_key
         account.rsa_public_key = _rsa_public_key
@@ -73,7 +80,10 @@ class TestChangeIssuerRSAPassphrase:
         assert resp.status_code == 200
         assert resp.json() is None
         _account = (await async_db.scalars(select(Account).limit(1))).first()
+        assert _account is not None
         _account_rsa_private_key = _account.rsa_private_key
+        assert _account_rsa_private_key is not None
+        assert _account.rsa_passphrase is not None
         _account_rsa_passphrase = E2EEUtils.decrypt(_account.rsa_passphrase)
         assert _account_rsa_private_key != _old_rsa_private_key
         assert _account_rsa_passphrase == _new_password
@@ -97,7 +107,7 @@ class TestChangeIssuerRSAPassphrase:
     # <Error_1>
     # parameter error(required body)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
@@ -121,7 +131,7 @@ class TestChangeIssuerRSAPassphrase:
     # <Error_2>
     # parameter error(required field)
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
 
@@ -156,7 +166,7 @@ class TestChangeIssuerRSAPassphrase:
     # <Error_3>
     # parameter error(not decrypt)
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_password = "password"
@@ -199,7 +209,7 @@ class TestChangeIssuerRSAPassphrase:
     # <Error_4>
     # No data
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _old_password = "password"
         _new_password = self.valid_password
 
@@ -222,7 +232,7 @@ class TestChangeIssuerRSAPassphrase:
     # <Error_5>
     # old password mismatch
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
@@ -232,6 +242,9 @@ class TestChangeIssuerRSAPassphrase:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.rsa_private_key = _old_rsa_private_key
         account.rsa_public_key = _rsa_public_key
@@ -260,7 +273,7 @@ class TestChangeIssuerRSAPassphrase:
     # <Error_6>
     # password policy
     @pytest.mark.asyncio
-    async def test_error_6(self, async_client, async_db):
+    async def test_error_6(self, async_client: AsyncClient, async_db: AsyncSession):
         _account = default_eth_account("user1")
         _issuer_address = _account["address"]
         _old_rsa_private_key = _account["rsa_private_key"]
@@ -270,6 +283,9 @@ class TestChangeIssuerRSAPassphrase:
 
         # prepare data
         account = Account()
+        account.keyfile = default_eth_account("user1")["keyfile_json"]
+        account.eoa_password = E2EEUtils.encrypt("password")
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.rsa_private_key = _old_rsa_private_key
         account.rsa_public_key = _rsa_public_key

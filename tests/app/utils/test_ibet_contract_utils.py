@@ -18,11 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.exceptions import ContractLogicError, Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -118,7 +120,7 @@ class TestDeployContract:
     ###########################################################################
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         _, rtn_abi, _ = ContractUtils.deploy_contract(
             contract_name=self.test_contract_name,
             args=self.test_arg,
@@ -253,9 +255,9 @@ class TestSendTransaction:
     ###########################################################################
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         # Contract
-        contract = web3.eth.contract(
+        contract: Any = web3.eth.contract(
             abi=self.contract_json["abi"],
             bytecode=self.contract_json["bytecode"],
             bytecode_runtime=self.contract_json["deployedBytecode"],
@@ -287,9 +289,9 @@ class TestSendTransaction:
     # <Error_1>
     # Transaction REVERT(Deploying invalid bytecode)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_db):
+    async def test_error_1(self, async_db: AsyncSession):
         # Contract
-        contract = web3.eth.contract(
+        contract: Any = web3.eth.contract(
             abi=self.contract_json["abi"],
             # add "0000" to make invalid bytecode
             bytecode=self.contract_json["bytecode"] + "0000",
@@ -325,9 +327,9 @@ class TestSendTransaction:
     # <Error_2>
     # Value Error
     @pytest.mark.asyncio
-    async def test_error_2(self, async_db):
+    async def test_error_2(self, async_db: AsyncSession):
         # Contract
-        contract = web3.eth.contract(
+        contract: Any = web3.eth.contract(
             abi=self.contract_json["abi"],
             bytecode=self.contract_json["bytecode"],
             bytecode_runtime=self.contract_json["deployedBytecode"],
@@ -358,7 +360,7 @@ class TestSendTransaction:
     # <Error_3>
     # Timeout waiting for lock release
     @pytest.mark.asyncio
-    async def test_error_3(self, async_db):
+    async def test_error_3(self, async_db: AsyncSession):
         # prepare data : TX lock
         _tx_mng = TransactionLock()
         _tx_mng.tx_from = self.test_account["address"]
@@ -366,7 +368,7 @@ class TestSendTransaction:
         await async_db.commit()
 
         # Contract
-        contract = web3.eth.contract(
+        contract: Any = web3.eth.contract(
             abi=self.contract_json["abi"],
             bytecode=self.contract_json["bytecode"],
             bytecode_runtime=self.contract_json["deployedBytecode"],
@@ -397,6 +399,56 @@ class TestSendTransaction:
         assert ex_info.typename == "SendTransactionError"
 
         await async_db.rollback()
+
+    # <Normal_2>
+    # Engine is disposed after successful send
+    @pytest.mark.asyncio
+    async def test_normal_2(self):
+        fake_engine = MagicMock()
+        fake_engine.dispose = MagicMock()
+        fake_session = MagicMock()
+        fake_session.scalars.return_value.first.return_value = None
+        fake_session.rollback = MagicMock()
+        fake_session.close = MagicMock()
+        fake_signed_tx = MagicMock()
+        fake_signed_tx.raw_transaction.to_0x_hex.return_value = "0xsigned"
+        fake_tx_hash = MagicMock()
+        fake_tx_hash.to_0x_hex.return_value = "0xhash"
+        fake_receipt = {"status": 1, "transactionHash": fake_tx_hash}
+
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.create_engine",
+                return_value=fake_engine,
+            ),
+            patch("app.utils.ibet_contract_utils.Session", return_value=fake_session),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction_count",
+                return_value=0,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.account.sign_transaction",
+                return_value=fake_signed_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.send_raw_transaction",
+                return_value=fake_tx_hash,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.wait_for_transaction_receipt",
+                return_value=fake_receipt,
+            ),
+        ):
+            rtn_tx_hash, rtn_receipt = ContractUtils.send_transaction(
+                transaction={"from": self.test_account["address"]},
+                private_key=self.private_key,
+            )
+
+        assert rtn_tx_hash == "0xhash"
+        assert rtn_receipt == fake_receipt
+        fake_session.rollback.assert_called_once()
+        fake_session.close.assert_called_once()
+        fake_engine.dispose.assert_called_once()
 
 
 class TestGetBlockByTransactionHash:
@@ -429,9 +481,9 @@ class TestGetBlockByTransactionHash:
     ###########################################################################
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         # Contract
-        contract = web3.eth.contract(
+        contract: Any = web3.eth.contract(
             abi=self.contract_json["abi"],
             bytecode=self.contract_json["bytecode"],
             bytecode_runtime=self.contract_json["deployedBytecode"],
@@ -446,7 +498,9 @@ class TestGetBlockByTransactionHash:
                 "gasPrice": 0,
             }
         )
-        nonce = web3.eth.get_transaction_count(self.test_account["address"])
+        nonce = web3.eth.get_transaction_count(
+            Web3.to_checksum_address(self.test_account["address"])
+        )
         tx["nonce"] = nonce
         signed_tx = web3.eth.account.sign_transaction(
             transaction_dict=tx, private_key=self.private_key
@@ -459,9 +513,11 @@ class TestGetBlockByTransactionHash:
         )
 
         block = ContractUtils.get_block_by_transaction_hash(tx_hash)
-
-        assert block["number"] == tx_receipt["blockNumber"]
-        assert block["timestamp"] > 0
+        block_number = block.get("number")
+        block_timestamp = block.get("timestamp")
+        assert block_number == tx_receipt["blockNumber"]
+        assert block_timestamp is not None
+        assert block_timestamp > 0
 
     ###########################################################################
     # Error Case

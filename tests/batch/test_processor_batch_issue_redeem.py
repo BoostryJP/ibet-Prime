@@ -20,12 +20,13 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import logging
 import uuid
-from typing import List, Sequence
+from typing import Sequence
 from unittest.mock import ANY, patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
@@ -39,13 +40,9 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.model.ibet.tx_params.ibet_share import (
-    AdditionalIssueParams as IbetShareAdditionalIssueParams,
-    RedeemParams as IbetShareRedeemParams,
-)
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    AdditionalIssueParams as IbetStraightBondAdditionalIssueParams,
-    RedeemParams as IbetStraightBondRedeemParams,
+from app.model.ibet.tx_params.ibet_security_token import (
+    AdditionalIssueParams as IbetSecurityTokenAdditionalIssueParams,
+    RedeemParams as IbetSecurityTokenRedeemParams,
 )
 from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_batch_issue_redeem import LOG, Processor
@@ -53,7 +50,7 @@ from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -72,7 +69,12 @@ class TestProcessor:
     # token type: IBET_STRAIGHT_BOND
     # processing category: ISSUE
     @pytest.mark.asyncio
-    async def test_normal_1(self, processor, async_db, caplog):
+    async def test_normal_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Test settings
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -91,6 +93,7 @@ class TestProcessor:
 
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = issuer_address
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
@@ -114,7 +117,7 @@ class TestProcessor:
         _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
         _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
-        _upload.processed = 0
+        _upload.processed = False
         async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
@@ -144,10 +147,10 @@ class TestProcessor:
         # Assertion: contract
         IbetStraightBondContract_bulk_additional_issue.assert_called_with(
             tx_params=[
-                IbetStraightBondAdditionalIssueParams(
+                IbetSecurityTokenAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
-                IbetStraightBondAdditionalIssueParams(
+                IbetSecurityTokenAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
             ],
@@ -156,16 +159,17 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
+        _upload_after: BatchIssueRedeemUpload | None = (
             await async_db.scalars(
                 select(BatchIssueRedeemUpload)
                 .where(BatchIssueRedeemUpload.upload_id == upload_id)
                 .limit(1)
             )
         ).first()
+        assert _upload_after is not None
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
+        _upload_data_after: Sequence[BatchIssueRedeem] = (
             await async_db.scalars(
                 select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
             )
@@ -201,7 +205,12 @@ class TestProcessor:
     # token type: IBET_STRAIGHT_BOND
     # processing category: REDEEM
     @pytest.mark.asyncio
-    async def test_normal_2(self, processor, async_db, caplog):
+    async def test_normal_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Test settings
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -220,6 +229,7 @@ class TestProcessor:
 
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = issuer_address
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
@@ -243,7 +253,7 @@ class TestProcessor:
         _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
         _upload.category = BatchIssueRedeemProcessingCategory.REDEEM
-        _upload.processed = 0
+        _upload.processed = False
         async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
@@ -273,10 +283,10 @@ class TestProcessor:
         # Assertion: contract
         IbetStraightBondContract_bulk_redeem.assert_called_with(
             tx_params=[
-                IbetStraightBondRedeemParams(
+                IbetSecurityTokenRedeemParams(
                     account_address=target_address, amount=target_amount
                 ),
-                IbetStraightBondRedeemParams(
+                IbetSecurityTokenRedeemParams(
                     account_address=target_address, amount=target_amount
                 ),
             ],
@@ -285,16 +295,17 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
+        _upload_after: BatchIssueRedeemUpload | None = (
             await async_db.scalars(
                 select(BatchIssueRedeemUpload)
                 .where(BatchIssueRedeemUpload.upload_id == upload_id)
                 .limit(1)
             )
         ).first()
+        assert _upload_after is not None
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
+        _upload_data_after: Sequence[BatchIssueRedeem] = (
             await async_db.scalars(
                 select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
             )
@@ -330,7 +341,12 @@ class TestProcessor:
     # token type: IBET_SHARE
     # processing category: ISSUE
     @pytest.mark.asyncio
-    async def test_normal_3(self, processor, async_db, caplog):
+    async def test_normal_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Test settings
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -349,6 +365,7 @@ class TestProcessor:
 
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = issuer_address
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
@@ -372,7 +389,7 @@ class TestProcessor:
         _upload.token_type = TokenType.IBET_SHARE
         _upload.token_address = token_address
         _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
-        _upload.processed = 0
+        _upload.processed = False
         async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
@@ -402,10 +419,10 @@ class TestProcessor:
         # Assertion: contract
         IbetShareContract_bulk_additional_issue.assert_called_with(
             tx_params=[
-                IbetShareAdditionalIssueParams(
+                IbetSecurityTokenAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
-                IbetShareAdditionalIssueParams(
+                IbetSecurityTokenAdditionalIssueParams(
                     account_address=target_address, amount=target_amount
                 ),
             ],
@@ -414,16 +431,17 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
+        _upload_after: BatchIssueRedeemUpload | None = (
             await async_db.scalars(
                 select(BatchIssueRedeemUpload)
                 .where(BatchIssueRedeemUpload.upload_id == upload_id)
                 .limit(1)
             )
         ).first()
+        assert _upload_after is not None
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
+        _upload_data_after: Sequence[BatchIssueRedeem] = (
             await async_db.scalars(
                 select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
             )
@@ -459,7 +477,12 @@ class TestProcessor:
     # token type: IBET_SHARE
     # processing category: REDEEM
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, async_db, caplog):
+    async def test_normal_4(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Test settings
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -478,6 +501,7 @@ class TestProcessor:
 
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = issuer_address
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
@@ -501,7 +525,7 @@ class TestProcessor:
         _upload.token_type = TokenType.IBET_SHARE
         _upload.token_address = token_address
         _upload.category = BatchIssueRedeemProcessingCategory.REDEEM
-        _upload.processed = 0
+        _upload.processed = False
         async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
@@ -531,10 +555,10 @@ class TestProcessor:
         # Assertion: contract
         IbetShareContract_bulk_redeem.assert_called_with(
             tx_params=[
-                IbetShareRedeemParams(
+                IbetSecurityTokenRedeemParams(
                     account_address=target_address, amount=target_amount
                 ),
-                IbetShareRedeemParams(
+                IbetSecurityTokenRedeemParams(
                     account_address=target_address, amount=target_amount
                 ),
             ],
@@ -543,16 +567,17 @@ class TestProcessor:
         )
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
+        _upload_after: BatchIssueRedeemUpload | None = (
             await async_db.scalars(
                 select(BatchIssueRedeemUpload)
                 .where(BatchIssueRedeemUpload.upload_id == upload_id)
                 .limit(1)
             )
         ).first()
+        assert _upload_after is not None
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
+        _upload_data_after: Sequence[BatchIssueRedeem] = (
             await async_db.scalars(
                 select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
             )
@@ -591,7 +616,12 @@ class TestProcessor:
     # Error_1
     # Issuer account does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, processor, async_db, caplog):
+    async def test_error_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Test settings
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -620,7 +650,7 @@ class TestProcessor:
         _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
         _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
-        _upload.processed = 0
+        _upload.processed = False
         async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
@@ -644,16 +674,17 @@ class TestProcessor:
         IbetStraightBondContract_bulk_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
+        _upload_after: BatchIssueRedeemUpload | None = (
             await async_db.scalars(
                 select(BatchIssueRedeemUpload)
                 .where(BatchIssueRedeemUpload.upload_id == upload_id)
                 .limit(1)
             )
         ).first()
+        assert _upload_after is not None
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
+        _upload_data_after: Sequence[BatchIssueRedeem] = (
             await async_db.scalars(
                 select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
             )
@@ -687,7 +718,12 @@ class TestProcessor:
     # Error_2
     # Failed to decode keyfile
     @pytest.mark.asyncio
-    async def test_error_2(self, processor, async_db, caplog):
+    async def test_error_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Test settings
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -702,6 +738,7 @@ class TestProcessor:
 
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = issuer_address
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
@@ -725,7 +762,7 @@ class TestProcessor:
         _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
         _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
-        _upload.processed = 0
+        _upload.processed = False
         async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
@@ -749,16 +786,17 @@ class TestProcessor:
         IbetStraightBondContract_bulk_additional_issue.assert_not_called()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
+        _upload_after: BatchIssueRedeemUpload | None = (
             await async_db.scalars(
                 select(BatchIssueRedeemUpload)
                 .where(BatchIssueRedeemUpload.upload_id == upload_id)
                 .limit(1)
             )
         ).first()
+        assert _upload_after is not None
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
+        _upload_data_after: Sequence[BatchIssueRedeem] = (
             await async_db.scalars(
                 select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
             )
@@ -792,7 +830,12 @@ class TestProcessor:
     # Error_3
     # Failed to send transaction
     @pytest.mark.asyncio
-    async def test_error_3(self, processor, async_db, caplog):
+    async def test_error_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+    ):
         # Test settings
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
@@ -807,6 +850,7 @@ class TestProcessor:
 
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = issuer_address
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
@@ -830,7 +874,7 @@ class TestProcessor:
         _upload.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload.token_address = token_address
         _upload.category = BatchIssueRedeemProcessingCategory.ISSUE
-        _upload.processed = 0
+        _upload.processed = False
         async_db.add(_upload)
 
         _upload_data = BatchIssueRedeem()
@@ -858,16 +902,17 @@ class TestProcessor:
             async_db.expire_all()
 
         # Assertion: DB
-        _upload_after: BatchIssueRedeemUpload = (
+        _upload_after: BatchIssueRedeemUpload | None = (
             await async_db.scalars(
                 select(BatchIssueRedeemUpload)
                 .where(BatchIssueRedeemUpload.upload_id == upload_id)
                 .limit(1)
             )
         ).first()
+        assert _upload_after is not None
         assert _upload_after.processed == True
 
-        _upload_data_after: List[BatchIssueRedeem] = (
+        _upload_data_after: Sequence[BatchIssueRedeem] = (
             await async_db.scalars(
                 select(BatchIssueRedeem).where(BatchIssueRedeem.upload_id == upload_id)
             )
@@ -898,13 +943,17 @@ class TestProcessor:
                 "token_address": token_address,
                 "token_type": TokenType.IBET_STRAIGHT_BOND,
             }
+            assert _notification.metainfo is not None
             assert len(_notification.metainfo["error_data_id"]) == 2
 
     # <Error_4>
     # ContractRevertError
     @pytest.mark.asyncio
     async def test_error_4(
-        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         # Test settings
         issuer_account = default_eth_account("user1")
@@ -920,6 +969,7 @@ class TestProcessor:
 
         # Prepare data
         _account = Account()
+        _account.is_deleted = False
         _account.issuer_address = issuer_address
         _account.keyfile = issuer_keyfile
         _account.eoa_password = issuer_eoa_password
@@ -943,7 +993,7 @@ class TestProcessor:
         _upload_1.token_type = TokenType.IBET_STRAIGHT_BOND
         _upload_1.token_address = token_address
         _upload_1.category = BatchIssueRedeemProcessingCategory.ISSUE
-        _upload_1.processed = 0
+        _upload_1.processed = False
         async_db.add(_upload_1)
 
         _upload_data_1 = BatchIssueRedeem()
@@ -961,7 +1011,7 @@ class TestProcessor:
         _upload_2.token_type = TokenType.IBET_SHARE
         _upload_2.token_address = token_address
         _upload_2.category = BatchIssueRedeemProcessingCategory.ISSUE
-        _upload_2.processed = 0
+        _upload_2.processed = False
         async_db.add(_upload_2)
 
         _upload_data_2 = BatchIssueRedeem()
@@ -995,6 +1045,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _upload_1_after is not None
         assert _upload_1_after.processed == True
 
         _upload_1_data_after: Sequence[BatchIssueRedeem] = (
@@ -1014,6 +1065,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _upload_2_after is not None
         assert _upload_2_after.processed == True
 
         _upload_2_data_after: Sequence[BatchIssueRedeem] = (
@@ -1063,6 +1115,7 @@ class TestProcessor:
             "token_address": token_address,
             "token_type": TokenType.IBET_STRAIGHT_BOND,
         }
+        assert _notification_list[0].metainfo is not None
         assert len(_notification_list[0].metainfo["error_data_id"]) == 1
 
         assert _notification_list[1].notice_id is not None
@@ -1079,4 +1132,5 @@ class TestProcessor:
             "token_address": token_address,
             "token_type": TokenType.IBET_SHARE,
         }
+        assert _notification_list[1].metainfo is not None
         assert len(_notification_list[1].metainfo["error_data_id"]) == 1

@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -21,8 +23,9 @@ import datetime
 import secrets
 
 import pytest
-from coincurve import PublicKey
-from eth_utils import keccak, to_checksum_address
+from eth_utils.address import to_checksum_address
+from eth_utils.crypto import keccak
+from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -35,25 +38,28 @@ from app.model.db import (
     PersonalInfoDataSource,
     PersonalInfoEventType,
 )
+from app.utils.e2ee_utils import E2EEUtils
+from app.utils.secp256k1_utils import combine_public_keys, private_key_to_public_key
 from config import ASYNC_DATABASE_URL
+from tests.account_config import default_eth_account
 
 
 class TestCreateChildAccount:
     sk_1 = secrets.token_bytes(32)
-    pk_1 = PublicKey.from_valid_secret(sk_1)
+    pk_1 = private_key_to_public_key(sk_1)
 
-    issuer_pub_key = pk_1.format().hex()
+    issuer_pub_key = pk_1.hex()
     issuer_address = to_checksum_address(
-        keccak(pk_1.format(compressed=False)[1:])[-20:]
+        keccak(private_key_to_public_key(sk_1, compressed=False)[1:])[-20:]
     )
 
     index = 1
     sk_2 = int(index).to_bytes(32)
-    pk_2 = PublicKey.from_valid_secret(sk_2)
+    pk_2 = private_key_to_public_key(sk_2)
 
-    child_1_pub_key = PublicKey.combine_keys([pk_1, pk_2])
+    child_1_pub_key = combine_public_keys([pk_1, pk_2])
     child_1_address = to_checksum_address(
-        keccak(child_1_pub_key.format(compressed=False)[1:])[-20:]
+        keccak(combine_public_keys([pk_1, pk_2], compressed=False)[1:])[-20:]
     )
 
     # Target API endpoint
@@ -66,13 +72,13 @@ class TestCreateChildAccount:
     # <Normal_0>
     # Verify the deterministic wallet
     @pytest.mark.asyncio
-    async def test_normal_0(self, async_client, async_db):
+    async def test_normal_0(self, async_client: AsyncClient, async_db: AsyncSession):
         # Generate a child public key from two private keys.
         child_sk_1 = ((int.from_bytes(self.sk_1) + self.index) % (2**256)).to_bytes(32)
-        child_pk_1 = PublicKey.from_valid_secret(child_sk_1)
+        child_pk_1 = private_key_to_public_key(child_sk_1)
 
         # Generate a child public key from two public keys.
-        child_pk_2 = PublicKey.combine_keys([self.pk_1, self.pk_2])
+        child_pk_2 = combine_public_keys([self.pk_1, self.pk_2])
 
         assert child_pk_1 == child_pk_2
 
@@ -80,11 +86,15 @@ class TestCreateChildAccount:
     # Successfully generated the child key
     @pytest.mark.freeze_time("2024-09-28 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()
@@ -133,6 +143,7 @@ class TestCreateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _child_index is not None
         assert _child_index.next_index == 2
 
         _off_personal_info = (
@@ -142,6 +153,7 @@ class TestCreateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _off_personal_info is not None
         assert _off_personal_info.issuer_address == self.issuer_address
         assert (
             _off_personal_info.account_address
@@ -166,6 +178,7 @@ class TestCreateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _personal_info_history is not None
         assert _personal_info_history.issuer_address == self.issuer_address
         assert (
             _personal_info_history.account_address
@@ -181,11 +194,15 @@ class TestCreateChildAccount:
     # Personal information is blank
     @pytest.mark.freeze_time("2024-09-28 12:34:56")
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()
@@ -223,6 +240,7 @@ class TestCreateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _child_index is not None
         assert _child_index.next_index == 2
 
         _off_personal_info = (
@@ -232,6 +250,7 @@ class TestCreateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _off_personal_info is not None
         assert _off_personal_info.issuer_address == self.issuer_address
         assert (
             _off_personal_info.account_address
@@ -256,6 +275,7 @@ class TestCreateChildAccount:
                 .limit(1)
             )
         ).first()
+        assert _personal_info_history is not None
         assert _personal_info_history.issuer_address == self.issuer_address
         assert (
             _personal_info_history.account_address
@@ -275,7 +295,7 @@ class TestCreateChildAccount:
     # RequestValidationError
     # - Missing body
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Call API
         resp = await async_client.post(
             self.base_url.format(self.issuer_address), json={}
@@ -297,7 +317,7 @@ class TestCreateChildAccount:
     # <Error_2>
     # 404: Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Call API
         resp = await async_client.post(
             self.base_url.format(self.issuer_address),
@@ -324,11 +344,15 @@ class TestCreateChildAccount:
     # <Error_3>
     # OperationNotPermittedForOlderIssuers
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = None  # public-key is not set
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
         await async_db.commit()
 
@@ -359,11 +383,15 @@ class TestCreateChildAccount:
     # ServiceUnavailableError
     # - Lock timeout for index table
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()
@@ -389,6 +417,7 @@ class TestCreateChildAccount:
                 .with_for_update(nowait=True)
             )
         ).first()
+        assert _child_index is not None
 
         # Call API
         resp = await async_client.post(
@@ -418,11 +447,15 @@ class TestCreateChildAccount:
     # <Error_5>
     # PersonalInfoExceedsSizeLimit
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db):
+    async def test_error_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
         _account.issuer_address = self.issuer_address
         _account.issuer_public_key = self.issuer_pub_key
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         async_db.add(_account)
 
         _child_index = ChildAccountIndex()

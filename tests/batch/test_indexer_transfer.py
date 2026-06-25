@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,16 +22,19 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import logging
 from datetime import UTC, datetime
+from typing import Iterator
 from unittest import mock
 from unittest.mock import patch
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import TxReceipt
 
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
@@ -38,6 +43,7 @@ from app.model.db import (
     IDXTransferBlockNumber,
     IDXTransferSourceEventType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -72,7 +78,9 @@ def main_func():
 
 
 @pytest.fixture(scope="function")
-def processor(async_db, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession, caplog: pytest.LogCaptureFixture
+) -> Iterator[Processor]:
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -83,12 +91,12 @@ def processor(async_db, caplog: pytest.LogCaptureFixture):
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -120,12 +128,12 @@ async def deploy_bond_token_contract(
 
 
 async def deploy_share_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
-):
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str | None = None,
+    transfer_approval_required: bool | None = None,
+) -> Contract:
     arguments = [
         "token.name",
         "token.symbol",
@@ -154,6 +162,19 @@ async def deploy_share_token_contract(
     return ContractUtils.get_contract("IbetShare", token_address)
 
 
+def _get_block_number(tx_receipt: TxReceipt) -> int:
+    block_number = tx_receipt.get("blockNumber")
+    assert block_number is not None
+    return block_number
+
+
+def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:
+    block = web3.eth.get_block(_get_block_number(tx_receipt))
+    timestamp = block.get("timestamp")
+    assert timestamp is not None
+    return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
+
+
 class TestProcessor:
     ###########################################################################
     # Normal Case
@@ -164,7 +185,12 @@ class TestProcessor:
     # No event logs
     # not issue token
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_1_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
 
@@ -175,7 +201,7 @@ class TestProcessor:
         token_1.issuer_address = issuer_address
         token_1.abi = {}
         token_1.tx_hash = "tx_hash"
-        token_1.token_status = 0
+        token_1.token_status = TokenStatus.PENDING
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
@@ -192,6 +218,7 @@ class TestProcessor:
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -200,7 +227,12 @@ class TestProcessor:
     # No event logs
     # issued token
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_1_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -228,7 +260,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -251,6 +283,7 @@ class TestProcessor:
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -263,7 +296,12 @@ class TestProcessor:
     # - ForceChangeLockedAccount
     # - Reallocation
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_2_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -281,6 +319,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -307,7 +347,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -481,10 +521,7 @@ class TestProcessor:
         assert _transfer.amount == 40
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_1)
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
@@ -495,10 +532,7 @@ class TestProcessor:
         assert _transfer.amount == 10
         assert _transfer.source_event == IDXTransferSourceEventType.REALLOCATION.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_7["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_7)
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -510,10 +544,7 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "garnishment"}
         assert _transfer.message == "garnishment"
-        block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_3)
 
         _transfer = _transfer_list[3]
         assert _transfer.id == 4
@@ -525,10 +556,7 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
         assert _transfer.data == {"message": "force_unlock"}
         assert _transfer.message == "force_unlock"
-        block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_4)
 
         _transfer = _transfer_list[4]
         assert _transfer.id == 5
@@ -540,10 +568,7 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
         assert _transfer.data == {"message": "ibet_wst_bridge"}
         assert _transfer.message == "ibet_wst_bridge"
-        block = web3.eth.get_block(tx_receipt_5["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_5)
 
         _transfer = _transfer_list[5]
         assert _transfer.id == 6
@@ -558,14 +583,12 @@ class TestProcessor:
         )
         assert _transfer.data == {"message": "ibet_wst_bridge"}
         assert _transfer.message == "ibet_wst_bridge"
-        block = web3.eth.get_block(tx_receipt_5["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_6)
 
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -575,7 +598,12 @@ class TestProcessor:
     # - Unlock: Transfer record is not registered because "from" and "to" are the same
     # - ForceUnlock: Transfer record is not registered because "from" and "to" are the same
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_2_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -590,6 +618,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -616,7 +646,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -687,6 +717,7 @@ class TestProcessor:
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -696,7 +727,12 @@ class TestProcessor:
     # - Unlock: Transfer record is registered but the data attribute is set null because of invalid data schema
     # - ForceUnlock: Transfer record is registered but the data attribute is set null because of invalid data schema
     @pytest.mark.asyncio
-    async def test_normal_2_3(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_2_3(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -714,6 +750,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -740,7 +778,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -843,10 +881,7 @@ class TestProcessor:
         assert _transfer.amount == 40
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_1)
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
@@ -858,10 +893,7 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {}
         assert _transfer.message is None
-        block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_3)
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -873,14 +905,12 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
         assert _transfer.data == {}
         assert _transfer.message is None
-        block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_4)
 
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -892,7 +922,12 @@ class TestProcessor:
     # - ForceUnlock(twice)
     # - ForceChangeLockedAccount(twice)
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_3_1(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -913,6 +948,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -939,7 +976,7 @@ class TestProcessor:
         token_2.issuer_address = issuer_address
         token_2.abi = {}
         token_2.tx_hash = "tx_hash"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
@@ -1172,10 +1209,7 @@ class TestProcessor:
         assert _transfer.amount == 40
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_1)
 
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
@@ -1186,10 +1220,7 @@ class TestProcessor:
         assert _transfer.amount == 20
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_2)
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -1201,10 +1232,7 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {"message": "garnishment"}
         assert _transfer.message == "garnishment"
-        block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_3)
 
         _transfer = _transfer_list[3]
         assert _transfer.id == 4
@@ -1215,11 +1243,8 @@ class TestProcessor:
         assert _transfer.amount == 10
         assert _transfer.source_event == IDXTransferSourceEventType.UNLOCK.value
         assert _transfer.data == {}
-        assert _transfer.message == None
-        block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.message is None
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_4)
 
         _transfer = _transfer_list[4]
         assert _transfer.id == 5
@@ -1231,10 +1256,7 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
         assert _transfer.data == {"message": "force_unlock"}
         assert _transfer.message == "force_unlock"
-        block = web3.eth.get_block(tx_receipt_5["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_5)
 
         _transfer = _transfer_list[5]
         assert _transfer.id == 6
@@ -1246,10 +1268,7 @@ class TestProcessor:
         assert _transfer.source_event == IDXTransferSourceEventType.FORCE_UNLOCK.value
         assert _transfer.data == {"message": "force_unlock"}
         assert _transfer.message == "force_unlock"
-        block = web3.eth.get_block(tx_receipt_6["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_6)
 
         _transfer = _transfer_list[6]
         assert _transfer.id == 7
@@ -1264,10 +1283,7 @@ class TestProcessor:
         )
         assert _transfer.data == {"message": "ibet_wst_bridge"}
         assert _transfer.message == "ibet_wst_bridge"
-        block = web3.eth.get_block(tx_receipt_7["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_7)
 
         _transfer = _transfer_list[7]
         assert _transfer.id == 8
@@ -1282,14 +1298,12 @@ class TestProcessor:
         )
         assert _transfer.data == {"message": "ibet_wst_bridge"}
         assert _transfer.message == "ibet_wst_bridge"
-        block = web3.eth.get_block(tx_receipt_8["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_8)
 
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -1298,7 +1312,12 @@ class TestProcessor:
     # Multi event logs
     # - Transfer(BulkTransfer)
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_3_2(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1327,6 +1346,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1422,7 +1443,7 @@ class TestProcessor:
         _transfer_list = (await async_db.scalars(select(IDXTransfer))).all()
         assert len(_transfer_list) == 7
 
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
+        block_timestamp_1 = _get_block_timestamp(tx_receipt_1)
         for i in range(0, 3):
             _transfer = _transfer_list[i]
             assert _transfer.id == i + 1
@@ -1433,11 +1454,9 @@ class TestProcessor:
             assert _transfer.amount == value_list1[i]
             assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
             assert _transfer.data is None
-            assert _transfer.block_timestamp == datetime.fromtimestamp(
-                block["timestamp"], UTC
-            ).replace(tzinfo=None)
+            assert _transfer.block_timestamp == block_timestamp_1
 
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
+        block_timestamp_2 = _get_block_timestamp(tx_receipt_2)
         for i in range(0, 4):
             _transfer = _transfer_list[i + 3]
             assert _transfer.id == i + 1 + 3
@@ -1448,20 +1467,24 @@ class TestProcessor:
             assert _transfer.amount == value_list2[i]
             assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
             assert _transfer.data is None
-            assert _transfer.block_timestamp == datetime.fromtimestamp(
-                block["timestamp"], UTC
-            ).replace(tzinfo=None)
+            assert _transfer.block_timestamp == block_timestamp_2
 
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
     # <Normal_4>
     # Multi Token
     @pytest.mark.asyncio
-    async def test_normal_4(self, processor, async_db, ibet_personal_info_contract):
+    async def test_normal_4(
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1474,6 +1497,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1575,10 +1600,7 @@ class TestProcessor:
         assert _transfer.amount == 40
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_1["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_1)
         _transfer = _transfer_list[1]
         assert _transfer.id == 2
         assert _transfer.transaction_hash == tx_hash_2
@@ -1588,10 +1610,7 @@ class TestProcessor:
         assert _transfer.amount == 30
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_2["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_2)
 
         _transfer = _transfer_list[2]
         assert _transfer.id == 3
@@ -1602,10 +1621,7 @@ class TestProcessor:
         assert _transfer.amount == 40
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_3["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_3)
 
         _transfer = _transfer_list[3]
         assert _transfer.id == 4
@@ -1616,14 +1632,12 @@ class TestProcessor:
         assert _transfer.amount == 30
         assert _transfer.source_event == IDXTransferSourceEventType.TRANSFER.value
         assert _transfer.data is None
-        block = web3.eth.get_block(tx_receipt_4["blockNumber"])
-        assert _transfer.block_timestamp == datetime.fromtimestamp(
-            block["timestamp"], UTC
-        ).replace(tzinfo=None)
+        assert _transfer.block_timestamp == _get_block_timestamp(tx_receipt_4)
 
         _idx_transfer_block_number = (
             await async_db.scalars(select(IDXTransferBlockNumber).limit(1))
         ).first()
+        assert _idx_transfer_block_number is not None
         assert _idx_transfer_block_number.id == 1
         assert _idx_transfer_block_number.latest_block_number == block_number
 
@@ -1633,7 +1647,10 @@ class TestProcessor:
     @pytest.mark.asyncio
     @mock.patch("web3.eth.Eth.block_number", 100)
     async def test_normal_5(
-        self, processor: Processor, async_db, caplog: pytest.LogCaptureFixture
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
     ):
         _idx_position_bond_block_number = IDXTransferBlockNumber()
         _idx_position_bond_block_number.id = 1
@@ -1653,9 +1670,9 @@ class TestProcessor:
     async def test_normal_6(
         self,
         processor: Processor,
-        async_db,
-        ibet_personal_info_contract,
-        ibet_security_token_escrow_contract,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        ibet_security_token_escrow_contract: Contract,
     ):
         escrow_contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
@@ -1666,6 +1683,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1735,9 +1754,9 @@ class TestProcessor:
     @pytest.mark.asyncio
     async def test_error_1(
         self,
-        main_func,
-        async_db,
-        ibet_personal_info_contract,
+        main_func,  # type: ignore
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
@@ -1748,6 +1767,8 @@ class TestProcessor:
 
         # Prepare data : Account
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = user_1["keyfile_json"]
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1781,7 +1802,7 @@ class TestProcessor:
         ):
             await main_func()
         assert 1 == caplog.record_tuples.count(
-            (LOG.name, logging.WARNING, "An external service was unavailable")
+            (LOG.name, logging.ERROR, "All blockchain nodes are unavailable: ")
         )
         caplog.clear()
 

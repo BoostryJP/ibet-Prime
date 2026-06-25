@@ -18,14 +18,16 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import LedgerDetailsData, Token, TokenType, TokenVersion
+from app.model.db import LedgerDetailsData, Token, TokenStatus, TokenType, TokenVersion
 from tests.account_config import default_eth_account
 
 
 class TestRetrieveLedgerDetailsData:
     # target API endpoint
-    base_url = "/ledger/{token_address}/details_data/{data_id}"
+    base_url: str = "/ledger/{token_address}/details_data/{data_id}"
 
     ###########################################################################
     # Normal Case
@@ -34,7 +36,9 @@ class TestRetrieveLedgerDetailsData:
     # <Normal_1_1>
     # set issuer-address
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -118,7 +122,9 @@ class TestRetrieveLedgerDetailsData:
     # <Normal_1_2>
     # unset issuer-address
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -199,7 +205,9 @@ class TestRetrieveLedgerDetailsData:
     # <Normal_2>
     # set issuer-address
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user = default_eth_account("user1")
         issuer_address = user["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -287,7 +295,9 @@ class TestRetrieveLedgerDetailsData:
     # <Error_1>
     # Parameter Error(issuer-address)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
 
@@ -317,7 +327,9 @@ class TestRetrieveLedgerDetailsData:
     # Token Not Found
     # set issuer-address
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -332,7 +344,7 @@ class TestRetrieveLedgerDetailsData:
         )
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 2
+        _token.token_status = TokenStatus.FAILED
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -357,7 +369,9 @@ class TestRetrieveLedgerDetailsData:
     # Token Not Found
     # unset issuer-address
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
         data_id = "data_id_1"
 
@@ -376,7 +390,9 @@ class TestRetrieveLedgerDetailsData:
     # <Error_3>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
         token_address = "0xABCdeF1234567890abcdEf123456789000000000"
@@ -389,7 +405,7 @@ class TestRetrieveLedgerDetailsData:
         _token.issuer_address = issuer_address
         _token.token_address = token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 

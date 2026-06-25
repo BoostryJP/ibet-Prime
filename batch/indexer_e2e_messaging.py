@@ -75,6 +75,8 @@ decoded message's max length is 5000.
 
 class Processor:
     def __init__(self):
+        if E2E_MESSAGING_CONTRACT_ADDRESS is None:
+            raise ValueError("E2E_MESSAGING_CONTRACT_ADDRESS must not be None")
         self.e2e_messaging_contract = AsyncContractUtils.get_contract(
             contract_name="E2EMessaging",
             contract_address=E2E_MESSAGING_CONTRACT_ADDRESS,
@@ -127,7 +129,7 @@ class Processor:
         LOG.info("Sync job has been completed")
 
     @staticmethod
-    async def __get_idx_e2e_messaging_block_number(db_session: AsyncSession):
+    async def __get_idx_e2e_messaging_block_number(db_session: AsyncSession) -> int:
         _idx_e2e_messaging_block_number: IDXE2EMessagingBlockNumber | None = (
             await db_session.scalars(select(IDXE2EMessagingBlockNumber).limit(1))
         ).first()
@@ -174,8 +176,12 @@ class Processor:
             )
             for event in events:
                 transaction_hash = event["transactionHash"].to_0x_hex()
+                block = await web3.eth.get_block(event["blockNumber"])
+                block_timestamp_raw = block.get("timestamp")
+                assert block_timestamp_raw is not None
                 block_timestamp = datetime.fromtimestamp(
-                    (await web3.eth.get_block(event["blockNumber"]))["timestamp"], UTC
+                    int(block_timestamp_raw),
+                    UTC,
                 ).replace(tzinfo=None)
                 args = event["args"]
                 from_address = args["sender"]
@@ -273,7 +279,8 @@ class Processor:
 
         # Decrypt AES key
         rsa_private_key = account_rsa_key.rsa_private_key
-        rsa_passphrase = E2EEUtils.decrypt(account_rsa_key.rsa_passphrase)
+        encrypted_rsa_passphrase = account_rsa_key.rsa_passphrase
+        rsa_passphrase = E2EEUtils.decrypt(encrypted_rsa_passphrase)
         try:
             rsa_key = RSA.importKey(rsa_private_key, passphrase=rsa_passphrase)
             rsa_cipher = PKCS1_OAEP.new(rsa_key)
@@ -286,7 +293,7 @@ class Processor:
         try:
             message_org = base64.b64decode(message)
             aes_iv = message_org[: AES.block_size]
-            aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)
+            aes_cipher = AES.new(aes_key, AES.MODE_CBC, aes_iv)  # type: ignore
             pad_message = aes_cipher.decrypt(message_org[AES.block_size :])
             decrypt_message = unpad(pad_message, AES.block_size).decode()
         except Exception as e:
@@ -330,8 +337,8 @@ async def main():
         start_time = time.time()
         try:
             await processor.process()
-        except ServiceUnavailableError:
-            LOG.warning("An external service was unavailable")
+        except ServiceUnavailableError as ex:
+            LOG.error(f"All blockchain nodes are unavailable: {ex}")
         except SQLAlchemyError as sa_err:
             LOG.error(f"A database error has occurred: code={sa_err.code}\n{sa_err}")
         except Exception as ex:

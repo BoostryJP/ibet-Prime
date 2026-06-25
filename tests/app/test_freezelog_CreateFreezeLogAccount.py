@@ -21,7 +21,10 @@ import base64
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.model.db import FreezeLogAccount, TransactionLock
 from app.utils.e2ee_utils import E2EEUtils
@@ -42,7 +45,12 @@ class TestCreateFreezeLogAccount:
     # <Normal_1>
     # Use Linux RNG
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -75,10 +83,15 @@ class TestCreateFreezeLogAccount:
     # <Normal_2>
     # Use AWS RNG
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_normal_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         # Mock setting
         class KMSClientMock:
-            def generate_random(self, NumberOfBytes):
+            def generate_random(self, NumberOfBytes: int):
                 assert NumberOfBytes == 32
                 return {"Plaintext": b"12345678901234567890123456789012"}
 
@@ -130,14 +143,19 @@ class TestCreateFreezeLogAccount:
     # Missing required field
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             ibet_freeze_log_contract.address,
         ):
             req_param = {}
-            resp = await async_client.post(self.test_url, json=req_param)
+            resp = await async_client.post(self.test_url, json=req_param)  # type: ignore
 
         # Assertion
         assert resp.status_code == 422
@@ -158,7 +176,12 @@ class TestCreateFreezeLogAccount:
     # Not encrypted password
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
@@ -190,7 +213,12 @@ class TestCreateFreezeLogAccount:
     # Password policy violation
     # -> InvalidParameterError
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db, ibet_freeze_log_contract):
+    async def test_error_3(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_freeze_log_contract: Contract,
+    ):
         # Request target api
         with mock.patch(
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",

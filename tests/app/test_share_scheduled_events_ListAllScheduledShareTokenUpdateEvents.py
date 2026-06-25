@@ -22,8 +22,11 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytz
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
+from app.model.db.scheduled_events import ScheduledEventStatus
 from config import TZ
 from tests.account_config import default_eth_account
 
@@ -40,7 +43,7 @@ class TestListAllScheduledShareTokenUpdateEvents:
     # <Normal_1>
     # issuer address is specified
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -78,7 +81,7 @@ class TestListAllScheduledShareTokenUpdateEvents:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = datetime_now_utc
         async_db.add(token_event)
@@ -113,20 +116,20 @@ class TestListAllScheduledShareTokenUpdateEvents:
     # issuer address is not specified
     # Multiple records
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
         _token_address = "token_address_test"
 
         # prepare data
-        datetime_list = []
+        datetime_list: list[datetime] = []
         datetime_utc = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)
         datetime_list.append(datetime_utc)
         datetime_utc = datetime.now(UTC).replace(tzinfo=None)
         datetime_list.append(datetime_utc)
 
-        uuid_list = [str(uuid.uuid4()), str(uuid.uuid4())]
+        uuid_list: list[str] = [str(uuid.uuid4()), str(uuid.uuid4())]
 
         update_data = {
             "cancellation_date": "20221231",
@@ -152,7 +155,7 @@ class TestListAllScheduledShareTokenUpdateEvents:
             token_event.token_type = TokenType.IBET_SHARE
             token_event.event_type = ScheduledEventType.UPDATE
             token_event.scheduled_datetime = _datetime
-            token_event.status = 0
+            token_event.status = ScheduledEventStatus.PROCESSING
             token_event.data = update_data
             token_event.created = _datetime
             async_db.add(token_event)
@@ -206,7 +209,7 @@ class TestListAllScheduledShareTokenUpdateEvents:
     # <Normal_3>
     # No data
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user2")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"

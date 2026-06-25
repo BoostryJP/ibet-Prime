@@ -40,9 +40,9 @@ class TokenHoldersList(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     # Token Address
-    token_address: Mapped[str | None] = mapped_column(String(42))
+    token_address: Mapped[str] = mapped_column(String(42), nullable=False)
     # Block Number
-    block_number: Mapped[int | None] = mapped_column(BigInteger)
+    block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
     # List id (UUID)
     list_id: Mapped[str | None] = mapped_column(String(36), index=False)
     # batch processing status

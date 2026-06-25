@@ -34,12 +34,20 @@ if [ -n "${E2E_MESSAGING_CONTRACT_ADDRESS}" ]; then
   PROC_LIST="${PROC_LIST} batch/processor_rotate_e2e_messaging_rsa_key.py"
 fi
 
-if [[ $IBET_WST_FEATURE_ENABLED = 1 ]]; then
+if [[ $IBET_WST_ETH_FEATURE_ENABLED = 1 ]]; then
   PROC_LIST="${PROC_LIST} batch/processor_monitor_block_sync_eth.py"
-  PROC_LIST="${PROC_LIST} batch/processor_eth_wst_bridge_to_ibet.py"
-  PROC_LIST="${PROC_LIST} batch/processor_eth_wst_monitor_bridge_events.py"
-  PROC_LIST="${PROC_LIST} batch/processor_eth_wst_monitor_txreceipt.py"
-  PROC_LIST="${PROC_LIST} batch/processor_eth_wst_send_tx.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_eth_bridge_to_ibet.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_eth_monitor_bridge_events.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_eth_monitor_txreceipt.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_eth_send_tx.py"
+fi
+
+if [[ $IBET_WST_AVA_FEATURE_ENABLED = 1 ]]; then
+  PROC_LIST="${PROC_LIST} batch/processor_monitor_block_sync_ava.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_ava_bridge_to_ibet.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_ava_monitor_bridge_events.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_ava_monitor_txreceipt.py"
+  PROC_LIST="${PROC_LIST} batch/processor_wst_ava_send_tx.py"
 fi
 
 for i in ${PROC_LIST}; do

@@ -21,15 +21,14 @@ import json
 import re
 import secrets
 from datetime import UTC, datetime
-from typing import Annotated, List, Sequence
+from typing import Annotated, Any, List, Sequence
 
 import boto3
-import eth_keyfile
 import pytz
-from coincurve import PublicKey
 from Crypto import Random
 from Crypto.PublicKey import RSA
-from eth_utils import keccak, to_checksum_address
+from eth_keyfile.keyfile import create_keyfile_json, decode_keyfile_json
+from eth_utils.crypto import keccak
 from fastapi import APIRouter, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, delete, desc, select
@@ -63,6 +62,10 @@ from app.utils.docs_utils import get_routers_responses
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.fastapi_utils import json_response
 from app.utils.ibet_contract_utils import AsyncContractUtils
+from app.utils.secp256k1_utils import (
+    private_key_to_public_key,
+    public_key_to_address,
+)
 from config import (
     AWS_KMS_GENERATE_RANDOM_ENABLED,
     AWS_REGION_NAME,
@@ -87,9 +90,7 @@ utc_tz = pytz.timezone("UTC")
     "/accounts",
     operation_id="CreateE2EMessagingAccount",
     response_model=E2EMessagingAccountResponse,
-    responses=get_routers_responses(
-        422, InvalidParameterError, SendTransactionError, ContractRevertError
-    ),
+    responses=get_routers_responses(422, InvalidParameterError, SendTransactionError),
 )
 async def create_e2e_messaging_account(
     db: DBAsyncSession,
@@ -124,9 +125,10 @@ async def create_e2e_messaging_account(
         private_key = keccak(result.get("Plaintext"))
     else:
         private_key = keccak(secrets.token_bytes(32))
-    public_key = PublicKey.from_valid_secret(private_key).format(compressed=False)[1:]
-    addr = to_checksum_address(keccak(public_key)[-20:])
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    addr = public_key_to_address(
+        private_key_to_public_key(private_key, compressed=False)
+    )
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -138,13 +140,17 @@ async def create_e2e_messaging_account(
 
     # Send transaction
     try:
+        if E2E_MESSAGING_CONTRACT_ADDRESS is None:
+            raise InvalidParameterError(
+                "E2E_MESSAGING_CONTRACT_ADDRESS must not be None"
+            )
         tx_hash, _ = await E2EMessaging(E2E_MESSAGING_CONTRACT_ADDRESS).set_public_key(
             public_key=rsa_public_key,
             key_type="RSA4096",
             tx_sender=addr,
             tx_sender_key=private_key,
         )
-    except SendTransactionError:
+    except SendTransactionError, ContractRevertError:
         raise SendTransactionError("failed to send transaction")
 
     # Register account data to the DB
@@ -152,8 +158,8 @@ async def create_e2e_messaging_account(
     _account.account_address = addr
     _account.keyfile = keyfile_json
     _account.eoa_password = E2EEUtils.encrypt(eoa_password)
-    _account.rsa_key_generate_interval = data.rsa_key_generate_interval
-    _account.rsa_generation = data.rsa_generation
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 0
+    _account.rsa_generation = data.rsa_generation or 0
     _account.is_deleted = False
     db.add(_account)
 
@@ -166,7 +172,8 @@ async def create_e2e_messaging_account(
     _account_rsa_key.rsa_public_key = rsa_public_key
     _account_rsa_key.rsa_passphrase = E2EEUtils.encrypt(rsa_passphrase)
     _account_rsa_key.block_timestamp = datetime.fromtimestamp(
-        block["timestamp"], UTC
+        block["timestamp"],  # type: ignore
+        UTC,
     ).replace(tzinfo=None)
     db.add(_account_rsa_key)
 
@@ -223,7 +230,7 @@ async def list_all_e2e_messaging_accounts(db: DBAsyncSession):
     )
 
     # Get E2E Messaging Accounts
-    _accounts: Sequence[tuple[E2EMessagingAccount, str]] = (
+    _accounts: Sequence[tuple[E2EMessagingAccount, str | None]] = (
         (
             await db.execute(
                 select(E2EMessagingAccount, latest_rsa_key.rsa_public_key)
@@ -239,7 +246,7 @@ async def list_all_e2e_messaging_accounts(db: DBAsyncSession):
         .all()
     )
 
-    account_list = []
+    account_list: list[dict[str, Any]] = []
     for _account, rsa_public_key in _accounts:
         account_list.append(
             {
@@ -288,7 +295,10 @@ async def retrieve_e2e_messaging_account(
                 .limit(1)
             )
         ).first()
-        rsa_public_key = _rsa_key.rsa_public_key
+        if _rsa_key is not None:
+            rsa_public_key = _rsa_key.rsa_public_key
+        else:
+            rsa_public_key = None
 
     return json_response(
         {
@@ -387,8 +397,8 @@ async def update_e2e_messaging_account_rsa_key(
         )
     ).first()
 
-    _account.rsa_key_generate_interval = data.rsa_key_generate_interval
-    _account.rsa_generation = data.rsa_generation
+    _account.rsa_key_generate_interval = data.rsa_key_generate_interval or 0
+    _account.rsa_generation = data.rsa_generation or 0
     await db.merge(_account)
     await db.commit()
 
@@ -397,7 +407,7 @@ async def update_e2e_messaging_account_rsa_key(
             "account_address": _account.account_address,
             "rsa_key_generate_interval": _account.rsa_key_generate_interval,
             "rsa_generation": _account.rsa_generation,
-            "rsa_public_key": _rsa_key.rsa_public_key,
+            "rsa_public_key": _rsa_key.rsa_public_key if _rsa_key is not None else None,
             "is_deleted": _account.is_deleted,
         }
     )
@@ -451,12 +461,12 @@ async def change_e2e_messaging_account_eoa_password(
 
     # Get Ethereum Key
     old_keyfile_json = _account.keyfile
-    private_key = eth_keyfile.decode_keyfile_json(
+    private_key = decode_keyfile_json(
         raw_keyfile_json=old_keyfile_json, password=old_eoa_password.encode("utf-8")
     )
 
     # Create New Ethereum Key File
-    keyfile_json = eth_keyfile.create_keyfile_json(
+    keyfile_json = create_keyfile_json(
         private_key=private_key, password=eoa_password.encode("utf-8"), kdf="pbkdf2"
     )
 
@@ -588,13 +598,16 @@ async def list_all_e2e_messages(
 
     _e2e_messaging_list: Sequence[IDXE2EMessaging] = (await db.scalars(stmt)).all()
 
-    e2e_messages = []
+    e2e_messages: list[dict[str, Any]] = []
     for _e2e_messaging in _e2e_messaging_list:
-        send_timestamp_formatted = (
-            utc_tz.localize(_e2e_messaging.send_timestamp)
-            .astimezone(local_tz)
-            .isoformat()
-        )
+        if _e2e_messaging.send_timestamp is not None:
+            send_timestamp_formatted = (
+                utc_tz.localize(_e2e_messaging.send_timestamp)
+                .astimezone(local_tz)
+                .isoformat()
+            )
+        else:
+            send_timestamp_formatted = None
         try:
             # json or list string decode
             message = json.loads(_e2e_messaging.message)
@@ -645,9 +658,14 @@ async def retrieve_e2e_messaging(
     if _e2e_messaging is None:
         raise HTTPException(status_code=404, detail="e2e messaging not found")
 
-    send_timestamp_formatted = (
-        utc_tz.localize(_e2e_messaging.send_timestamp).astimezone(local_tz).isoformat()
-    )
+    if _e2e_messaging.send_timestamp is not None:
+        send_timestamp_formatted = (
+            utc_tz.localize(_e2e_messaging.send_timestamp)
+            .astimezone(local_tz)
+            .isoformat()
+        )
+    else:
+        send_timestamp_formatted = None
     try:
         # json or list string decode
         message = json.loads(_e2e_messaging.message)

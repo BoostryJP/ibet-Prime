@@ -1,3 +1,6 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -17,7 +20,11 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Any, TypedDict
+
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
@@ -30,11 +37,16 @@ from app.model.db import (
 from tests.account_config import default_eth_account
 
 
+class UploadIssuer(TypedDict):
+    address: str
+    keyfile: dict[str, Any]
+
+
 class TestAppRoutersShareBulkTransferGET:
     # target API endpoint
     test_url = "/share/bulk_transfer/{}"
 
-    upload_issuer_list = [
+    upload_issuer_list: list[UploadIssuer] = [
         {
             "address": default_eth_account("user1")["address"],
             "keyfile": default_eth_account("user1")["keyfile_json"],
@@ -65,10 +77,13 @@ class TestAppRoutersShareBulkTransferGET:
     # Header: issuer-address is set
     # - Personal information is not set
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)
@@ -128,10 +143,13 @@ class TestAppRoutersShareBulkTransferGET:
     # Header: issuer-address is set
     # - Personal information is set
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)
@@ -161,7 +179,7 @@ class TestAppRoutersShareBulkTransferGET:
             _personal_info_from = IDXPersonalInfo()
             _personal_info_from.issuer_address = self.upload_issuer_list[i]["address"]
             _personal_info_from.account_address = self.upload_issuer_list[1]["address"]
-            _personal_info_from._personal_info = {
+            _personal_info_from.personal_info = {
                 "key_manager": "key_manager_test1",
                 "name": "test_name1",
                 "postal_code": "postal_code_test1",
@@ -177,7 +195,7 @@ class TestAppRoutersShareBulkTransferGET:
             _personal_info_to = IDXPersonalInfo()
             _personal_info_to.issuer_address = self.upload_issuer_list[i]["address"]
             _personal_info_to.account_address = self.upload_issuer_list[2]["address"]
-            _personal_info_to._personal_info = {
+            _personal_info_to.personal_info = {
                 "key_manager": "key_manager_test2",
                 "name": "test_name2",
                 "postal_code": "postal_code_test2",
@@ -241,7 +259,7 @@ class TestAppRoutersShareBulkTransferGET:
     # <Normal_2>
     # Header: issuer-address is not set
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         for i in range(0, 3):
             # prepare data : BulkTransferUpload
             bulk_transfer_upload = BulkTransferUpload()
@@ -295,7 +313,7 @@ class TestAppRoutersShareBulkTransferGET:
     # <Normal_3>
     # Bulk transaction error record
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : BulkTransferUpload
         bulk_transfer_upload = BulkTransferUpload()
         bulk_transfer_upload.issuer_address = self.upload_issuer_list[0]["address"]
@@ -352,10 +370,13 @@ class TestAppRoutersShareBulkTransferGET:
     # <Normal_4>
     # offset / limit
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)
@@ -420,7 +441,7 @@ class TestAppRoutersShareBulkTransferGET:
     # RequestValidationError
     # invalid type : issuer-address
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.test_url.format(self.upload_id_list[0]),
@@ -444,7 +465,7 @@ class TestAppRoutersShareBulkTransferGET:
     # <Error_2>
     # Upload id Not Found
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(self.test_url.format("DUMMY UPLOAD ID"))
 
@@ -458,10 +479,13 @@ class TestAppRoutersShareBulkTransferGET:
     # <Error_3>
     # Upload id Not Found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data : Account(Issuer)
         for _issuer in self.upload_issuer_list:
             account = Account()
+            account.eoa_password = E2EEUtils.encrypt("password")
+            account.rsa_status = AccountRsaStatus.UNSET.value
+            account.is_deleted = False
             account.issuer_address = _issuer["address"]
             account.keyfile = _issuer["keyfile"]
             async_db.add(account)

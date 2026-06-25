@@ -18,9 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import uuid
+from typing import TypedDict
 from unittest import mock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     BatchIssueRedeem,
@@ -35,6 +38,11 @@ from app.model.db import (
 from tests.account_config import default_eth_account
 
 
+class RedemptionAccount(TypedDict):
+    address: str
+    amount: int
+
+
 class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # target API endpoint
     base_url = "/bond/tokens/{}/redeem/batch"
@@ -44,7 +52,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         "0e778f46-864e-4ec0-b566-21bd31cf63ff",
     ]
 
-    account_list = [
+    account_list: list[RedemptionAccount] = [
         {"address": default_eth_account("user1")["address"], "amount": 1},
         {"address": default_eth_account("user2")["address"], "amount": 2},
     ]
@@ -56,7 +64,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal Case 1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -85,7 +93,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal Case 2_1>
     # 1 record 1 result(No personal information)
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -119,7 +127,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = "other_issuer_address"
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -172,7 +180,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal Case 2_2>
     # 1 record 1 result(With personal information)
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -206,7 +214,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = issuer_address
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -259,7 +267,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal Case 2_3>
     # 1 record multiple result
     @pytest.mark.asyncio
-    async def test_normal_2_3(self, async_client, async_db):
+    async def test_normal_2_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -293,7 +301,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = issuer_address
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -316,7 +324,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_2 = IDXPersonalInfo()
         idx_personal_info_2.account_address = self.account_list[1]["address"]
         idx_personal_info_2.issuer_address = "other_issuer_address"
-        idx_personal_info_2._personal_info = {
+        idx_personal_info_2.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -384,7 +392,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal Case 2_4>
     # 1 record(Issuer specified) 1 result(No personal information)
     @pytest.mark.asyncio
-    async def test_normal_2_4(self, async_client, async_db):
+    async def test_normal_2_4(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -418,7 +426,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = "other_issuer_address"
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -474,7 +482,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal Case 2_5>
     # 1 record(Issuer specified) 1 result(With personal information)
     @pytest.mark.asyncio
-    async def test_normal_2_5(self, async_client, async_db):
+    async def test_normal_2_5(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -508,7 +516,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = issuer_address
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -564,7 +572,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal Case 2_6>
     # 1 record(Issuer specified) multiple result(With personal information)
     @pytest.mark.asyncio
-    async def test_normal_2_6(self, async_client, async_db):
+    async def test_normal_2_6(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -598,7 +606,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_1 = IDXPersonalInfo()
         idx_personal_info_1.account_address = self.account_list[0]["address"]
         idx_personal_info_1.issuer_address = issuer_address
-        idx_personal_info_1._personal_info = {
+        idx_personal_info_1.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -621,7 +629,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
         idx_personal_info_2 = IDXPersonalInfo()
         idx_personal_info_2.account_address = self.account_list[1]["address"]
         idx_personal_info_2.issuer_address = "other_issuer_address"
-        idx_personal_info_2._personal_info = {
+        idx_personal_info_2.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -692,7 +700,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal_3_1>
     # Multi record
     @pytest.mark.asyncio
-    async def test_normal_3_1(self, async_client, async_db):
+    async def test_normal_3_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -804,7 +812,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal_3_2>
     # Multi record (Issuer specified)
     @pytest.mark.asyncio
-    async def test_normal_3_2(self, async_client, async_db):
+    async def test_normal_3_2(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -901,7 +909,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal_3_3>
     # Multi record (status)
     @pytest.mark.asyncio
-    async def test_normal_3_3(self, async_client, async_db):
+    async def test_normal_3_3(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -1007,7 +1015,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal_4>
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -1104,7 +1112,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # <Normal_5>
     # Sort
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client, async_db):
+    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"
@@ -1224,7 +1232,7 @@ class TestAppRoutersBondTokensTokenAddressRedeemBatchGET:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         issuer_account = default_eth_account("user1")
         issuer_address = issuer_account["address"]
         token_address = "token_address_test"

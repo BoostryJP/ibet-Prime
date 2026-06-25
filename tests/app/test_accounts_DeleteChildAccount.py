@@ -1,3 +1,7 @@
+from app.model.db import AccountRsaStatus
+from app.utils.e2ee_utils import E2EEUtils
+from tests.account_config import default_eth_account
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,7 +22,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, ChildAccount, IDXPersonalInfo, PersonalInfoDataSource
 
@@ -36,9 +42,13 @@ class TestDeleteChildAccount:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
 
@@ -84,7 +94,7 @@ class TestDeleteChildAccount:
     # <Error_1>
     # 404: Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Call API
         resp = await async_client.delete(self.base_url.format(self.issuer_address, 1))
 
@@ -98,9 +108,13 @@ class TestDeleteChildAccount:
     # <Error_2>
     # 404: Issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Prepare data
         _account = Account()
+        _account.keyfile = default_eth_account("user1")["keyfile_json"]
+        _account.eoa_password = E2EEUtils.encrypt("password")
+        _account.rsa_status = AccountRsaStatus.UNSET.value
+        _account.is_deleted = False
         _account.issuer_address = self.issuer_address
         async_db.add(_account)
         await async_db.commit()

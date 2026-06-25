@@ -45,7 +45,7 @@ class UploadFileRequest(BaseModel):
 
     @field_validator("content")
     @classmethod
-    def content_is_less_than_max_upload_file_size(cls, v):
+    def content_is_less_than_max_upload_file_size(cls, v: str) -> str:
         try:
             data = base64.b64decode(v)
         except Exception:

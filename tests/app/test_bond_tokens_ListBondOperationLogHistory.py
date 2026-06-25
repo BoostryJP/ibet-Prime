@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -20,16 +22,18 @@ SPDX-License-Identifier: Apache-2.0
 import json
 from _decimal import Decimal
 from datetime import datetime
+from typing import Any
 from unittest.mock import ANY
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from httpx import AsyncClient
 from pytz import timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import TxParams
 
 import config
 from app.model.db import (
@@ -52,14 +56,14 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 async def deploy_bond_token_contract(
     session: AsyncSession,
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=config.ZERO_ADDRESS,
-    transfer_approval_required=True,
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: str = config.ZERO_ADDRESS,
+    transfer_approval_required: bool = True,
     created: datetime | None = None,
-) -> (Contract, dict):
-    arguments = [
+) -> tuple[Contract, dict[str, Any]]:
+    arguments: list[Any] = [
         "token.name",  # name
         "token.symbol",  # symbol
         100,  # total_supply
@@ -75,7 +79,7 @@ async def deploy_bond_token_contract(
     bond_contrat = IbetStraightBondContract()
     token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
     contract = ContractUtils.get_contract("IbetStraightBond", token_address)
-    token_create_param = IbetStraightBondCreate(
+    token_create_param: dict[str, Any] = IbetStraightBondCreate(
         name="token.name",
         total_supply=100,
         face_value=20,
@@ -102,11 +106,7 @@ async def deploy_bond_token_contract(
         transfer_approval_required=transfer_approval_required,  # update
         interest_payment_currency="JPY",  # update
         base_fx_rate=123.456789,  # update
-    ).__dict__
-
-    token_create_param.pop("image_url")
-    token_create_param.pop("activate_ibet_wst")
-    token_create_param.pop("ibet_wst_name")
+    ).model_dump(exclude={"image_url", "activate_ibet_wst", "ibet_wst_name"})
 
     token_update_operation_log = TokenUpdateOperationLog()
     token_update_operation_log.issuer_address = address
@@ -122,16 +122,16 @@ async def deploy_bond_token_contract(
 
     await session.commit()
 
-    build_tx_param = {
+    build_tx_param: TxParams = {
         "chainId": config.CHAIN_ID,
         "from": address,
         "gas": config.TX_GAS_LIMIT,
-        "gasPrice": 0,
+        "gasPrice": Web3.to_wei(0, "wei"),
     }
     tx = contract.functions.setInterestRate(
         int(Decimal(str(token_create_param["interest_rate"])) * Decimal("10000"))
     ).build_transaction(build_tx_param)
-    _interest_payment_date = {}
+    _interest_payment_date: dict[str, str] = {}
     for i, item in enumerate(token_create_param["interest_payment_date"]):
         _interest_payment_date[f"interestPaymentDate{i + 1}"] = item
     _interest_payment_date_string = json.dumps(_interest_payment_date)
@@ -203,7 +203,7 @@ class TestListBondOperationLogHistory:
     @staticmethod
     async def create_history_by_api(
         async_client: AsyncClient, token_address: str, issuer_address: str
-    ):
+    ) -> None:
         await async_client.post(
             f"/bond/tokens/{token_address}",
             json={"face_value": 10000, "memo": None},
@@ -231,9 +231,9 @@ class TestListBondOperationLogHistory:
 
     @staticmethod
     def expected_original_after_issue(
-        create_token_param: dict, issuer_address: str, token_address: str
-    ):
-        interest_payment_date = [
+        create_token_param: dict[str, Any], issuer_address: str, token_address: str
+    ) -> dict[str, Any]:
+        interest_payment_date: list[str] = [
             (
                 create_token_param["interest_payment_date"][i]
                 if len(create_token_param["interest_payment_date"]) > i
@@ -242,7 +242,7 @@ class TestListBondOperationLogHistory:
             for i in range(12)
         ]
 
-        return {
+        expected_original: dict[str, Any] = {
             **create_token_param,
             "contract_name": "IbetStraightBond",
             "interest_payment_date": interest_payment_date,
@@ -250,6 +250,8 @@ class TestListBondOperationLogHistory:
             "memo": "",
             "token_address": token_address,
         }
+        expected_original.pop("ibet_wst_blockchains", None)
+        return expected_original
 
     ###########################################################################
     # Normal Case
@@ -258,13 +260,20 @@ class TestListBondOperationLogHistory:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db, ibet_personal_info_contract):
+    async def test_normal_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
 
         # prepare data: Token
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -301,7 +310,12 @@ class TestListBondOperationLogHistory:
     # <Normal_2>
     # Multiple record
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db, ibet_personal_info_contract):
+    async def test_normal_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         issuer_private_key = decode_keyfile_json(
@@ -321,6 +335,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -396,7 +412,10 @@ class TestListBondOperationLogHistory:
     # Search filter: trigger
     @pytest.mark.asyncio
     async def test_normal_3_1(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -417,6 +436,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -490,7 +511,10 @@ class TestListBondOperationLogHistory:
     # Search filter: modified_contents
     @pytest.mark.asyncio
     async def test_normal_3_2(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -511,6 +535,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -571,7 +597,11 @@ class TestListBondOperationLogHistory:
     # Search filter: created_from
     @pytest.mark.asyncio
     async def test_normal_3_3(
-        self, async_client, async_db, ibet_personal_info_contract, monkeypatch
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -593,6 +623,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -682,7 +714,11 @@ class TestListBondOperationLogHistory:
     # Search filter: created_to
     @pytest.mark.asyncio
     async def test_normal_3_4(
-        self, async_client, async_db, ibet_personal_info_contract, monkeypatch
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -704,6 +740,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -787,7 +825,10 @@ class TestListBondOperationLogHistory:
     # Sort Order
     @pytest.mark.asyncio
     async def test_normal_4_1(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -808,6 +849,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -887,7 +930,10 @@ class TestListBondOperationLogHistory:
     # Sort Item
     @pytest.mark.asyncio
     async def test_normal_4_2(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -908,6 +954,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -988,7 +1036,10 @@ class TestListBondOperationLogHistory:
     # Pagination
     @pytest.mark.asyncio
     async def test_normal_5_1(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -1009,6 +1060,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1073,7 +1126,10 @@ class TestListBondOperationLogHistory:
     # Pagination (over offset)
     @pytest.mark.asyncio
     async def test_normal_5_2(
-        self, async_client, async_db, ibet_personal_info_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_personal_info_contract: Contract,
     ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
@@ -1094,6 +1150,8 @@ class TestListBondOperationLogHistory:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -1142,7 +1200,7 @@ class TestListBondOperationLogHistory:
     # RequestValidationError
     # query(invalid value)
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         token_address = "0x0123456789012345678901234567890123456789"
 
         # request target api

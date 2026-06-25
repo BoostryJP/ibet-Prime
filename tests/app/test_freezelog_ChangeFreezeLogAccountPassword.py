@@ -18,7 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import FreezeLogAccount
 from app.utils.e2ee_utils import E2EEUtils
@@ -35,7 +37,7 @@ class TestChangeFreezeLogAccountPassword:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]
@@ -70,6 +72,8 @@ class TestChangeFreezeLogAccountPassword:
                 .limit(1)
             )
         ).first()
+        assert log_account_af is not None
+        assert log_account_af.eoa_password is not None
         assert E2EEUtils.decrypt(log_account_af.eoa_password) == new_password
 
     ###########################################################################
@@ -80,14 +84,15 @@ class TestChangeFreezeLogAccountPassword:
     # Missing required fields
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
         # Request target api
         req_param = {}
         resp = await async_client.post(
-            self.base_url.format(account_address=user_address_1), json=req_param
+            self.base_url.format(account_address=user_address_1),
+            json=req_param,  # type: ignore
         )
 
         # Assertion
@@ -114,7 +119,7 @@ class TestChangeFreezeLogAccountPassword:
     # Password is not encrypted
     # -> RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
 
@@ -153,7 +158,7 @@ class TestChangeFreezeLogAccountPassword:
     # Log account is not exists
     # -> NotFound
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         old_password = "password"
@@ -179,7 +184,7 @@ class TestChangeFreezeLogAccountPassword:
     # New password violates password policy
     # -> InvalidParameterError
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
         user_keyfile_1 = user_1["keyfile_json"]

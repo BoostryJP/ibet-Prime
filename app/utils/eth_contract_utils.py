@@ -22,11 +22,12 @@ import json
 import sys
 import threading
 from json import JSONDecodeError
-from typing import Any, Type, TypeVar
+from typing import Any, TypeAlias, cast
+from weakref import WeakKeyDictionary
 
 from aiohttp import ClientError
-from eth_typing import URI
-from eth_utils import to_checksum_address
+from eth_typing import URI, HexStr
+from eth_utils.address import to_checksum_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncHTTPProvider, AsyncWeb3
@@ -39,13 +40,17 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
-from web3.types import Nonce, RPCEndpoint, RPCResponse, TxReceipt
+from web3.types import Nonce, RPCEndpoint, RPCResponse, TxParams, TxReceipt
 
 from app import log
 from app.database import async_engine
 from app.exceptions import SendTransactionError, ServiceUnavailableError
 from app.model import EthereumAddress
 from app.model.db import EthereumNode
+from app.utils.web3_provider_utils import (
+    KeepAliveHTTPSessionManager,
+    ResolvedEndpointCacheMixin,
+)
 from eth_config import (
     ETH_CHAIN_ID,
     ETH_WEB3_HTTP_PROVIDER,
@@ -56,12 +61,109 @@ from eth_config import (
 thread_local = threading.local()
 LOG = log.get_logger()
 
+ContractArtifact: TypeAlias = dict[str, Any]
+EventArgumentFilters: TypeAlias = dict[str, Any] | None
 
-class EthFailOverHTTPProvider(AsyncHTTPProvider):
-    def __init__(self, fail_over_mode: bool = False, *args, **kwargs):
+
+class _EthWeb3Context:
+    def __init__(self) -> None:
+        if "pytest" in sys.modules:
+            self._fail_over_mode = False
+        else:
+            self._fail_over_mode = True
+
+    def get_web3(self) -> AsyncWeb3[Any]:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is None:
+            # Preserve a per-thread fallback instance for code paths that touch
+            # EthWeb3 before entering an event loop.
+            try:
+                return cast(AsyncWeb3[Any], thread_local.eth_web3_without_loop)
+            except AttributeError:
+                async_web3 = self._create_web3()
+                thread_local.eth_web3_without_loop = async_web3
+                return async_web3
+
+        # AsyncWeb3 instances are isolated per event loop because the provider
+        # session must not be shared across loops.
+        try:
+            eth_web3_by_loop = cast(
+                WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncWeb3[Any]],
+                thread_local.eth_web3_by_loop,
+            )
+        except AttributeError:
+            eth_web3_by_loop: WeakKeyDictionary[
+                asyncio.AbstractEventLoop, AsyncWeb3[Any]
+            ] = WeakKeyDictionary()
+            thread_local.eth_web3_by_loop = eth_web3_by_loop
+
+        async_web3 = eth_web3_by_loop.get(loop)
+        if async_web3 is None:
+            async_web3 = self._create_web3()
+            eth_web3_by_loop[loop] = async_web3
+        return async_web3
+
+    def _create_web3(self) -> AsyncWeb3[Any]:
+        return AsyncWeb3(
+            EthFailOverHTTPProvider(
+                fail_over_mode=self._fail_over_mode,
+                session_manager=KeepAliveHTTPSessionManager(),
+            )
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.get_web3(), name)
+
+
+class EthFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
+    def __init__(
+        self,
+        fail_over_mode: bool = False,
+        session_manager: KeepAliveHTTPSessionManager | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
+        self._init_resolved_endpoint_cache()
+        if session_manager is not None:
+            self._request_session_manager = session_manager
         self.fail_over_mode = fail_over_mode
-        self.endpoint_uri = None
+        self.endpoint_uri: URI | None = None
+
+    def _get_cache_ttl(self) -> float:
+        return float(ETH_WEB3_REQUEST_WAIT_TIME)
+
+    async def _resolve_endpoint_uri(
+        self, db_session: AsyncSession, failed_endpoint_uris: set[URI] | None = None
+    ) -> URI | None:
+        cached_endpoint_uri = self._get_cached_endpoint_uri()
+        if cached_endpoint_uri is not None and cached_endpoint_uri not in (
+            failed_endpoint_uris or set()
+        ):
+            return cached_endpoint_uri
+
+        stmt = select(EthereumNode).where(EthereumNode.is_synced.is_(True))
+        if failed_endpoint_uris:
+            stmt = stmt.where(
+                EthereumNode.endpoint_uri.not_in(
+                    [str(uri) for uri in failed_endpoint_uris]
+                )
+            )
+        node: EthereumNode | None = (
+            await db_session.scalars(
+                stmt.order_by(EthereumNode.priority, EthereumNode.id).limit(1)
+            )
+        ).first()
+        if node is None or node.endpoint_uri is None:
+            return None
+
+        endpoint_uri = URI(node.endpoint_uri)
+        self._set_cached_endpoint_uri(endpoint_uri)
+        return endpoint_uri
 
     async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         """Make an HTTP request to the Ethereum node."""
@@ -69,6 +171,19 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
             if self.fail_over_mode:
+                failed_endpoint_uris: set[URI] = set()
+                cached_endpoint_uri = self._get_cached_endpoint_uri()
+                if cached_endpoint_uri is not None:
+                    self.endpoint_uri = cached_endpoint_uri
+                    try:
+                        return await super().make_request(method, params)
+                    except ClientError, JSONDecodeError:
+                        self._clear_cached_endpoint_uri()
+                        failed_endpoint_uris.add(cached_endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={cached_endpoint_uri}, method={method}, params={params}"
+                        )
+
                 # If the block synchronization monitoring process has not started yet, connect to the primary node.
                 node = (await db_session.scalars(select(EthereumNode).limit(1))).first()
                 if node is None:
@@ -77,16 +192,10 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
 
                 counter = 0
                 while counter <= ETH_WEB3_REQUEST_RETRY_COUNT:
-                    # Switch to an available node
-                    node: EthereumNode | None = (
-                        await db_session.scalars(
-                            select(EthereumNode)
-                            .where(EthereumNode.is_synced.is_(True))
-                            .order_by(EthereumNode.priority, EthereumNode.id)
-                            .limit(1)
-                        )
-                    ).first()
-                    if node is None:
+                    endpoint_uri = await self._resolve_endpoint_uri(
+                        db_session, failed_endpoint_uris
+                    )
+                    if endpoint_uri is None:
                         counter += 1
                         # If the number of retries is within the limit, retry.
                         if counter <= ETH_WEB3_REQUEST_RETRY_COUNT:
@@ -97,14 +206,16 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                             "Cannot connect to any Ethereum node"
                         )
 
-                    self.endpoint_uri = URI(node.endpoint_uri)
+                    self.endpoint_uri = endpoint_uri
                     try:
                         # Send request
                         return await super().make_request(method, params)
-                    except (ClientError, JSONDecodeError):
+                    except ClientError, JSONDecodeError:
                         # JSONDecodeError may occur when sending a request during geth shutdown, etc.
-                        LOG.info(
-                            f"Retry web3 request due to connection fail: method={method}, params={params}"
+                        self._clear_cached_endpoint_uri()
+                        failed_endpoint_uris.add(endpoint_uri)
+                        LOG.warning(
+                            f"Retry web3 request due to connection fail: endpoint={endpoint_uri}, method={method}, params={params}"
                         )
                         counter += 1
                         # If the number of retries is within the limit, retry.
@@ -119,23 +230,18 @@ class EthFailOverHTTPProvider(AsyncHTTPProvider):
                 # If fail_over_mode is False, connect to the primary node.
                 self.endpoint_uri = URI(ETH_WEB3_HTTP_PROVIDER)
                 return await super().make_request(method, params)
+
+            raise ServiceUnavailableError("Cannot connect to any Ethereum node")
         finally:
             await db_session.close()
 
 
-try:
-    EthWeb3 = thread_local.EthWeb3
-except AttributeError:
-    if "pytest" in sys.modules:  # For unit tests
-        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=False))
-    else:
-        EthWeb3 = AsyncWeb3(EthFailOverHTTPProvider(fail_over_mode=True))
-    thread_local.EthWeb3 = EthWeb3
+EthWeb3 = _EthWeb3Context()
 
 
 class EthTxUtils:
     @staticmethod
-    async def suggest_fees(reward_percentile: int = 50):
+    async def suggest_fees(reward_percentile: int = 50) -> dict[str, int]:
         """
         A function that returns recommended maxFeePerGas and maxPriorityFeePerGas for EIP-1559.
 
@@ -144,7 +250,9 @@ class EthTxUtils:
         """
 
         latest_block = await EthWeb3.eth.get_block("latest")
-        base_fee = latest_block["baseFeePerGas"]  # wei
+        base_fee = latest_block.get("baseFeePerGas")
+        if base_fee is None:
+            raise ValueError("latest block does not include baseFeePerGas")
 
         # Get fee history
         fee_history = await EthWeb3.eth.fee_history(5, "latest", [reward_percentile])
@@ -188,16 +296,22 @@ class EthAsyncContractEventsView:
 
 
 class EthAsyncContractUtils:
-    factory_map: dict[str, Type[AsyncContract]] = {}
+    # Contract factories are bound to the AsyncWeb3 that created them.
+    factory_map: WeakKeyDictionary[AsyncWeb3[Any], dict[str, type[AsyncContract]]] = (
+        WeakKeyDictionary()
+    )
 
     @staticmethod
-    def get_contract_code(contract_name: str):
+    def get_contract_code(contract_name: str) -> tuple[Any, Any, Any]:
         """Get contract code
 
         :param contract_name: contract name
         :return: ABI, bytecode, deployedBytecode
         """
-        contract_json = json.load(open(f"contracts/eth/{contract_name}.json", "r"))
+
+        contract_json: ContractArtifact = json.load(
+            open(f"contracts/wst/{contract_name}.json", "r")
+        )
 
         if "bytecode" not in contract_json.keys():
             contract_json["bytecode"] = None
@@ -211,7 +325,10 @@ class EthAsyncContractUtils:
 
     @staticmethod
     async def deploy_contract(
-        contract_name: str, args: list, deployer: EthereumAddress, private_key: bytes
+        contract_name: str,
+        args: list[Any],
+        deployer: EthereumAddress,
+        private_key: bytes,
     ) -> tuple[str, Nonce]:
         """Deploy contract
 
@@ -221,9 +338,9 @@ class EthAsyncContractUtils:
         :param private_key: private key
         :return: contract address, ABI, transaction hash
         """
-        contract_file = f"contracts/eth/{contract_name}.json"
+        contract_file = f"contracts/wst/{contract_name}.json"
         try:
-            contract_json = json.load(open(contract_file, "r"))
+            contract_json: ContractArtifact = json.load(open(contract_file, "r"))
         except FileNotFoundError as file_not_found_err:
             raise SendTransactionError(file_not_found_err)
 
@@ -255,30 +372,39 @@ class EthAsyncContractUtils:
         return tx_hash, nonce
 
     @classmethod
-    def get_contract(cls, contract_name: str, contract_address: EthereumAddress):
+    def get_contract(
+        cls, contract_name: str, contract_address: EthereumAddress
+    ) -> AsyncContract:
         """Get contract
 
         :param contract_name: contract name
         :param contract_address: contract address
         :return: Contract
         """
-        contract_factory = cls.factory_map.get(contract_name)
+        # Reuse factories only within the same AsyncWeb3 context so provider
+        # state and loop ownership stay consistent.
+        current_async_web3 = EthWeb3.get_web3()
+        contract_factory_map = cls.factory_map.get(current_async_web3)
+        if contract_factory_map is None:
+            contract_factory_map = {}
+            cls.factory_map[current_async_web3] = contract_factory_map
+
+        contract_factory = contract_factory_map.get(contract_name)
         if contract_factory is not None:
             return contract_factory(address=to_checksum_address(contract_address))
 
-        contract_file = f"contracts/eth/{contract_name}.json"
-        contract_json = json.load(open(contract_file, "r"))
-        contract_factory = EthWeb3.eth.contract(abi=contract_json["abi"])
-        cls.factory_map[contract_name] = contract_factory
+        contract_file = f"contracts/wst/{contract_name}.json"
+        contract_json: ContractArtifact = json.load(open(contract_file, "r"))
+
+        contract_factory = current_async_web3.eth.contract(abi=contract_json["abi"])
+        contract_factory_map[contract_name] = contract_factory
         return contract_factory(address=to_checksum_address(contract_address))
 
-    T = TypeVar("T")
-
     @staticmethod
-    async def call_function(
+    async def call_function[T](
         contract: AsyncContract,
         function_name: str,
-        args: tuple,
+        args: tuple[Any, ...],
         default_returns: T = None,
     ) -> T:
         """Call contract function
@@ -305,18 +431,23 @@ class EthAsyncContractUtils:
         return result
 
     @staticmethod
-    async def send_transaction(transaction: dict, private_key: bytes):
+    async def send_transaction(
+        transaction: TxParams, private_key: bytes
+    ) -> tuple[str, Nonce]:
         """Send transaction
 
         :param transaction: Transaction parameters
         :param private_key: Private key of the sender
         :return: Tuple of transaction hash and nonce
         """
-        _tx_from = transaction["from"]
+        tx_from_value = transaction.get("from")
+        if tx_from_value is None:
+            raise SendTransactionError("Transaction sender is required")
+        tx_from = to_checksum_address(cast(str, tx_from_value))
 
         # Get nonce
         nonce = await EthWeb3.eth.get_transaction_count(
-            _tx_from, block_identifier="pending"
+            tx_from, block_identifier="pending"
         )
         transaction["nonce"] = nonce
         signed_tx = EthWeb3.eth.account.sign_transaction(
@@ -338,7 +469,7 @@ class EthAsyncContractUtils:
         """
         try:
             tx_receipt: TxReceipt = await EthWeb3.eth.wait_for_transaction_receipt(
-                transaction_hash=tx_hash, timeout=timeout
+                transaction_hash=HexStr(tx_hash), timeout=timeout
             )
         except TimeExhausted:
             raise
@@ -352,28 +483,32 @@ class EthAsyncContractUtils:
         :param tx_hash: transaction hash
         :return: block
         """
-        tx = await EthWeb3.eth.get_transaction(tx_hash)
-        block = await EthWeb3.eth.get_block(tx["blockNumber"])
+        tx = await EthWeb3.eth.get_transaction(HexStr(tx_hash))
+        block_number = tx.get("blockNumber")
+        if block_number is None:
+            raise SendTransactionError("Transaction has not been mined yet")
+        block = await EthWeb3.eth.get_block(block_number)
         return block
 
     @staticmethod
-    async def get_finalized_block_number():
+    async def get_finalized_block_number() -> int:
         """Get finalized block number
 
         :return: finalized block number
         """
         block = await EthWeb3.eth.get_block("finalized")
         block_number = block.get("number")
+        assert block_number is not None
         return block_number
 
     @staticmethod
     async def get_event_logs(
         contract: AsyncContract | EthAsyncContractEventsView,
         event: str,
-        block_from: int = None,
-        block_to: int = None,
-        argument_filters: dict = None,
-    ):
+        block_from: int | None = None,
+        block_to: int | None = None,
+        argument_filters: EventArgumentFilters = None,
+    ) -> list[Any]:
         """Get contract event logs
 
         :param contract: Contract
@@ -385,12 +520,15 @@ class EthAsyncContractUtils:
         """
         try:
             _event = getattr(contract.events, event)
-            result = await _event.get_logs(
-                from_block=block_from,
-                to_block=block_to,
-                argument_filters=argument_filters,
-            )
+            get_logs_kwargs: dict[str, Any] = {}
+            if block_from is not None:
+                get_logs_kwargs["from_block"] = block_from
+            if block_to is not None:
+                get_logs_kwargs["to_block"] = block_to
+            if argument_filters is not None:
+                get_logs_kwargs["argument_filters"] = argument_filters
+            result = await _event.get_logs(**get_logs_kwargs)
         except ABIEventNotFound:
             return []
 
-        return result
+        return cast(list[Any], result)

@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import Enum
+from typing import Any
 
 from sqlalchemy import JSON, BigInteger, Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -36,9 +37,9 @@ class Account(Base):
     # - NOTE: The value will be set in versions after v24.12.
     issuer_public_key: Mapped[str | None] = mapped_column(String(66))
     # ethereum private-key keyfile
-    keyfile: Mapped[dict | None] = mapped_column(JSON)
+    keyfile: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # keyfile password (encrypted)
-    eoa_password: Mapped[str | None] = mapped_column(String(2000))
+    eoa_password: Mapped[str] = mapped_column(String(2000), nullable=False)
     # rsa private key
     rsa_private_key: Mapped[str | None] = mapped_column(String(8000))
     # rsa public key
@@ -46,9 +47,9 @@ class Account(Base):
     # rsa passphrase (encrypted)
     rsa_passphrase: Mapped[str | None] = mapped_column(String(2000))
     # rsa status (AccountRsaStatus)
-    rsa_status: Mapped[int | None] = mapped_column(Integer)
+    rsa_status: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # delete flag
-    is_deleted: Mapped[bool | None] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
 class AccountRsaStatus(int, Enum):

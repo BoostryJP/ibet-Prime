@@ -18,11 +18,13 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import datetime
+from typing import Any, cast
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 
@@ -59,7 +61,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 async def deploy_bond_token_contract(
     issuer_address: str,
     issuer_private_key: bytes,
-):
+) -> str:
     arguments = [
         "token.name",
         "token.symbol",
@@ -73,7 +75,7 @@ async def deploy_bond_token_contract(
         "token.return_amount",
         "token.purpose",
     ]
-    bond_contrat = IbetStraightBondContract()
+    bond_contrat = cast(Any, IbetStraightBondContract())
     contract_address, _, _ = await bond_contrat.create(
         arguments, issuer_address, issuer_private_key
     )
@@ -83,7 +85,7 @@ async def deploy_bond_token_contract(
 async def deploy_share_token_contract(
     issuer_address: str,
     issuer_private_key: bytes,
-):
+) -> str:
     arguments = [
         "token.name",
         "token.symbol",
@@ -95,7 +97,7 @@ async def deploy_share_token_contract(
         "token.cancellation_date",
         200,
     ]
-    share_contract = IbetShareContract()
+    share_contract = cast(Any, IbetShareContract())
     contract_address, _, _ = await share_contract.create(
         arguments, issuer_address, issuer_private_key
     )
@@ -111,7 +113,7 @@ class TestRequestLedgerCreation:
     # <Normal_1_1>
     # No token information
     # -> skip
-    async def test_normal_1_1(self, async_db):
+    async def test_normal_1_1(self, async_db: AsyncSession):
         # Execute
         await ibet_ledger_utils.request_ledger_creation(async_db, "invalid_address")
         await async_db.commit()
@@ -122,12 +124,12 @@ class TestRequestLedgerCreation:
     # <Normal_1_2>
     # Only IBET_STRAIGHT_BOND/IBET_SHARE can be used as token.type
     # -> skip
-    async def test_normal_1_2(self, async_db):
+    async def test_normal_1_2(self, async_db: AsyncSession):
         token_address_1 = "test_token_address"
 
         # Prepare data
         _token_1 = Token()
-        _token_1.type = "invalid_token_type"
+        _token_1.type = cast(Any, "invalid_token_type")
         _token_1.tx_hash = ""
         _token_1.issuer_address = "test_issuer_address"
         _token_1.token_address = token_address_1
@@ -146,7 +148,7 @@ class TestRequestLedgerCreation:
     # <Normal_2>
     # Ledger template is not set
     # -> skip
-    async def test_normal_2(self, async_db):
+    async def test_normal_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -178,7 +180,7 @@ class TestRequestLedgerCreation:
     # <Normal_3>
     # Request ledger creation
     # - Ledger details template is not set
-    async def test_normal_3(self, async_db):
+    async def test_normal_3(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -262,7 +264,7 @@ class TestRequestLedgerCreation:
     # <Normal_4_1>
     # Successfully request ledger creation
     # - Create dataset from DB (off-chain data)
-    async def test_normal_4_1(self, async_db):
+    async def test_normal_4_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -396,11 +398,64 @@ class TestRequestLedgerCreation:
         assert ledger_req_data[1].price == 40
         assert ledger_req_data[1].balance == 1200
 
+    # <Error_1>
+    # acquisition_date is null in uploaded off-chain data
+    async def test_error_acquisition_date_is_none(self, async_db: AsyncSession):
+        token_address_1 = "test_token_address"
+
+        # Prepare data: Token
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = "test_issuer_address"
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_25_09
+        async_db.add(_token_1)
+
+        # Prepare data: LedgerTemplate
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = "test_issuer_address"
+        _template.headers = []
+        _template.token_name = "受益権テスト"
+        _template.footers = []
+        async_db.add(_template)
+
+        # Prepare data: LedgerDetailsData
+        _details_data = LedgerDetailsData()
+        _details_data.token_address = token_address_1
+        _details_data.data_id = "data_id_1"
+        _details_data.name = "test_data_name"
+        _details_data.address = "test_data_address"
+        _details_data.amount = 100
+        _details_data.price = 200
+        _details_data.balance = 20000
+        _details_data.acquisition_date = None
+        async_db.add(_details_data)
+
+        # Prepare data: LedgerDetailsTemplate
+        _details_template = LedgerDetailsTemplate()
+        _details_template.token_address = token_address_1
+        _details_template.token_detail_type = "劣後受益権"
+        _details_template.data_type = LedgerDataType.DB
+        _details_template.data_source = "data_id_1"
+        async_db.add(_details_template)
+
+        await async_db.commit()
+
+        # Execute
+        async with async_db.begin_nested():
+            with pytest.raises(ValueError, match="LedgerDetailsData.acquisition_date"):
+                await ibet_ledger_utils.request_ledger_creation(
+                    async_db, token_address_1
+                )
+
     # <Normal_4_2_1>
     # Successfully request ledger creation
     # - Create dataset from ibet for Fin (on-chain data)
     # - token_type == TokenType.IBET_SHARE
-    async def test_normal_4_2_1(self, async_db):
+    async def test_normal_4_2_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -656,7 +711,7 @@ class TestRequestLedgerCreation:
     # Successfully request ledger creation
     # - Create dataset from ibet for Fin (on-chain data)
     # - token_type == TokenType.IBET_STRAIGHT_BOND
-    async def test_normal_4_2_2(self, async_db):
+    async def test_normal_4_2_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -911,7 +966,7 @@ class TestRequestLedgerCreation:
     # <Normal_5>
     # Successfully request ledger creation
     # - Duplicate ledger detail template
-    async def test_normal_5(self, async_db):
+    async def test_normal_5(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1059,7 +1114,7 @@ class TestRequestLedgerCreation:
     # <Error_1>
     # Failed to request ledger creation
     # - Create dataset from ibet for Fin (on-chain data) and the balance data is over the BigInteger limit
-    async def test_error_1(self, async_db):
+    async def test_error_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         issuer_private_key = decode_keyfile_json(
@@ -1188,6 +1243,67 @@ class TestRequestLedgerCreation:
         ).all()
         assert len(ledger_req_data) == 0
 
+    # <Error_2>
+    # UTXO.block_timestamp is null
+    async def test_error_block_timestamp_is_none(self, async_db: AsyncSession):
+        issuer = default_eth_account("user1")
+        issuer_address = issuer["address"]
+        issuer_private_key = decode_keyfile_json(
+            raw_keyfile_json=issuer["keyfile_json"], password="password".encode("utf-8")
+        )
+        user_1 = default_eth_account("user2")
+        user_address_1 = user_1["address"]
+
+        # Prepare data: Token
+        token_address_1 = await deploy_share_token_contract(
+            issuer_address,
+            issuer_private_key,
+        )
+        _token_1 = Token()
+        _token_1.type = TokenType.IBET_SHARE
+        _token_1.tx_hash = ""
+        _token_1.issuer_address = issuer_address
+        _token_1.token_address = token_address_1
+        _token_1.abi = {}
+        _token_1.version = TokenVersion.V_25_09
+        async_db.add(_token_1)
+
+        # Prepare data: LedgerTemplate
+        _template = LedgerTemplate()
+        _template.token_address = token_address_1
+        _template.issuer_address = issuer_address
+        _template.headers = []
+        _template.token_name = "受益権テスト"
+        _template.footers = []
+        async_db.add(_template)
+
+        # Prepare data: UTXO
+        _utxo = UTXO()
+        _utxo.transaction_hash = "tx1"
+        _utxo.account_address = user_address_1
+        _utxo.token_address = token_address_1
+        _utxo.amount = 100
+        _utxo.block_number = 1
+        _utxo.block_timestamp = None
+        async_db.add(_utxo)
+
+        # Prepare data: LedgerDetailsTemplate
+        _details_template = LedgerDetailsTemplate()
+        _details_template.token_address = token_address_1
+        _details_template.token_detail_type = "劣後受益権"
+        _details_template.data_type = LedgerDataType.IBET_FIN
+        _details_template.data_source = None
+        async_db.add(_details_template)
+
+        await async_db.commit()
+
+        # Execute
+        async with async_db.begin_nested():
+            with pytest.raises(ValueError, match="UTXO.block_timestamp"):
+                await ibet_ledger_utils.request_ledger_creation(
+                    async_db, token_address_1
+                )
+
 
 @pytest.mark.asyncio
 class TestSyncRequestWithRegisteredPersonalInfo:
@@ -1198,7 +1314,7 @@ class TestSyncRequestWithRegisteredPersonalInfo:
     # <Normal_1>
     # No request data
     # -> skip
-    async def test_normal_1(self, async_db):
+    async def test_normal_1(self, async_db: AsyncSession):
         # Execute
         (
             initial_unset_count,
@@ -1216,7 +1332,7 @@ class TestSyncRequestWithRegisteredPersonalInfo:
 
     # <Normal_2>
     # PersonalInfo is not registered
-    async def test_normal_2(self, async_db):
+    async def test_normal_2(self, async_db: AsyncSession):
         request_id = "test_req_id"
         issuer_address = "test_issuer_address"
         user_address_1 = "test_address_1"
@@ -1250,7 +1366,7 @@ class TestSyncRequestWithRegisteredPersonalInfo:
 
     # <Normal_3>
     # Update PersonalInfo
-    async def test_normal_3(self, async_db):
+    async def test_normal_3(self, async_db: AsyncSession):
         request_id = "test_req_id"
         issuer_address = "test_issuer_address"
         user_address_1 = "test_address_1"
@@ -1303,6 +1419,7 @@ class TestSyncRequestWithRegisteredPersonalInfo:
         ledger_req_data = (
             await async_db.scalars(select(LedgerCreationRequestData).limit(1))
         ).first()
+        assert ledger_req_data is not None
         assert ledger_req_data.name == "name_test1"
         assert ledger_req_data.address == "address_test1"
 
@@ -1316,7 +1433,7 @@ class TestFinalizeLedger:
     # <Normal_1_1>
     # No token information
     # -> skip
-    async def test_normal_1_1(self, async_db):
+    async def test_normal_1_1(self, async_db: AsyncSession):
         # Execute
         await ibet_ledger_utils.finalize_ledger(
             async_db,
@@ -1331,14 +1448,14 @@ class TestFinalizeLedger:
     # <Normal_1_2>
     # Only IBET_STRAIGHT_BOND/IBET_SHARE can be used as token.type
     # -> skip
-    async def test_normal_1_2(self, async_db):
+    async def test_normal_1_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         token_address_1 = "test_token_address"
 
         # Prepare data
         _token_1 = Token()
-        _token_1.type = "invalid_token_type"
+        _token_1.type = cast(Any, "invalid_token_type")
         _token_1.tx_hash = ""
         _token_1.issuer_address = issuer_address
         _token_1.token_address = token_address_1
@@ -1361,7 +1478,7 @@ class TestFinalizeLedger:
     # <Normal_2>
     # Ledger template is not set
     # -> skip
-    async def test_normal_2(self, async_db):
+    async def test_normal_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         token_address_1 = "test_token_address"
@@ -1391,7 +1508,7 @@ class TestFinalizeLedger:
     # <Normal_3>
     # Ledger details template is not set
     @pytest.mark.freeze_time("2024-11-06 12:34:56")
-    async def test_normal_3(self, async_db):
+    async def test_normal_3(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         token_address_1 = "test_token_address"
@@ -1482,7 +1599,9 @@ class TestFinalizeLedger:
         assert _notifications[0].priority == 0
         assert _notifications[0].type == NotificationType.CREATE_LEDGER_INFO
         assert _notifications[0].code == 0
-        assert _notifications[0].metainfo == {
+        assert cast(
+            dict[str, object] | None, cast(Any, _notifications[0]).metainfo
+        ) == {
             "token_address": token_address_1,
             "token_type": TokenType.IBET_SHARE,
             "ledger_id": 1,
@@ -1492,7 +1611,7 @@ class TestFinalizeLedger:
     # Create Ledger data from LedgerCreationRequestData
     # - Multiple data_type: DB + IBETFIN
     @pytest.mark.freeze_time("2024-11-06 12:34:56")
-    async def test_normal_4_1(self, async_db):
+    async def test_normal_4_1(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         user_1 = default_eth_account("user2")
@@ -1757,7 +1876,9 @@ class TestFinalizeLedger:
         assert _notifications[0].priority == 0
         assert _notifications[0].type == NotificationType.CREATE_LEDGER_INFO
         assert _notifications[0].code == 0
-        assert _notifications[0].metainfo == {
+        assert cast(
+            dict[str, object] | None, cast(Any, _notifications[0]).metainfo
+        ) == {
             "token_address": token_address_1,
             "token_type": TokenType.IBET_SHARE,
             "ledger_id": 1,
@@ -1767,7 +1888,7 @@ class TestFinalizeLedger:
     # Create Ledger data from LedgerCreationRequestData
     # - Duplicate data_type: DB + DB
     @pytest.mark.freeze_time("2024-11-06 12:34:56")
-    async def test_normal_4_2(self, async_db):
+    async def test_normal_4_2(self, async_db: AsyncSession):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
         user_1 = default_eth_account("user2")
@@ -1944,7 +2065,9 @@ class TestFinalizeLedger:
         assert _notifications[0].priority == 0
         assert _notifications[0].type == NotificationType.CREATE_LEDGER_INFO
         assert _notifications[0].code == 0
-        assert _notifications[0].metainfo == {
+        assert cast(
+            dict[str, object] | None, cast(Any, _notifications[0]).metainfo
+        ) == {
             "token_address": token_address_1,
             "token_type": TokenType.IBET_SHARE,
             "ledger_id": 1,

@@ -5,7 +5,7 @@
 # ibet-Prime
 
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-26.3-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-26.6-blue.svg?cacheSeconds=2592000" />
   <img alt="License: Apache--2.0" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" />
 </p>
 
@@ -22,11 +22,11 @@ English | [日本語](./README_JA.md)
 
 ## Dependencies
 
-- [Python3](https://www.python.org/downloads/release/python-3811/) - version 3.13
+- [Python3](https://www.python.org/downloads/release/python-3142/) - version 3.14
 - [PostgreSQL](https://www.postgresql.org/) - version 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).
-  - We use [hardhat network](https://hardhat.org/hardhat-network/) for local development and unit testing, and we use the latest version.
+  - We use [Anvil](https://www.getfoundry.sh/anvil) for local development and unit testing.
 
 
 ## Supported ibet smart contract version
@@ -46,7 +46,10 @@ English | [日本語](./README_JA.md)
     - Password: issuerapipass
     - Database: issuerapidb
     - Test database: issuerapidb_test
-- The TokenList and E2EMessaging contracts from the ibet-SmartContract project must be deployed in advance.
+- An ibet node must be available and connected.
+  - The TokenList and E2EMessaging contracts from the ibet-SmartContract project must be deployed in advance.
+- An Ethereum node is optional, but can be set up and connected.
+- An Avalanche node is optional, but can be set up and connected.
 
 ### Install packages
 
@@ -57,137 +60,39 @@ $ uv venv
 
 Install python packages with:
 ```bash
-$ uv sync --frozen --no-install-project --no-dev --all-extras
-```
-
-### Install pre-commit hook
-```bash
-$ uv run pre-commit install
-```
-
-### Install hardhat
-```bash
-$ npm install
+$ make install
 ```
 
 ### Setting environment variables
 
-The main environment variables are as follows. 
-
-<table style="border-collapse: collapse" id="env-table">
-    <tr bgcolor="#000000">
-        <th style="width: 25%">Variable Name</th>
-        <th style="width: 10%">Required</th>
-        <th style="width: 30%">Details</th>
-        <th>Example</th>
-    </tr>
-    <tr>
-        <td>DATABASE_URL</td>
-        <td>False</td>
-        <td nowrap>Database URL</td>
-        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
-    </tr>
-    <tr>
-        <td>TEST_DATABASE_URL</td>
-        <td>False</td>
-        <td nowrap>Test database URL</td>
-        <td>postgresql://issuerapi:issuerapipass@localhost:5432/issuerapidb</td>
-    </tr>
-    <tr>
-        <td>DATABASE_SCHEMA</td>
-        <td>False</td>
-        <td nowrap>Database schema</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>WEB3_HTTP_PROVIDER</td>
-        <td>False</td>
-        <td nowrap>Web3 provider for ibet network</td>
-        <td>http://localhost:8545</td>
-    </tr>
-    <tr>
-        <td>CHAIN_ID</td>
-        <td>False</td>
-        <td nowrap>Blockchain network ID</td>
-        <td>1010032</td>
-    </tr>
-    <tr>
-        <td>TOKEN_LIST_CONTRACT_ADDRESS</td>
-        <td>True</td>
-        <td nowrap>TokenList contract address</td>
-        <td>0x0000000000000000000000000000000000000000</td>
-    </tr>
-    <tr>
-        <td>E2E_MESSAGING_CONTRACT_ADDRESS</td>
-        <td>True</td>
-        <td nowrap>E2EMessaging contract address</td>
-        <td>0x0000000000000000000000000000000000000000</td>
-    </tr>
-    <tr>
-        <td>TZ</td>
-        <td>False</td>
-        <td nowrap>Timezone</td>
-        <td>Asia/Tokyo</td>
-    </tr>
-    <tr>
-        <td>ETH_WEB3_HTTP_PROVIDER</td>
-        <td>False</td>
-        <td nowrap>Web3 provider for Ethereum network</td>
-        <td>http://localhost:8545</td>
-    </tr>
-    <tr>
-        <td>DEDICATED_OFFCHAIN_TX_MODE</td>
-        <td>False</td>
-        <td nowrap>Boot mode for off-chain transaction dedicated server</td>
-        <td>0(not use) / 1(use)</td>
-    </tr>
-    <tr>
-        <td>DEDICATED_DVP_AGENT_MODE</td>
-        <td>False</td>
-        <td nowrap>Boot mode for DvP agent dedicated server</td>
-        <td>0(not use) / 1(use)</td>
-    </tr>
-    <tr>
-        <td>IBET_WST_FEATURE_ENABLED</td>
-        <td>False</td>
-        <td nowrap>Weather to use IbetWST features</td>
-        <td>1</td>
-    </tr>
-    <tr>
-        <td>DVP_AGENT_FEATURE_ENABLED</td>
-        <td>False</td>
-        <td nowrap>Whether to use DVP agent features</td>
-        <td>0(not use) / 1(use)</td>
-    </tr>
-    <tr>
-        <td>BC_EXPLORER_ENABLED</td>
-        <td>False</td>
-        <td nowrap>Whether to use the BC Explorer</td>
-        <td>0(not use) / 1(use)</td>
-    </tr>
-    <tr>
-        <td>FREEZE_LOG_FEATURE_ENABLED</td>
-        <td>False</td>
-        <td nowrap>Whether to use the "FreezeLog" features</td>
-        <td>0(not use) / 1(use)</td>
-    </tr>
-</table>
-
-Other environment variables that can be set can be found in `config.py`.
+See [docs/environment_variables.md](docs/environment_variables.md) for the list of environment variables.
+Set the required variables according to each use case.
 
 ### DB migrations
 
 See [migrations/README.md](migrations/README.md).
 
 
+## Development Information
+
+### Setting environment variables
+
+You can create a `.env` file to define local environment variables.
+
+### Running tests
+
+For test container startup, see [docker-compose.yml](docker-compose.yml).
+When running individual test cases, set up a local Python runtime environment and configure the required environment variables first.
+
+
 ## Starting the Server
 
 You can start the API server with:
 ```bash
-$ ./run.sh server (Press CTRL+C to quit)
+$ make run
 ```
 
-Open your browser at [http://0.0.0.0:5000](http://0.0.0.0:5000).
+Open your browser at [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 You will see the JSON response as:
 ```json
@@ -196,23 +101,14 @@ You will see the JSON response as:
 
 ### API docs
 
-#### Swagger UI
-
-Now go to [http://0.0.0.0:5000/docs](http://0.0.0.0:5000/docs).
+Now go to [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
 
 You will see the automatic interactive API documentation provided by Swagger UI:
 
 ![swagger](https://user-images.githubusercontent.com/963333/146362141-da0fc0d2-1518-4041-a274-be2b743966a1.png)
 
-
-#### ReDoc
-
-And now, go to [http://0.0.0.0:5000/redoc](http://0.0.0.0:5000/redoc).
-
-You will see the alternative automatic documentation provided by ReDoc:
-
-![redoc](https://user-images.githubusercontent.com/963333/146362775-c1ec56fa-f0b0-48a4-8926-75c2b7159c90.png)
-
+And now, go to [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc).
+You will see the alternative automatic documentation provided by ReDoc.
 
 ## Branching model
 

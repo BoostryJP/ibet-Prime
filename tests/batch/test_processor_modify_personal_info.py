@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -19,17 +21,19 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import logging
+from typing import Any, Sequence, TypedDict
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
+from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
-    AccountRsaStatus,
     IDXPersonalInfo,
     PersonalInfoDataSource,
     Token,
@@ -52,13 +56,14 @@ from app.utils.ibet_contract_utils import ContractUtils
 from batch.processor_modify_personal_info import Processor
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
+from tests.types import UnitTestAccount
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
 @pytest.fixture(scope="function")
-def processor(async_db):
+def processor(async_db: AsyncSession):
     LOG = logging.getLogger("background")
     default_log_level = LOG.level
     LOG.setLevel(logging.DEBUG)
@@ -68,7 +73,7 @@ def processor(async_db):
     LOG.setLevel(default_log_level)
 
 
-def deploy_personal_info_contract(issuer_user):
+def deploy_personal_info_contract(issuer_user: UnitTestAccount) -> str:
     address = issuer_user["address"]
     keyfile = issuer_user["keyfile_json"]
     eoa_password = "password"
@@ -82,19 +87,27 @@ def deploy_personal_info_contract(issuer_user):
     return contract_address
 
 
+class PersonalInfoSender(TypedDict):
+    user: UnitTestAccount
+    data: dict[str, Any] | str
+
+
 async def set_personal_info_contract(
-    contract_address, issuer_account: Account, sender_list
-):
+    contract_address: str,
+    issuer_account: Account,
+    sender_list: Sequence[PersonalInfoSender],
+) -> None:
     contract = ContractUtils.get_contract("PersonalInfo", contract_address)
 
     for sender in sender_list:
+        sender_address = Web3.to_checksum_address(sender["user"]["address"])
         tx = contract.functions.register(
             issuer_account.issuer_address, ""
         ).build_transaction(
             {
-                "nonce": web3.eth.get_transaction_count(sender["user"]["address"]),
+                "nonce": web3.eth.get_transaction_count(sender_address),
                 "chainId": CHAIN_ID,
-                "from": sender["user"]["address"],
+                "from": sender_address,
                 "gas": TX_GAS_LIMIT,
                 "gasPrice": 0,
             }
@@ -105,14 +118,16 @@ async def set_personal_info_contract(
         )
         ContractUtils.send_transaction(tx, private_key)
 
-        if sender["data"]:
+        if isinstance(sender["data"], dict):
             personal_info = PersonalInfoContract(
                 logging.getLogger("unittest"), issuer_account, contract_address
             )
-            await personal_info.modify_info(sender["user"]["address"], sender["data"])
+            await personal_info.modify_info(sender_address, sender["data"])
 
 
-async def deploy_bond_token_contract(issuer_user, personal_info_contract_address):
+async def deploy_bond_token_contract(
+    issuer_user: UnitTestAccount, personal_info_contract_address: str | None
+) -> str:
     address = issuer_user["address"]
     keyfile = issuer_user["keyfile_json"]
     eoa_password = "password"
@@ -146,7 +161,9 @@ async def deploy_bond_token_contract(issuer_user, personal_info_contract_address
     return contract_address
 
 
-async def deploy_share_token_contract(issuer_user, personal_info_contract_address):
+async def deploy_share_token_contract(
+    issuer_user: UnitTestAccount, personal_info_contract_address: str | None
+) -> str:
     address = issuer_user["address"]
     keyfile = issuer_user["keyfile_json"]
     eoa_password = "password"
@@ -191,7 +208,11 @@ class TestProcessor:
     # Execute Batch Run 3rd: modified PersonalInfo
     @pytest.mark.asyncio
     async def test_normal_1(
-        self, processor, async_db, caplog: pytest.LogCaptureFixture
+        self,
+        processor: Processor,
+        async_db: AsyncSession,
+        caplog: pytest.LogCaptureFixture,
+        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
@@ -199,6 +220,7 @@ class TestProcessor:
         # prepare data
         # account
         account = Account()
+        account.is_deleted = False
         account.issuer_address = user_1["address"]
         account.keyfile = user_1["keyfile_json"]
         eoa_password = E2EEUtils.encrypt("password")
@@ -348,7 +370,10 @@ class TestProcessor:
         async_db.expire_all()
 
         # assertion(Run 1st)
-        _account = (await async_db.scalars(select(Account).limit(1))).first()
+        _account: Account | None = (
+            await async_db.scalars(select(Account).limit(1))
+        ).first()
+        assert _account is not None
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -357,13 +382,14 @@ class TestProcessor:
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value
 
-        _temporary = (
+        _temporary: AccountRsaKeyTemporary | None = (
             await async_db.scalars(select(AccountRsaKeyTemporary).limit(1))
         ).first()
-        assert temporary.issuer_address == user_1["address"]
-        assert temporary.rsa_private_key == user_1["rsa_private_key"]
-        assert temporary.rsa_public_key == user_1["rsa_public_key"]
-        assert temporary.rsa_passphrase == rsa_passphrase
+        assert _temporary is not None
+        assert _temporary.issuer_address == user_1["address"]
+        assert _temporary.rsa_private_key == user_1["rsa_private_key"]
+        assert _temporary.rsa_public_key == user_1["rsa_public_key"]
+        assert _temporary.rsa_passphrase == rsa_passphrase
 
         _personal_info_1 = PersonalInfoContract(
             logging.getLogger("unittest"), account, personal_info_contract_address_1
@@ -417,7 +443,10 @@ class TestProcessor:
         }
 
         # RSA Key Change Completed
-        account = (await async_db.scalars(select(Account).limit(1))).first()
+        account: Account | None = (
+            await async_db.scalars(select(Account).limit(1))
+        ).first()
+        assert account is not None
         account.rsa_private_key = personal_user_1["rsa_private_key"]
         account.rsa_public_key = personal_user_1["rsa_public_key"]
         await async_db.merge(account)
@@ -431,7 +460,10 @@ class TestProcessor:
         async_db.expire_all()
 
         # assertion(Run 2nd)
-        _account = (await async_db.scalars(select(Account).limit(1))).first()
+        _account: Account | None = (
+            await async_db.scalars(select(Account).limit(1))
+        ).first()
+        assert _account is not None
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password
@@ -440,13 +472,14 @@ class TestProcessor:
         assert _account.rsa_passphrase == rsa_passphrase
         assert _account.rsa_status == AccountRsaStatus.CHANGING.value
 
-        _temporary = (
+        _temporary: AccountRsaKeyTemporary | None = (
             await async_db.scalars(select(AccountRsaKeyTemporary).limit(1))
         ).first()
-        assert temporary.issuer_address == user_1["address"]
-        assert temporary.rsa_private_key == user_1["rsa_private_key"]
-        assert temporary.rsa_public_key == user_1["rsa_public_key"]
-        assert temporary.rsa_passphrase == rsa_passphrase
+        assert _temporary is not None
+        assert _temporary.issuer_address == user_1["address"]
+        assert _temporary.rsa_private_key == user_1["rsa_private_key"]
+        assert _temporary.rsa_public_key == user_1["rsa_public_key"]
+        assert _temporary.rsa_passphrase == rsa_passphrase
 
         _personal_info_1 = PersonalInfoContract(
             logging.getLogger("unittest"), account, personal_info_contract_address_1
@@ -509,7 +542,10 @@ class TestProcessor:
             f"Modify personal info process is completed: issuer={user_1['address']}",
         ) in caplog.record_tuples
 
-        _account = (await async_db.scalars(select(Account).limit(1))).first()
+        _account: Account | None = (
+            await async_db.scalars(select(Account).limit(1))
+        ).first()
+        assert _account is not None
         assert _account.issuer_address == user_1["address"]
         assert _account.keyfile == user_1["keyfile_json"]
         assert _account.eoa_password == eoa_password

@@ -18,8 +18,9 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import hashlib
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import Optional
+from typing import cast
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
@@ -34,8 +35,12 @@ from app.model.db import Account, AuthToken
 from app.utils.e2ee_utils import E2EEUtils
 from config import E2EE_REQUEST_ENABLED, EOA_PASSWORD_CHECK_ENABLED
 
+HeaderValue = str | None
+HeaderValidator = Callable[[str, HeaderValue], None]
+HeaderValidationTarget = tuple[HeaderValue, HeaderValidator | list[HeaderValidator]]
 
-def validate_headers(**kwargs):
+
+def validate_headers(**kwargs: HeaderValidationTarget) -> None:
     """Header-Parameters Validation Function
 
     :param kwargs: keyword is header name(Replace hyphens with underscores).
@@ -51,17 +56,15 @@ def validate_headers(**kwargs):
     e.g.) headers_validate(eoa_password=(pwd_encrypt_str, [eoa_password_is_required, eoa_password_is_encrypted_value]))
     """
 
-    errors = []
+    errors: list[ErrorDetails] = []
     for name, v in kwargs.items():
-        if not isinstance(v, tuple) or len(v) != 2:
-            raise Exception
         name = name.replace("_", "-")
         value, validators = v
-        if not isinstance(validators, list):
-            validators = [validators]
-        for valid_func in validators:
-            if not callable(valid_func):
-                raise Exception
+        validator_list = cast(
+            list[HeaderValidator],
+            validators if isinstance(validators, list) else [validators],
+        )
+        for valid_func in validator_list:
             try:
                 valid_func(name, value)
             except Exception as err:
@@ -81,24 +84,24 @@ def validate_headers(**kwargs):
         raise RequestValidationError(errors)
 
 
-def address_is_valid_address(name, value):
+def address_is_valid_address(name: str, value: HeaderValue) -> None:
     if value:
         if not Web3.is_address(value):
             raise ValueError(f"{name} is not a valid address")
 
 
-def eoa_password_is_required(_, value):
+def eoa_password_is_required(_: str, value: HeaderValue) -> None:
     if EOA_PASSWORD_CHECK_ENABLED:
         if not value:
             raise PydanticCustomError("value_error.missing", "field required")
 
 
-def eoa_password_is_encrypted_value(name, value):
+def eoa_password_is_encrypted_value(name: str, value: HeaderValue) -> None:
     if E2EE_REQUEST_ENABLED:
         check_value_is_encrypted(name, value)
 
 
-def check_value_is_encrypted(name, value):
+def check_value_is_encrypted(name: str, value: HeaderValue) -> None:
     if value:
         try:
             E2EEUtils.decrypt(value)
@@ -110,9 +113,9 @@ async def check_auth(
     request: Request,
     db: AsyncSession,
     issuer_address: str,
-    eoa_password: Optional[str] = None,
-    auth_token: Optional[str] = None,
-):
+    eoa_password: str | None = None,
+    auth_token: str | None = None,
+) -> tuple[Account, str]:
     # Check for existence of issuer account
     try:
         account, decrypted_eoa_password = await check_account_for_auth(
@@ -158,7 +161,9 @@ async def check_auth(
     return account, decrypted_eoa_password
 
 
-async def check_account_for_auth(db: AsyncSession, issuer_address: str):
+async def check_account_for_auth(
+    db: AsyncSession, issuer_address: str
+) -> tuple[Account, str]:
     account = (
         await db.scalars(
             select(Account).where(Account.issuer_address == issuer_address).limit(1)
@@ -170,7 +175,7 @@ async def check_account_for_auth(db: AsyncSession, issuer_address: str):
     return account, decrypted_eoa_password
 
 
-def check_eoa_password_for_auth(checked_pwd: str, correct_pwd: str):
+def check_eoa_password_for_auth(checked_pwd: str, correct_pwd: str) -> None:
     if E2EE_REQUEST_ENABLED:
         decrypted_pwd = E2EEUtils.decrypt(checked_pwd)
         result = decrypted_pwd == correct_pwd
@@ -180,19 +185,26 @@ def check_eoa_password_for_auth(checked_pwd: str, correct_pwd: str):
         raise AuthorizationError
 
 
-async def check_token_for_auth(db: AsyncSession, issuer_address: str, auth_token: str):
-    issuer_token: Optional[AuthToken] = (
+async def check_token_for_auth(
+    db: AsyncSession, issuer_address: str, auth_token: str
+) -> None:
+    issuer_token: AuthToken | None = (
         await db.scalars(
             select(AuthToken).where(AuthToken.issuer_address == issuer_address).limit(1)
         )
     ).first()
-    if issuer_token is None:
+    if (
+        issuer_token is None
+        or issuer_token.auth_token is None
+        or issuer_token.usage_start is None
+        or issuer_token.valid_duration is None
+    ):
         raise AuthorizationError
-    else:
-        hashed_token = hashlib.sha256(auth_token.encode()).hexdigest()
-        if issuer_token.auth_token != hashed_token:
-            raise AuthorizationError
-        elif issuer_token.valid_duration != 0 and issuer_token.usage_start + timedelta(
-            seconds=issuer_token.valid_duration
-        ) < datetime.now(UTC).replace(tzinfo=None):
-            raise AuthorizationError
+
+    hashed_token = hashlib.sha256(auth_token.encode()).hexdigest()
+    if issuer_token.auth_token != hashed_token:
+        raise AuthorizationError
+    if issuer_token.valid_duration != 0 and issuer_token.usage_start + timedelta(
+        seconds=issuer_token.valid_duration
+    ) < datetime.now(UTC).replace(tzinfo=None):
+        raise AuthorizationError

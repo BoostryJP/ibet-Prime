@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,17 +20,21 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from unittest.mock import ANY
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone as tz
 from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
     ScheduledEvents,
     ScheduledEventType,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
 )
@@ -47,7 +53,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # <Normal_1>
     # Multiple Records
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -55,6 +61,8 @@ class TestScheduleShareTokenUpdateEventsBatch:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -177,7 +185,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # RequestValidationError
     # - Empty list
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -187,7 +195,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
         datetime_now_str = datetime_now_utc.isoformat()
 
         # request target API
-        req_param = {
+        req_param: dict[str, object] = {
             "scheduled_datetime": datetime_now_str,
             "event_type": "Update",
             "data": [],
@@ -223,7 +231,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # RequestValidationError
     # - Invalid parameters
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -277,7 +285,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # RequestValidationError
     # - validate_headers
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -323,7 +331,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # AuthorizationError
     # - issuer_address does not exist
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -356,7 +364,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # AuthorizationError
     # - password mismatch
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -364,6 +372,8 @@ class TestScheduleShareTokenUpdateEventsBatch:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -408,7 +418,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # 404: NotFound
     # - Token not found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -416,6 +426,8 @@ class TestScheduleShareTokenUpdateEventsBatch:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -451,7 +463,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
     # InvalidParameterError
     # - Processing token
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -459,6 +471,8 @@ class TestScheduleShareTokenUpdateEventsBatch:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -470,7 +484,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
@@ -513,7 +527,12 @@ class TestScheduleShareTokenUpdateEventsBatch:
         ],
     )
     @pytest.mark.asyncio
-    async def test_error_5(self, async_client, async_db, update_data):
+    async def test_error_5(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        update_data: dict[str, Any],
+    ):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -521,6 +540,8 @@ class TestScheduleShareTokenUpdateEventsBatch:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -532,7 +553,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
         token.issuer_address = _issuer_address
         token.token_address = _token_address
         token.abi = {}
-        token.token_status = 1
+        token.token_status = TokenStatus.SUCCEEDED
         token.version = TokenVersion.V_23_12
         async_db.add(token)
 
@@ -541,7 +562,7 @@ class TestScheduleShareTokenUpdateEventsBatch:
         # request target API
         datetime_1 = datetime.now(tz("Asia/Tokyo"))
         datetime_1_str = datetime_1.isoformat()
-        req_param = [
+        req_param: list[dict[str, object]] = [
             {
                 "scheduled_datetime": datetime_1_str,
                 "event_type": "Update",

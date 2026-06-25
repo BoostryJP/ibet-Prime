@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -18,9 +20,18 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import pytest
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import Account, Token, TokenHolderExtraInfo, TokenType, TokenVersion
+from app.model.db import (
+    Account,
+    Token,
+    TokenHolderExtraInfo,
+    TokenStatus,
+    TokenType,
+    TokenVersion,
+)
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account
 
@@ -36,7 +47,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Normal_1>
     # Register token holder's extra information
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -48,6 +59,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -89,6 +102,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         extra_info = (
             await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
         ).first()
+        assert extra_info is not None
         assert extra_info.json() == {
             "token_address": _token_address,
             "account_address": _test_account_address,
@@ -103,7 +117,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Normal_2>
     # Optional input parameters
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -115,6 +129,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -132,7 +148,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         await async_db.commit()
 
         # request target API
-        req_param = {}
+        req_param: dict[str, object] = {}
         resp = await async_client.post(
             self.test_url.format(_token_address, _test_account_address),
             json=req_param,
@@ -149,6 +165,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         extra_info = (
             await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
         ).first()
+        assert extra_info is not None
         assert extra_info.json() == {
             "token_address": _token_address,
             "account_address": _test_account_address,
@@ -163,7 +180,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Normal_3>
     # Overwrite the already registered data
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -187,6 +204,8 @@ class TestRegisterShareTokenHolderExtraInfo:
         await async_db.commit()
 
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -228,6 +247,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         extra_info = (
             await async_db.scalars(select(TokenHolderExtraInfo).limit(1))
         ).first()
+        assert extra_info is not None
         assert extra_info.json() == {
             "token_address": _token_address,
             "account_address": _test_account_address,
@@ -247,7 +267,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # RequestValidationError
     # - headers and body required
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -286,7 +306,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # RequestValidationError
     # - invalid issuer_address format
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -332,7 +352,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # RequestValidationError
     # - eoa-password not encrypted
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -378,7 +398,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # RequestValidationError
     # - external_id: string_too_long
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -460,7 +480,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # AuthorizationError
     # - issuer does not exist
     @pytest.mark.asyncio
-    async def test_error_5_1(self, async_client, async_db):
+    async def test_error_5_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -499,7 +519,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # AuthorizationError
     # - password mismatch
     @pytest.mark.asyncio
-    async def test_error_5_2(self, async_client, async_db):
+    async def test_error_5_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -511,6 +531,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -544,7 +566,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_6_1>
     # Token not found
     @pytest.mark.asyncio
-    async def test_error_6_1(self, async_client, async_db):
+    async def test_error_6_1(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -556,6 +578,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -590,7 +614,7 @@ class TestRegisterShareTokenHolderExtraInfo:
     # <Error_6_2>
     # Token is temporarily unavailable
     @pytest.mark.asyncio
-    async def test_error_6_2(self, async_client, async_db):
+    async def test_error_6_2(self, async_client: AsyncClient, async_db: AsyncSession):
         _issuer_account = default_eth_account("user1")
         _issuer_address = _issuer_account["address"]
         _issuer_keyfile = _issuer_account["keyfile_json"]
@@ -602,6 +626,8 @@ class TestRegisterShareTokenHolderExtraInfo:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _issuer_keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -614,7 +640,7 @@ class TestRegisterShareTokenHolderExtraInfo:
         token.token_address = _token_address
         token.abi = {}
         token.version = TokenVersion.V_25_09
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         async_db.add(token)
 
         await async_db.commit()

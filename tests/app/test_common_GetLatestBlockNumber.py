@@ -21,6 +21,8 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import ServiceUnavailableError
 
@@ -35,7 +37,7 @@ class TestGetLatestBlockNumber:
 
     # <Normal_1>
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.get(self.apiurl)
 
@@ -54,7 +56,7 @@ class TestGetLatestBlockNumber:
         AsyncMock(side_effect=ServiceUnavailableError("")),
     )
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target api
         resp = await async_client.get(self.apiurl)
 

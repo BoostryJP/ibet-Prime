@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from enum import StrEnum
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import JSON, BigInteger, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -44,9 +44,9 @@ class TransferApprovalHistory(Base):
     # Operation Type: TransferApprovalOperationType
     operation_type: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
     # From Address Personal Information (snapshot)
-    from_address_personal_info: Mapped[Optional[dict | list]] = mapped_column(JSON)
+    from_address_personal_info: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)
     # To Address Personal Information (snapshot)
-    to_address_personal_info: Mapped[Optional[dict | list]] = mapped_column(JSON)
+    to_address_personal_info: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON)
 
     def json(self):
         return {

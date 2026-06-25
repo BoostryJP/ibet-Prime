@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -22,9 +24,12 @@ from datetime import UTC, datetime
 
 import pytest
 import pytz
+from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import Account, ScheduledEvents, ScheduledEventType, TokenType
+from app.model.db.scheduled_events import ScheduledEventStatus
 from app.utils.e2ee_utils import E2EEUtils
 from config import TZ
 from tests.account_config import default_eth_account
@@ -42,7 +47,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
     # <Normal_1>
     # soft_delete = False (default)
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -50,6 +55,8 @@ class TestDeleteScheduledBondTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -88,7 +95,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = data
         token_event.created = datetime_now_utc
         async_db.add(token_event)
@@ -129,7 +136,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
     # <Normal_2>
     # soft_delete = True
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -137,6 +144,8 @@ class TestDeleteScheduledBondTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -175,7 +184,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = datetime_now_utc
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = data
         token_event.created = datetime_now_utc
         async_db.add(token_event)
@@ -223,7 +232,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
     # RequestValidationError
     # invalid issuer_address, password not encrypted
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -259,7 +268,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
     # AuthorizationError
     # issuer_address does not exists
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _token_address = "token_address_test"
@@ -282,7 +291,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
     # AuthorizationError
     # password mismatch
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -290,6 +299,8 @@ class TestDeleteScheduledBondTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -315,7 +326,7 @@ class TestDeleteScheduledBondTokenUpdateEvent:
     # NotFound
     # event not found
     @pytest.mark.asyncio
-    async def test_error_4(self, async_client, async_db):
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
         test_account = default_eth_account("user1")
         _issuer_address = test_account["address"]
         _keyfile = test_account["keyfile_json"]
@@ -323,6 +334,8 @@ class TestDeleteScheduledBondTokenUpdateEvent:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = _issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

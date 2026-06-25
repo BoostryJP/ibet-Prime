@@ -23,8 +23,11 @@ from unittest import mock
 
 import pytest
 import pytz
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import ScheduledEvents, ScheduledEventType, TokenType
+from app.model.db.scheduled_events import ScheduledEventStatus
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
 from config import TZ
 from tests.account_config import default_eth_account
@@ -54,7 +57,7 @@ class TestListAllScheduledEvents:
     # <Normal_1>
     # 0 record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(self.api_url)
 
@@ -71,7 +74,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_2_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -104,7 +110,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -117,7 +123,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -279,7 +285,12 @@ class TestListAllScheduledEvents:
     # TokenType = IbetShare
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
-    async def test_normal_2_2(self, mock_IbetShareContract_get, async_client, async_db):
+    async def test_normal_2_2(
+        self,
+        mock_IbetShareContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
 
@@ -311,7 +322,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -324,7 +335,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -449,7 +460,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_3(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -482,7 +496,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -495,7 +509,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -583,7 +597,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_4_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -615,7 +632,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data_1
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -643,7 +660,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data_2
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -730,7 +747,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_4_2(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -762,7 +782,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data_1
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -790,7 +810,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_SHARE
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data_2
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -877,7 +897,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_4_3(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -910,7 +933,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -923,7 +946,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 1
+        token_event.status = ScheduledEventStatus.SUCCEEDED
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -1008,7 +1031,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5_1(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -1041,7 +1067,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -1054,7 +1080,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -1219,7 +1245,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5_2(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -1252,7 +1281,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -1265,7 +1294,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -1430,7 +1459,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_5_3(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -1463,7 +1495,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -1476,7 +1508,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -1641,7 +1673,10 @@ class TestListAllScheduledEvents:
     @pytest.mark.asyncio
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     async def test_normal_6(
-        self, mock_IbetStraightBondContract_get, async_client, async_db
+        self,
+        mock_IbetStraightBondContract_get: mock.MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         create_datetime_1 = datetime(2025, 2, 12, 0, 0, 0).replace(tzinfo=None)
         create_datetime_2 = datetime(2025, 2, 12, 0, 0, 1).replace(tzinfo=None)
@@ -1676,7 +1711,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_1
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_1
         async_db.add(token_event)
@@ -1689,7 +1724,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_2
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_2
         async_db.add(token_event)
@@ -1702,7 +1737,7 @@ class TestListAllScheduledEvents:
         token_event.token_type = TokenType.IBET_STRAIGHT_BOND
         token_event.event_type = ScheduledEventType.UPDATE
         token_event.scheduled_datetime = scheduled_datetime_3
-        token_event.status = 0
+        token_event.status = ScheduledEventStatus.PROCESSING
         token_event.data = update_data
         token_event.created = create_datetime_3
         async_db.add(token_event)
@@ -1800,7 +1835,7 @@ class TestListAllScheduledEvents:
     # Header(issuer_address): Invalid address format
     # -> 422: RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(
             self.api_url,
@@ -1825,7 +1860,7 @@ class TestListAllScheduledEvents:
     # Invalid token_type
     # -> 422: RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2_1(self, async_client, async_db):
+    async def test_error_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(
             self.api_url, params={"token_type": "invalid_token_type"}
@@ -1850,7 +1885,7 @@ class TestListAllScheduledEvents:
     # Invalid token_address
     # -> 422: RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2_2(self, async_client, async_db):
+    async def test_error_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(
             self.api_url, params={"token_address": "invalid_token_address"}
@@ -1875,7 +1910,7 @@ class TestListAllScheduledEvents:
     # Invalid status
     # -> 422: RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2_3(self, async_client, async_db):
+    async def test_error_2_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(self.api_url, params={"status": 3})
 
@@ -1898,7 +1933,7 @@ class TestListAllScheduledEvents:
     # Invalid sort item
     # -> 422: RequestValidationError
     @pytest.mark.asyncio
-    async def test_error_2_4(self, async_client, async_db):
+    async def test_error_2_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # Request target API
         resp = await async_client.get(
             self.api_url, params={"sort_item": "invalid_sort_item", "sort_order": 2}

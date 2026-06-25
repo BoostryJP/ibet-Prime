@@ -1,3 +1,5 @@
+from app.model.db import AccountRsaStatus
+
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -17,10 +19,14 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import Optional
 from unittest import mock
 
 import pytest
-from eth_keyfile import decode_keyfile_json
+from eth_keyfile.keyfile import decode_keyfile_json
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from web3.contract import Contract
 
 from app.model.db import Account, DVPAgentAccount, Token, TokenType, TokenVersion
 from app.model.ibet import IbetStraightBondContract
@@ -34,11 +40,11 @@ from tests.account_config import default_eth_account
 
 
 async def deploy_bond_token_contract(
-    address,
-    private_key,
-    personal_info_contract_address,
-    tradable_exchange_contract_address=None,
-    transfer_approval_required=None,
+    address: str,
+    private_key: bytes,
+    personal_info_contract_address: str,
+    tradable_exchange_contract_address: Optional[str] = None,
+    transfer_approval_required: Optional[bool] = None,
 ):
     arguments = [
         "token.name",
@@ -69,7 +75,7 @@ async def deploy_bond_token_contract(
     return ContractUtils.get_contract("IbetStraightBond", token_address)
 
 
-class TestUpdateDVPDelivery:
+class TestUpdateDVPAgentDelivery:
     # target API endpoint
     base_url = "/settlement/dvp/agent/{exchange_address}/delivery/{delivery_id}"
 
@@ -82,10 +88,10 @@ class TestUpdateDVPDelivery:
     @pytest.mark.asyncio
     async def test_normal_1(
         self,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
-        async_client,
-        async_db,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
@@ -105,6 +111,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -195,10 +203,10 @@ class TestUpdateDVPDelivery:
     @pytest.mark.asyncio
     async def test_normal_2(
         self,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
-        async_client,
-        async_db,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
@@ -218,6 +226,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -312,10 +322,10 @@ class TestUpdateDVPDelivery:
     )
     async def test_normal_3(
         self,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
-        async_client,
-        async_db,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
     ):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
@@ -335,6 +345,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -430,7 +442,10 @@ class TestUpdateDVPDelivery:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1_1(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -438,6 +453,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -483,7 +500,10 @@ class TestUpdateDVPDelivery:
     # <Error_1_2>
     @pytest.mark.asyncio
     async def test_error_1_2(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -491,6 +511,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -545,7 +567,10 @@ class TestUpdateDVPDelivery:
     # -> RequestValidationError
     @pytest.mark.asyncio
     async def test_error_1_3(
-        self, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -553,6 +578,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -610,7 +637,11 @@ class TestUpdateDVPDelivery:
         ["Finish", "Abort"],
     )
     async def test_error_2(
-        self, operation_type, async_client, async_db, ibet_security_token_dvp_contract
+        self,
+        operation_type: str,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -618,6 +649,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -654,11 +687,11 @@ class TestUpdateDVPDelivery:
     )
     async def test_error_3(
         self,
-        operation_type,
-        async_client,
-        async_db,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
+        operation_type: str,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
     ):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
@@ -672,6 +705,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")
@@ -729,11 +764,11 @@ class TestUpdateDVPDelivery:
     )
     async def test_error_4(
         self,
-        operation_type,
-        async_client,
-        async_db,
-        ibet_security_token_dvp_contract,
-        ibet_personal_info_contract,
+        operation_type: str,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        ibet_security_token_dvp_contract: Contract,
+        ibet_personal_info_contract: Contract,
     ):
         issuer = default_eth_account("user1")
         issuer_address = issuer["address"]
@@ -753,6 +788,8 @@ class TestUpdateDVPDelivery:
 
         # prepare data
         account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
         account.issuer_address = issuer_address
         account.keyfile = _keyfile
         account.eoa_password = E2EEUtils.encrypt("password")

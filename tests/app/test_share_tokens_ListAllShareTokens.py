@@ -17,12 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import datetime
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import IbetWSTVersion, Token, TokenType, TokenVersion
+from app.model.db import IbetWSTVersion, Token, TokenStatus, TokenType, TokenVersion
 from app.model.ibet import IbetShareContract
 from config import TZ
 from tests.account_config import default_eth_account
@@ -33,6 +37,10 @@ class TestListAllShareTokens:
     apiurl = "/share/tokens"
     local_tz = timezone(TZ)
 
+    def localize_created(self, created: datetime | None) -> str:
+        assert created is not None
+        return timezone("UTC").localize(created).astimezone(self.local_tz).isoformat()
+
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -40,7 +48,7 @@ class TestListAllShareTokens:
     # <Normal_1>
     # parameter unset address, 0 Record
     @pytest.mark.asyncio
-    async def test_normal_1(self, async_client, async_db):
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.get(self.apiurl)
 
         assert resp.status_code == 200
@@ -50,7 +58,9 @@ class TestListAllShareTokens:
     # parameter unset address, 1 Record
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_2(self, mock_get, async_client, async_db):
+    async def test_normal_2(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
 
@@ -61,20 +71,15 @@ class TestListAllShareTokens:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = "eth_token_address_test1"
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
         await async_db.commit()
 
-        _issue_datetime = (
-            timezone("UTC")
-            .localize(token.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime = self.localize_created(token.created)
 
         # request target API
         mock_token = IbetShareContract()
@@ -139,6 +144,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": {"ethereum": True},
+                    "deployed": {"ethereum": True},
+                    "address": {"ethereum": "eth_token_address_test1"},
+                },
                 "ibet_wst_name": "ibet_wst_name_test1",
             }
         ]
@@ -150,7 +160,9 @@ class TestListAllShareTokens:
     # parameter unset address, Multi Record
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_3(self, mock_get, async_client, async_db):
+    async def test_normal_3(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -163,20 +175,15 @@ class TestListAllShareTokens:
         token_1.token_address = "token_address_test1"
         token_1.abi = "abi_test1"
         token_1.version = TokenVersion.V_25_09
-        token_1.ibet_wst_activated = True
+        token_1.set_ibet_wst_activated("ethereum", True)
         token_1.ibet_wst_version = IbetWSTVersion.V_1
-        token_1.ibet_wst_deployed = True
-        token_1.ibet_wst_address = "eth_token_address_test1"
+        token_1.set_ibet_wst_deployed("ethereum", True)
+        token_1.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token_1.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token_1)
         await async_db.commit()
 
-        _issue_datetime_1 = (
-            timezone("UTC")
-            .localize(token_1.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_1 = self.localize_created(token_1.created)
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -213,17 +220,12 @@ class TestListAllShareTokens:
         token_2.issuer_address = issuer_address_2
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
         await async_db.commit()
 
-        _issue_datetime_2 = (
-            timezone("UTC")
-            .localize(token_2.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_2 = self.localize_created(token_2.created)
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_2
@@ -288,6 +290,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": IbetWSTVersion.V_1,
                 "ibet_wst_deployed": True,
                 "ibet_wst_address": "eth_token_address_test1",
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": {"ethereum": True},
+                    "deployed": {"ethereum": True},
+                    "address": {"ethereum": "eth_token_address_test1"},
+                },
                 "ibet_wst_name": "ibet_wst_name_test1",
             },
             {
@@ -320,6 +327,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             },
         ]
@@ -330,7 +342,7 @@ class TestListAllShareTokens:
     # <Normal Case 4>
     # parameter set address, 0 Record
     @pytest.mark.asyncio
-    async def test_normal_4(self, async_client, async_db):
+    async def test_normal_4(self, async_client: AsyncClient, async_db: AsyncSession):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         # No Target Data
@@ -354,7 +366,9 @@ class TestListAllShareTokens:
     # parameter set address, 1 Record
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_5(self, mock_get, async_client, async_db):
+    async def test_normal_5(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -369,12 +383,7 @@ class TestListAllShareTokens:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
         await async_db.commit()
-        _issue_datetime = (
-            timezone("UTC")
-            .localize(token_1.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime = self.localize_created(token_1.created)
 
         mock_token = IbetShareContract()
         mock_token.issuer_address = issuer_address_1
@@ -450,6 +459,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             }
         ]
@@ -461,7 +475,9 @@ class TestListAllShareTokens:
     # parameter set address, Multi Record
     @mock.patch("app.model.ibet.token.IbetShareContract.get")
     @pytest.mark.asyncio
-    async def test_normal_6(self, mock_get, async_client, async_db):
+    async def test_normal_6(
+        self, mock_get: MagicMock, async_client: AsyncClient, async_db: AsyncSession
+    ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
         user_2 = default_eth_account("user2")
@@ -477,12 +493,7 @@ class TestListAllShareTokens:
         async_db.add(token_1)
         await async_db.commit()
 
-        _issue_datetime_1 = (
-            timezone("UTC")
-            .localize(token_1.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_1 = self.localize_created(token_1.created)
 
         mock_token_1 = IbetShareContract()
         mock_token_1.issuer_address = issuer_address_1
@@ -519,17 +530,12 @@ class TestListAllShareTokens:
         token_2.issuer_address = issuer_address_1
         token_2.token_address = "token_address_test2"
         token_2.abi = "abi_test2"
-        token_2.token_status = 0
+        token_2.token_status = TokenStatus.PENDING
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
         await async_db.commit()
 
-        _issue_datetime_2 = (
-            timezone("UTC")
-            .localize(token_2.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime_2 = self.localize_created(token_2.created)
 
         mock_token_2 = IbetShareContract()
         mock_token_2.issuer_address = issuer_address_1
@@ -606,6 +612,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             },
             {
@@ -638,6 +649,11 @@ class TestListAllShareTokens:
                 "ibet_wst_version": None,
                 "ibet_wst_deployed": False,
                 "ibet_wst_address": None,
+                "ibet_wst_settings_by_blockchain": {
+                    "activated": None,
+                    "deployed": None,
+                    "address": None,
+                },
                 "ibet_wst_name": None,
             },
         ]
@@ -652,7 +668,7 @@ class TestListAllShareTokens:
     # <Error_1>
     # parameter error
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.get(
             self.apiurl, headers={"issuer-address": "issuer_address"}
         )

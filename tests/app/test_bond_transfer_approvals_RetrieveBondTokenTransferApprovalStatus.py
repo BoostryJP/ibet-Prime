@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from app.model.db import (
@@ -28,6 +30,7 @@ from app.model.db import (
     IDXTransferApproval,
     PersonalInfoDataSource,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
     TransferApprovalHistory,
@@ -91,7 +94,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Normal_1_1>
     # unapproved data
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -106,7 +109,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -122,7 +125,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -207,7 +210,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Normal_1_2>
     # unapproved data (Personal information is not synchronized)
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -273,7 +276,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # canceled data
     # operation completed, event synchronizing
     @pytest.mark.asyncio
-    async def test_normal_2_1(self, async_client, async_db):
+    async def test_normal_2_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -384,7 +387,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Normal_2_2>
     # canceled data
     @pytest.mark.asyncio
-    async def test_normal_2_2(self, async_client, async_db):
+    async def test_normal_2_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -497,7 +500,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Normal_3>
     # escrow finished data
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -512,7 +515,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -528,7 +531,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -614,7 +617,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # transferred data
     # operation completed, event synchronizing
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db):
+    async def test_normal_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -727,7 +730,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Normal_4_2>
     # transferred data
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db):
+    async def test_normal_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -841,7 +844,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # transferred data
     # created from 22.12 to 23.9
     @pytest.mark.asyncio
-    async def test_normal_4_3(self, async_client, async_db):
+    async def test_normal_4_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -856,7 +859,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _personal_info_from = IDXPersonalInfo()
         _personal_info_from.account_address = self.test_from_address
         _personal_info_from.issuer_address = self.test_issuer_address
-        _personal_info_from._personal_info = {
+        _personal_info_from.personal_info = {
             "key_manager": "key_manager_test1",
             "name": "name_test1",
             "postal_code": "postal_code_test1",
@@ -872,7 +875,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _personal_info_to = IDXPersonalInfo()
         _personal_info_to.account_address = self.test_to_address
         _personal_info_to.issuer_address = self.test_issuer_address
-        _personal_info_to._personal_info = {
+        _personal_info_to.personal_info = {
             "key_manager": "key_manager_test2",
             "name": "name_test2",
             "postal_code": "postal_code_test2",
@@ -973,7 +976,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Error_1>
     # token not found
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         id = 10
 
         # request target API
@@ -989,7 +992,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Error_2>
     # processing token
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         id = 10
 
         # prepare data: Token
@@ -999,7 +1002,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 
@@ -1018,7 +1021,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
     # <Error_3>
     # transfer approval not found
     @pytest.mark.asyncio
-    async def test_error_3(self, async_client, async_db):
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
         id = 10
 
         # prepare data: Token
@@ -1028,7 +1031,7 @@ class TestRetrieveBondTokenTransferApprovalStatus:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.token_status = 1
+        _token.token_status = TokenStatus.SUCCEEDED
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 

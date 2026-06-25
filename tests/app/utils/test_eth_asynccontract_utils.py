@@ -17,17 +17,25 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+import asyncio
 import json
-from unittest.mock import patch
+from typing import Any, cast
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from hexbytes import HexBytes
-from web3 import Web3
+from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
 from web3.exceptions import Web3Exception
 
 from app.exceptions import SendTransactionError
-from app.utils.eth_contract_utils import EthAsyncContractUtils
+from app.utils import eth_contract_utils as contract_module
+from app.utils.eth_contract_utils import EthAsyncContractUtils, EthTxUtils, EthWeb3
+from app.utils.web3_provider_utils import KeepAliveHTTPSessionManager
 from tests.account_config import default_eth_account
+
+
+async def _get_eth_web3() -> AsyncWeb3[AsyncHTTPProvider]:
+    return EthWeb3.get_web3()
 
 
 # Test for get_contract_code
@@ -48,7 +56,7 @@ class TestGetContractCode:
         ) = EthAsyncContractUtils.get_contract_code(contract_name="AuthIbetWST")
 
         # Assert
-        expected_json = json.load(open("contracts/eth/AuthIbetWST.json", "r"))
+        expected_json = json.load(open("contracts/wst/AuthIbetWST.json", "r"))
         assert rtn_abi == expected_json["abi"]
         assert rtn_bytecode == expected_json["bytecode"]
         assert rtn_deploy_bytecode == expected_json["deployedBytecode"]
@@ -157,6 +165,7 @@ class TestGetContract:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -165,6 +174,34 @@ class TestGetContract:
         )
         assert contract is not None
         assert contract.address == Web3.to_checksum_address(contract_address)
+
+    # <Normal_2>
+    # Contract factory cache is scoped by AsyncWeb3 instance
+    async def test_normal_2(self, monkeypatch: pytest.MonkeyPatch):
+        web3_1 = AsyncWeb3(AsyncHTTPProvider("http://127.0.0.1:8545"))
+        web3_2 = AsyncWeb3(AsyncHTTPProvider("http://127.0.0.1:8545"))
+
+        contract_module.EthAsyncContractUtils.factory_map.clear()
+
+        monkeypatch.setattr(contract_module.EthWeb3, "get_web3", lambda: web3_1)
+        contract_1 = EthAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address="0x0000000000000000000000000000000000000001",
+        )
+
+        monkeypatch.setattr(contract_module.EthWeb3, "get_web3", lambda: web3_2)
+        contract_2 = EthAsyncContractUtils.get_contract(
+            contract_name="AuthIbetWST",
+            contract_address="0x0000000000000000000000000000000000000002",
+        )
+
+        assert cast(Any, contract_1).w3 is web3_1
+        assert cast(Any, contract_2).w3 is web3_2
+        assert len(contract_module.EthAsyncContractUtils.factory_map) == 2
+        assert len(contract_module.EthAsyncContractUtils.factory_map[web3_1]) == 1
+        assert len(contract_module.EthAsyncContractUtils.factory_map[web3_2]) == 1
+
+        contract_module.EthAsyncContractUtils.factory_map.clear()
 
     ########################################################
     # Error
@@ -187,6 +224,7 @@ class TestGetContract:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         with pytest.raises(FileNotFoundError):
@@ -194,6 +232,41 @@ class TestGetContract:
                 contract_name="NOT_EXIST_CONTRACT",
                 contract_address=contract_address,
             )
+
+
+# Test for AsyncWeb3 scope
+class TestEthWeb3Scope:
+    # <Normal_1>
+    # AsyncWeb3 instance is scoped by event loop
+    def test_normal_1(self):
+        loops: list[asyncio.AbstractEventLoop] = []
+
+        def get_web3_for_new_loop() -> AsyncWeb3[AsyncHTTPProvider]:
+            loop = asyncio.new_event_loop()
+            loops.append(loop)
+            return loop.run_until_complete(_get_eth_web3())
+
+        async_web3_1 = get_web3_for_new_loop()
+        async_web3_2 = get_web3_for_new_loop()
+
+        try:
+            assert async_web3_1 is not async_web3_2
+        finally:
+            for loop in loops:
+                loop.close()
+
+    # <Normal_2>
+    # Async provider uses the shared keep-alive session manager
+    def test_normal_2(self):
+        loop = asyncio.new_event_loop()
+
+        try:
+            async_web3 = loop.run_until_complete(_get_eth_web3())
+        finally:
+            loop.close()
+
+        session_manager = cast(Any, async_web3.provider)._request_session_manager
+        assert isinstance(session_manager, KeepAliveHTTPSessionManager)
 
 
 # Test for call_function
@@ -223,6 +296,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -259,6 +333,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -290,6 +365,7 @@ class TestCallFunction:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -336,7 +412,9 @@ class TestGetBlockByTransactionHash:
 
         # Assert
         assert block is not None
-        assert HexBytes(tx_hash) in block["transactions"]
+        transactions = block.get("transactions")
+        assert transactions is not None
+        assert HexBytes(tx_hash) in transactions
 
 
 # Test for get_finalized_block_number
@@ -372,7 +450,9 @@ class TestGetFinalizedBlockNumber:
         block_number = await EthAsyncContractUtils.get_finalized_block_number()
 
         # Assert
-        assert block_number == latest_block["number"]
+        latest_block_number = latest_block.get("number")
+        assert latest_block_number is not None
+        assert block_number == latest_block_number - 2
 
 
 # Test for get_event_logs
@@ -402,6 +482,7 @@ class TestGetEventLogs:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -457,6 +538,7 @@ class TestGetEventLogs:
         # Get transaction receipt
         tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
         contract_address = tx_receipt.get("contractAddress")
+        assert contract_address is not None
 
         # Get contract
         contract = EthAsyncContractUtils.get_contract(
@@ -489,3 +571,21 @@ class TestGetEventLogs:
 
         # Assert
         assert logs == []
+
+
+# Test for suggest_fees
+@pytest.mark.asyncio
+class TestSuggestFees:
+    # <Error_1>
+    # baseFeePerGas is missing from the latest block
+    async def test_error_1(self):
+        get_block_mock = patch(
+            target="app.utils.eth_contract_utils.EthWeb3.eth.get_block",
+            new=AsyncMock(return_value={"number": 1}),
+        )
+
+        with get_block_mock:
+            with pytest.raises(
+                ValueError, match="latest block does not include baseFeePerGas"
+            ):
+                await EthTxUtils.suggest_fees()

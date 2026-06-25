@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, NonNegativeInt, RootModel
 
@@ -79,7 +79,7 @@ class TxDataDetail(BaseModel):
     to_address: Optional[str] = Field(...)
     contract_name: Optional[str] = Field(...)
     contract_function: Optional[str] = Field(...)
-    contract_parameters: Optional[dict] = Field(...)
+    contract_parameters: Optional[dict[str, Any]] = Field(...)
     gas: NonNegativeInt
     gas_price: NonNegativeInt
     value: NonNegativeInt

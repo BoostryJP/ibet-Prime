@@ -20,7 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
 import pytest
+from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
 from app.model.db import (
@@ -28,6 +30,7 @@ from app.model.db import (
     IDXTransferApproval,
     PersonalInfoDataSource,
     Token,
+    TokenStatus,
     TokenType,
     TokenVersion,
     TransferApprovalHistory,
@@ -105,7 +108,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_1_1>
     # no data
     @pytest.mark.asyncio
-    async def test_normal_1_1(self, async_client, async_db):
+    async def test_normal_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -123,7 +126,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
 
         # assertion
         assert resp.status_code == 200
-        assumed_response = {
+        assumed_response: dict[str, object] = {
             "result_set": {"count": 0, "offset": None, "limit": None, "total": 0},
             "transfer_approval_history": [],
         }
@@ -132,7 +135,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_1_2>
     # exist data
     @pytest.mark.asyncio
-    async def test_normal_1_2(self, async_client, async_db):
+    async def test_normal_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -147,7 +150,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -163,7 +166,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -329,7 +332,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_2>
     # offset, limit
     @pytest.mark.asyncio
-    async def test_normal_2(self, async_client, async_db):
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -344,7 +347,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -360,7 +363,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -452,7 +455,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Normal_3>
     # set exchange_address
     @pytest.mark.asyncio
-    async def test_normal_3(self, async_client, async_db):
+    async def test_normal_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -467,7 +470,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -483,7 +486,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -659,7 +662,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # filter
     # from_address
     @pytest.mark.asyncio
-    async def test_normal_4_1(self, async_client, async_db):
+    async def test_normal_4_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -674,7 +677,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -690,7 +693,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -775,7 +778,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # filter
     # to_address
     @pytest.mark.asyncio
-    async def test_normal_4_2(self, async_client, async_db):
+    async def test_normal_4_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -790,7 +793,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -806,7 +809,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -892,7 +895,9 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # status
     # 0: unapproved
     @pytest.mark.asyncio
-    async def test_normal_4_3_1(self, async_client, async_db):
+    async def test_normal_4_3_1(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -907,7 +912,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -923,7 +928,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1041,7 +1046,9 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # status
     # 1: escrow_finished
     @pytest.mark.asyncio
-    async def test_normal_4_3_2(self, async_client, async_db):
+    async def test_normal_4_3_2(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1056,7 +1063,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1072,7 +1079,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1190,7 +1197,9 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # status
     # 2: transferred
     @pytest.mark.asyncio
-    async def test_normal_4_3_3(self, async_client, async_db):
+    async def test_normal_4_3_3(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1425,7 +1434,9 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # status
     # 3: canceled
     @pytest.mark.asyncio
-    async def test_normal_4_3_4(self, async_client, async_db):
+    async def test_normal_4_3_4(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1440,7 +1451,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1456,7 +1467,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1648,7 +1659,9 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # status
     # multi specify
     @pytest.mark.asyncio
-    async def test_normal_4_3_5(self, async_client, async_db):
+    async def test_normal_4_3_5(
+        self, async_client: AsyncClient, async_db: AsyncSession
+    ):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1663,7 +1676,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1679,7 +1692,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1903,7 +1916,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # id
     @pytest.mark.asyncio
-    async def test_normal_5_1(self, async_client, async_db):
+    async def test_normal_5_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -1918,7 +1931,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -1934,7 +1947,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2106,7 +2119,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # exchange_address
     @pytest.mark.asyncio
-    async def test_normal_5_2(self, async_client, async_db):
+    async def test_normal_5_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -2121,7 +2134,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2137,7 +2150,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2349,7 +2362,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # application_id
     @pytest.mark.asyncio
-    async def test_normal_5_3(self, async_client, async_db):
+    async def test_normal_5_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -2364,7 +2377,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2380,7 +2393,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2592,7 +2605,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # from_address
     @pytest.mark.asyncio
-    async def test_normal_5_4(self, async_client, async_db):
+    async def test_normal_5_4(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -2607,7 +2620,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2623,7 +2636,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2800,7 +2813,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # to_address
     @pytest.mark.asyncio
-    async def test_normal_5_5(self, async_client, async_db):
+    async def test_normal_5_5(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -2815,7 +2828,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -2831,7 +2844,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3006,7 +3019,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # amount
     @pytest.mark.asyncio
-    async def test_normal_5_6(self, async_client, async_db):
+    async def test_normal_5_6(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -3021,7 +3034,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3037,7 +3050,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3248,7 +3261,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # application_datetime
     @pytest.mark.asyncio
-    async def test_normal_5_7(self, async_client, async_db):
+    async def test_normal_5_7(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -3263,7 +3276,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3279,7 +3292,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3497,7 +3510,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # approval_datetime
     @pytest.mark.asyncio
-    async def test_normal_5_8(self, async_client, async_db):
+    async def test_normal_5_8(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -3512,7 +3525,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3528,7 +3541,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3742,7 +3755,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # sort
     # status
     @pytest.mark.asyncio
-    async def test_normal_5_9(self, async_client, async_db):
+    async def test_normal_5_9(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -3757,7 +3770,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _from_personal_info = IDXPersonalInfo()
         _from_personal_info.account_address = self.test_from_address
         _from_personal_info.issuer_address = self.test_issuer_address
-        _from_personal_info._personal_info = {
+        _from_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -3773,7 +3786,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _to_personal_info = IDXPersonalInfo()
         _to_personal_info.account_address = self.test_to_address
         _to_personal_info.issuer_address = self.test_issuer_address
-        _to_personal_info._personal_info = {
+        _to_personal_info.personal_info = {
             "key_manager": "key_manager_test",
             "name": "name_test",
             "postal_code": "postal_code_test",
@@ -4174,7 +4187,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # validation error
     # type_error
     @pytest.mark.asyncio
-    async def test_error_1_1(self, async_client, async_db):
+    async def test_error_1_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address),
@@ -4217,7 +4230,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # validation error
     # min value
     @pytest.mark.asyncio
-    async def test_error_1_2(self, async_client, async_db):
+    async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address),
@@ -4246,7 +4259,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # validation error
     # max value
     @pytest.mark.asyncio
-    async def test_error_1_3(self, async_client, async_db):
+    async def test_error_1_3(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(
             self.base_url.format(self.test_token_address),
@@ -4274,7 +4287,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Error_2>
     # token not found
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # request target API
         resp = await async_client.get(self.base_url.format(self.test_token_address))
 
@@ -4289,7 +4302,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
     # <Error_3>
     # processing token
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data: Token
         _token = Token()
         _token.type = TokenType.IBET_STRAIGHT_BOND
@@ -4297,7 +4310,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         _token.issuer_address = self.test_issuer_address
         _token.token_address = self.test_token_address
         _token.abi = {}
-        _token.token_status = 0
+        _token.token_status = TokenStatus.PENDING
         _token.version = TokenVersion.V_25_09
         async_db.add(_token)
 

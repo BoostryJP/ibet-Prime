@@ -1,17 +1,9 @@
-FROM node:22-alpine
+FROM ghcr.io/foundry-rs/foundry:latest
 
-# Make directory
-RUN mkdir -p /hardhat
+COPY tests/run_anvil.sh /app/ibet-Prime/tests/run_anvil.sh
+COPY tests/run_anvil_ibet.sh /app/ibet-Prime/tests/run_anvil_ibet.sh
 
-# Copy files
-COPY package.json /hardhat
-COPY package-lock.json /hardhat
-COPY hardhat-ibet.config.js /hardhat
+WORKDIR /app/ibet-Prime
 
-WORKDIR /hardhat
-
-# Install hardhat
-RUN npm install --only=dev
-
-# Run hardhat node
-CMD ["npx", "hardhat", "--config", "./hardhat-ibet.config.js", "node"]
+# Run anvil node
+ENTRYPOINT ["bash", "/app/ibet-Prime/tests/run_anvil_ibet.sh"]

@@ -17,12 +17,16 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from datetime import datetime
 from unittest import mock
+from unittest.mock import MagicMock
 
 import pytest
 import pytz
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.model.db import IbetWSTVersion, Token, TokenType, TokenVersion
+from app.model.db import IbetWSTVersion, Token, TokenStatus, TokenType, TokenVersion
 from app.model.ibet import IbetStraightBondContract
 from config import TZ
 
@@ -32,6 +36,12 @@ class TestRetrieveBondToken:
     base_apiurl = "/bond/tokens/"
     local_tz = pytz.timezone(TZ)
 
+    def localize_created(self, created: datetime | None) -> str:
+        assert created is not None
+        return (
+            pytz.timezone("UTC").localize(created).astimezone(self.local_tz).isoformat()
+        )
+
     ###########################################################################
     # Normal Case
     ###########################################################################
@@ -40,7 +50,12 @@ class TestRetrieveBondToken:
     # not exist Additional info
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
-    async def test_normal_1(self, mock_get, async_client, async_db):
+    async def test_normal_1(
+        self,
+        mock_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
@@ -49,21 +64,16 @@ class TestRetrieveBondToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = "eth_token_address_test1"
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
 
         await async_db.commit()
 
-        _issue_datetime = (
-            pytz.timezone("UTC")
-            .localize(token.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime = self.localize_created(token.created)
 
         # request target API
         mock_token = IbetStraightBondContract()
@@ -167,6 +177,11 @@ class TestRetrieveBondToken:
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
             "ibet_wst_address": "eth_token_address_test1",
+            "ibet_wst_settings_by_blockchain": {
+                "activated": {"ethereum": True},
+                "deployed": {"ethereum": True},
+                "address": {"ethereum": "eth_token_address_test1"},
+            },
             "ibet_wst_name": "ibet_wst_name_test1",
         }
 
@@ -177,7 +192,12 @@ class TestRetrieveBondToken:
     # exist Additional info
     @mock.patch("app.model.ibet.token.IbetStraightBondContract.get")
     @pytest.mark.asyncio
-    async def test_normal_2(self, mock_get, async_client, async_db):
+    async def test_normal_2(
+        self,
+        mock_get: MagicMock,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
         # prepare data
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
@@ -186,21 +206,16 @@ class TestRetrieveBondToken:
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
         token.version = TokenVersion.V_25_09
-        token.ibet_wst_activated = True
+        token.set_ibet_wst_activated("ethereum", True)
         token.ibet_wst_version = IbetWSTVersion.V_1
-        token.ibet_wst_deployed = True
-        token.ibet_wst_address = "eth_token_address_test1"
+        token.set_ibet_wst_deployed("ethereum", True)
+        token.set_ibet_wst_address("ethereum", "eth_token_address_test1")
         token.ibet_wst_name = "ibet_wst_name_test1"
         async_db.add(token)
 
         await async_db.commit()
 
-        _issue_datetime = (
-            pytz.timezone("UTC")
-            .localize(token.created)
-            .astimezone(self.local_tz)
-            .isoformat()
-        )
+        _issue_datetime = self.localize_created(token.created)
 
         # request target API
         mock_token = IbetStraightBondContract()
@@ -304,6 +319,11 @@ class TestRetrieveBondToken:
             "ibet_wst_version": IbetWSTVersion.V_1,
             "ibet_wst_deployed": True,
             "ibet_wst_address": "eth_token_address_test1",
+            "ibet_wst_settings_by_blockchain": {
+                "activated": {"ethereum": True},
+                "deployed": {"ethereum": True},
+                "address": {"ethereum": "eth_token_address_test1"},
+            },
             "ibet_wst_name": "ibet_wst_name_test1",
         }
 
@@ -317,7 +337,7 @@ class TestRetrieveBondToken:
     # <Error_1>
     # No data
     @pytest.mark.asyncio
-    async def test_error_1(self, async_client, async_db):
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
         resp = await async_client.get(self.base_apiurl + "not_found_token_address")
 
         assert resp.status_code == 404
@@ -329,7 +349,7 @@ class TestRetrieveBondToken:
     # <Error_2>
     # Processing Token
     @pytest.mark.asyncio
-    async def test_error_2(self, async_client, async_db):
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
         # prepare data
         token = Token()
         token.type = TokenType.IBET_STRAIGHT_BOND
@@ -337,7 +357,7 @@ class TestRetrieveBondToken:
         token.issuer_address = "issuer_address_test1"
         token.token_address = "token_address_test1"
         token.abi = "abi_test1"
-        token.token_status = 0
+        token.token_status = TokenStatus.PENDING
         token.version = TokenVersion.V_25_09
         async_db.add(token)
 
