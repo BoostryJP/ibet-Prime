@@ -25,7 +25,7 @@ jobs:
             **/uv.lock
       - name: Restore cache
         id: cache-venv
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
@@ -112,7 +112,7 @@ jobs:
         run: jrm cov/pytest.xml "cov/pytest-*.xml"
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@dd5b80bde6d16941f336518e92929e89069d8451 # v1.7.2
+        uses: MishaKav/pytest-coverage-comment@e48ae95fa406cefacc7fbdd79949122795569961 # v1.8.0
         with:
           report-only-changed-files: true
           pytest-xml-coverage-path: cov/coverage.xml
