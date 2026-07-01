@@ -22,7 +22,7 @@ English | [日本語](./README_JA.md)
 
 ## Dependencies
 
-- [Python3](https://www.python.org/downloads/release/python-3146/) - version 3.14.6
+- [Python3](https://www.python.org/downloads/release/python-3146/) - version 3.14
 - [PostgreSQL](https://www.postgresql.org/) - version 17
 - [GoQuorum](https://github.com/ConsenSys/quorum)
   - We support the official GoQuorum node of [ibet-Network](https://github.com/BoostryJP/ibet-Network).

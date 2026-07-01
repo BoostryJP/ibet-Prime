@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = "==3.14.6"
+requires-python = "==3.14.*"
 
 [options]
 exclude-newer = "2026-05-13T02:16:44.257676Z"
