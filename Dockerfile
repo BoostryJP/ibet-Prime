@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:26.04@sha256:b7f48194d4d8b763a478a621cdc81c27be222ba2206ca3ca6bc42b49685f3d9e AS builder
 
 ENV PYTHON_VERSION=3.14.6
 ENV UV_VERSION=0.11.26
@@ -37,11 +37,14 @@ RUN apt-get update -q \
 ADD https://astral.sh/uv/$UV_VERSION/install.sh /uv-installer.sh
 RUN INSTALLER_NO_MODIFY_PATH=1 sh /uv-installer.sh && rm /uv-installer.sh
 
+# prepare Python install scope
+ENV UV_PYTHON_INSTALL_DIR="/home/apl/.local/share/uv/python"
+USER apl
+
 # install Python
 RUN uv python install $PYTHON_VERSION
 
 # prepare venv
-USER apl
 RUN mkdir /home/apl/.venv
 
 # setup shell setting
@@ -85,7 +88,7 @@ RUN cd /app/ibet-Prime \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/uv.lock
 
-FROM ubuntu:24.04 AS runner
+FROM ubuntu:26.04@sha256:b7f48194d4d8b763a478a621cdc81c27be222ba2206ca3ca6bc42b49685f3d9e AS runner
 
 # make application directory
 RUN mkdir -p /app/ibet-Prime/
