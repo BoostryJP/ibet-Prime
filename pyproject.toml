@@ -119,7 +119,6 @@ include = [
 
 [tool.uv]
 exclude-newer = "7 days"
-exclude-newer-package = { playwright = "6 days" }
 
 [tool.uv.sources]
 ibet-prime-settlement = { path = "cmd/settlement", editable = true}
