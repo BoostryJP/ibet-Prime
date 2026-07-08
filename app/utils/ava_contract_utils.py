@@ -63,6 +63,7 @@ LOG = log.get_logger()
 
 ContractArtifact: TypeAlias = dict[str, Any]
 EventArgumentFilters: TypeAlias = dict[str, Any] | None
+_ASYNC_RETRYABLE_RPC_EXCEPTIONS = (ClientError, TimeoutError, JSONDecodeError)
 
 
 class _AvaWeb3Context:
@@ -177,7 +178,7 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                     self.endpoint_uri = cached_endpoint_uri
                     try:
                         return await super().make_request(method, params)
-                    except ClientError, JSONDecodeError:
+                    except _ASYNC_RETRYABLE_RPC_EXCEPTIONS:
                         self._clear_cached_endpoint_uri()
                         failed_endpoint_uris.add(cached_endpoint_uri)
                         LOG.warning(
@@ -212,7 +213,7 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                     try:
                         # Send request
                         return await super().make_request(method, params)
-                    except ClientError, JSONDecodeError:
+                    except _ASYNC_RETRYABLE_RPC_EXCEPTIONS:
                         # JSONDecodeError may occur when sending a request during geth shutdown, etc.
                         self._clear_cached_endpoint_uri()
                         failed_endpoint_uris.add(endpoint_uri)
