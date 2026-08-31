@@ -12,7 +12,7 @@ dependencies = [
     "alembic>=1.19.1,<2.0.0",
     "boto3~=1.43.0",
     "cryptography~=50.0.0",
-    "eth-keyfile==0.8.1",
+    "eth-keyfile==0.10.0",
     "eth-utils~=6.0.0",
     "fastapi~=0.141.1",
     "gunicorn~=26.0.0",
