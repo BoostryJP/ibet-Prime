@@ -112,7 +112,7 @@ jobs:
         run: jrm cov/pytest.xml "cov/pytest-*.xml"
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@d46d9d594f3e1d11008ed19939deb7a139b18751 # v1.11.1
+        uses: MishaKav/pytest-coverage-comment@ce64cfb4332195faa36733a0364dda8849109f70 # v1.11.2
         with:
           report-only-changed-files: true
           pytest-xml-coverage-path: cov/coverage.xml
