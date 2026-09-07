@@ -15,7 +15,7 @@ dependencies = [
     "eth-keyfile==0.10.0",
     "eth-utils~=6.0.0",
     "fastapi~=0.141.1",
-    "gunicorn~=26.0.0",
+    "gunicorn>=26.0,<26.3",
     "psycopg[c]>=3.3.4,<4.0.0",
     "pycryptodome~=3.23",
     "pydantic~=2.13.4",
