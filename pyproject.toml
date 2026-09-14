@@ -21,7 +21,7 @@ dependencies = [
     "pydantic~=2.13.4",
     "pytz~=2026.3",
     "shared-memory-dict~=0.7.2",
-    "web3==7.16.0",
+    "web3==8.0.0",
     "httpx<1.0.0,>=0.27.0",
     "sqlalchemy[asyncio]>=2.0.51,<3.0.0",
     "uvicorn[standard]~=0.52.1",
