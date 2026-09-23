@@ -1,7 +1,3 @@
-from app.model.db import AccountRsaStatus
-from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import default_eth_account
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -33,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     ChildAccount,
     IDXPersonalInfo,
     IDXPersonalInfoHistory,
@@ -40,8 +37,10 @@ from app.model.db import (
     PersonalInfoEventType,
     TmpChildAccountBatchCreate,
 )
+from app.utils.e2ee_utils import E2EEUtils
 from app.utils.secp256k1_utils import combine_public_keys, private_key_to_public_key
 from batch.processor_batch_create_child_account import LOG, Processor
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")

@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -35,7 +33,7 @@ from web3.exceptions import ContractLogicError, TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ContractRevertError, SendTransactionError
-from app.model.db import Account
+from app.model.db import Account, AccountRsaStatus
 from app.model.ibet import PersonalInfoContract
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils

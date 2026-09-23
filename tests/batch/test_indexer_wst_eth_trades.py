@@ -1,7 +1,3 @@
-from app.model.db import AccountRsaStatus
-from app.utils.e2ee_utils import E2EEUtils
-from tests.account_config import default_eth_account
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -33,6 +29,7 @@ from web3.types import RPCEndpoint
 
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     IDXEthIbetWSTTrade,
     IDXEthIbetWSTTradeBlockNumber,
     IDXIbetWSTTradeState,
@@ -41,8 +38,10 @@ from app.model.db import (
     TokenVersion,
 )
 from app.model.wst import IbetWSTTrade
+from app.utils.e2ee_utils import E2EEUtils
 from app.utils.eth_contract_utils import EthWeb3
 from batch.indexer_wst_eth_trades import Processor
+from tests.account_config import default_eth_account
 
 
 @pytest.fixture(scope="function")

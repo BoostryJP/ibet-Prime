@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -21,21 +19,22 @@ SPDX-License-Identifier: Apache-2.0
 
 import logging
 from datetime import UTC, datetime
-from typing import Sequence
-from unittest import mock
-from unittest.mock import patch
+from typing import Any, Sequence, cast
+from unittest.mock import MagicMock, patch
 
 import pytest
-from eth_keyfile.keyfile import decode_keyfile_json
+from eth_utils.address import to_checksum_address
+from hexbytes import HexBytes
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3.contract import Contract
 from web3.types import TxReceipt
 
+import batch.indexer_issue_redeem as indexer_issue_redeem
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     IDXIssueRedeem,
     IDXIssueRedeemBlockNumber,
     IDXIssueRedeemEventType,
@@ -44,21 +43,68 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.model.ibet import IbetShareContract, IbetStraightBondContract
-from app.model.ibet.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import ContractUtils
-from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.indexer_issue_redeem import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
+from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
 
-web3 = AsyncWeb3Wrapper()
+BOND_TOKEN_ADDRESS = to_checksum_address("0x0000000000000000000000000000000000000301")
+SHARE_TOKEN_ADDRESS = to_checksum_address("0x0000000000000000000000000000000000000302")
+PERSONAL_INFO_CONTRACT_ADDRESS = to_checksum_address(
+    "0x0000000000000000000000000000000000000303"
+)
+EVENT_BLOCK_NUMBER = 10
+ISSUE_TX_HASH_1 = "0x" + "11" * 32
+ISSUE_TX_HASH_2 = "0x" + "12" * 32
+REDEEM_TX_HASH = "0x" + "13" * 32
+
+
+def get_fake_contract(contract_name: str, contract_address: str) -> MagicMock:
+    contract = MagicMock()
+    contract.address = contract_address
+    contract.abi = {}
+    contract.events = MagicMock()
+    return contract
+
+
+class FakeAsyncEth:
+    @property
+    def block_number(self):
+        return self._get_block_number()
+
+    async def _get_block_number(self) -> int:
+        return 100
+
+    def contract(self, address: str, abi: Any) -> MagicMock:
+        return get_fake_contract("IbetSecurityTokenInterface", address)
+
+    async def get_block(self, block_number: int) -> dict[str, int]:
+        return {"timestamp": 1_700_000_000 + block_number}
+
+
+class FakeAsyncWeb3:
+    eth = FakeAsyncEth()
+
+
+class FakeSyncEth:
+    @property
+    def block_number(self):
+        return self._get_block_number()
+
+    async def _get_block_number(self) -> int:
+        return 100
+
+    def get_block(self, block_number: int) -> dict[str, int]:
+        return {"timestamp": 1_700_000_000 + block_number}
+
+
+class FakeSyncWeb3:
+    eth = FakeSyncEth()
+
+
+web3 = FakeSyncWeb3()
+_EVENT_LOGS: dict[tuple[str, str], list[dict[str, Any]]] = {}
 
 
 @pytest.fixture(scope="function")
@@ -83,74 +129,54 @@ def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
     LOG.setLevel(default_log_level)
 
 
-async def deploy_bond_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
-    tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-):
-    arguments = [
-        "token.name",
-        "token.symbol",
-        100,
-        20,
-        "JPY",
-        "token.redemption_date",
-        30,
-        "JPY",
-        "token.return_date",
-        "token.return_amount",
-        "token.purpose",
-    ]
-    bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
-    await bond_contrat.update(
-        tx_params=IbetStraightBondUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
+@pytest.fixture(scope="function", autouse=True)
+def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Fixture to mock the blockchain for testing purposes.
+    """
+
+    _EVENT_LOGS.clear()
+    monkeypatch.setattr(indexer_issue_redeem, "web3", FakeAsyncWeb3())
+
+    async def get_event_logs(
+        contract: Any,
+        event: str,
+        block_from: int,
+        block_to: int,
+    ) -> list[dict[str, Any]]:
+        return _EVENT_LOGS.get((contract.address, event), [])
+
+    monkeypatch.setattr(AsyncContractUtils, "get_event_logs", get_event_logs)
+
+
+def add_event(
+    token_address: str,
+    event_name: str,
+    transaction_hash: str,
+    block_number: int,
+    target_address: str,
+    amount: int,
+) -> TxReceipt:
+    _EVENT_LOGS.setdefault((token_address, event_name), []).append(
+        {
+            "transactionHash": HexBytes(transaction_hash),
+            "blockNumber": block_number,
+            "args": {
+                "lockAddress": ZERO_ADDRESS,
+                "targetAddress": target_address,
+                "amount": amount,
+            },
+        }
     )
+    return cast(TxReceipt, {"blockNumber": block_number})
 
-    return ContractUtils.get_contract("IbetStraightBond", token_address)
+
+async def create_fake_bond_token_contract() -> MagicMock:
+    return get_fake_contract("IbetStraightBond", BOND_TOKEN_ADDRESS)
 
 
-async def deploy_share_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
-    tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-):
-    arguments = [
-        "token.name",
-        "token.symbol",
-        20,
-        100,
-        3,
-        "token.dividend_record_date",
-        "token.dividend_payment_date",
-        "token.cancellation_date",
-        30,
-    ]
-    share_contract = IbetShareContract()
-    token_address, _, _ = await share_contract.create(arguments, address, private_key)
-    await share_contract.update(
-        tx_params=IbetShareUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
-    )
-
-    return ContractUtils.get_contract("IbetShare", token_address)
+async def create_fake_share_token_contract() -> MagicMock:
+    return get_fake_contract("IbetShare", SHARE_TOKEN_ADDRESS)
 
 
 def _get_block_number(tx_receipt: TxReceipt) -> int:
@@ -160,7 +186,7 @@ def _get_block_number(tx_receipt: TxReceipt) -> int:
 
 
 async def _get_block_timestamp(tx_receipt: TxReceipt) -> datetime:
-    block = await web3.eth.get_block(_get_block_number(tx_receipt))
+    block = web3.eth.get_block(_get_block_number(tx_receipt))
     timestamp = block.get("timestamp")
     assert timestamp is not None
     return datetime.fromtimestamp(timestamp, UTC).replace(tzinfo=None)
@@ -178,7 +204,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -218,20 +243,12 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -269,13 +286,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -287,11 +300,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -305,18 +314,16 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # issueFrom
-        tx = token_contract_1.functions.issueFrom(
-            issuer_address, ZERO_ADDRESS, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        # Create "Issue" event
+        tx_hash_1 = ISSUE_TX_HASH_1
+        tx_receipt_1 = add_event(
+            token_address_1,
+            "Issue",
+            tx_hash_1,
+            EVENT_BLOCK_NUMBER,
+            issuer_address,
+            40,
         )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
         block_number = await web3.eth.block_number
@@ -353,13 +360,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -371,11 +374,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_share_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_share_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -389,18 +388,16 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # issueFrom
-        tx = token_contract_1.functions.issueFrom(
-            issuer_address, ZERO_ADDRESS, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        # Create "Issue" event
+        tx_hash_1 = ISSUE_TX_HASH_1
+        tx_receipt_1 = add_event(
+            token_address_1,
+            "Issue",
+            tx_hash_1,
+            EVENT_BLOCK_NUMBER,
+            issuer_address,
+            40,
         )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
         block_number = await web3.eth.block_number
@@ -437,13 +434,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -455,11 +448,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -473,18 +462,16 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # redeemFrom
-        tx = token_contract_1.functions.redeemFrom(
-            issuer_address, ZERO_ADDRESS, 10
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        # Create "Redeem" event
+        tx_hash_1 = REDEEM_TX_HASH
+        tx_receipt_1 = add_event(
+            token_address_1,
+            "Redeem",
+            tx_hash_1,
+            EVENT_BLOCK_NUMBER,
+            issuer_address,
+            10,
         )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
         block_number = await web3.eth.block_number
@@ -521,13 +508,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -539,11 +522,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_share_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_share_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -557,18 +536,16 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # redeemFrom
-        tx = token_contract_1.functions.redeemFrom(
-            issuer_address, ZERO_ADDRESS, 10
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        # Create "Redeem" event
+        tx_hash_1 = REDEEM_TX_HASH
+        tx_receipt_1 = add_event(
+            token_address_1,
+            "Redeem",
+            tx_hash_1,
+            EVENT_BLOCK_NUMBER,
+            issuer_address,
+            10,
         )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
         block_number = await web3.eth.block_number
@@ -604,13 +581,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -622,11 +595,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -640,30 +609,25 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # issueFrom * 2
-        tx = token_contract_1.functions.issueFrom(
-            issuer_address, ZERO_ADDRESS, 10
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        # Create "Issue" events
+        tx_hash_1 = ISSUE_TX_HASH_1
+        tx_receipt_1 = add_event(
+            token_address_1,
+            "Issue",
+            tx_hash_1,
+            EVENT_BLOCK_NUMBER,
+            issuer_address,
+            10,
         )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
-
-        tx = token_contract_1.functions.issueFrom(
-            issuer_address, ZERO_ADDRESS, 20
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_2 = ISSUE_TX_HASH_2
+        tx_receipt_2 = add_event(
+            token_address_1,
+            "Issue",
+            tx_hash_2,
+            EVENT_BLOCK_NUMBER + 1,
+            issuer_address,
+            20,
         )
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
         block_number = await web3.eth.block_number
@@ -707,7 +671,6 @@ class TestProcessor:
     # If block number processed in batch is equal or greater than current block number,
     # batch logs "skip process".
     @pytest.mark.asyncio
-    @mock.patch("web3.eth.Eth.block_number", 100)
     async def test_normal_6(
         self,
         processor: Processor,
@@ -732,13 +695,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -750,11 +709,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -776,11 +731,7 @@ class TestProcessor:
         assert len(processor.token_list.keys()) == 1
 
         # Prepare additional token
-        token_contract_2 = await deploy_share_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_2 = await create_fake_share_token_contract()
 
         token_address_2 = token_contract_2.address
         token_2 = Token()
@@ -813,15 +764,10 @@ class TestProcessor:
         self,
         main_func,  # type: ignore
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
-
         # Prepare data : Account
         account = Account()
         account.rsa_status = AccountRsaStatus.UNSET.value
@@ -832,11 +778,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            address=issuer_address,
-            private_key=issuer_private_key,
-            personal_info_contract_address=ibet_personal_info_contract.address,
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
 
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -854,7 +796,7 @@ class TestProcessor:
         with (
             patch("batch.indexer_issue_redeem.INDEXER_SYNC_INTERVAL", None),
             patch.object(
-                AsyncWeb3Wrapper().eth,
+                indexer_issue_redeem.web3.eth,
                 "contract",
                 side_effect=ServiceUnavailableError(),
             ),

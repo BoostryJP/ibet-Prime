@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -25,14 +23,13 @@ from typing import Any, Sequence
 from unittest.mock import patch
 
 import pytest
-from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3.contract import Contract
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     BatchRegisterPersonalInfo,
     BatchRegisterPersonalInfoUpload,
     BatchRegisterPersonalInfoUploadStatus,
@@ -43,13 +40,41 @@ from app.model.db import (
     TokenVersion,
 )
 from app.model.ibet import IbetShareContract
-from app.model.ibet.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.processor_batch_register_personal_info import LOG, Processor
+from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
+
+
+class FakeContract:
+    def __init__(self, address: str):
+        self.address = address
+        self.abi: dict[str, Any] = {}
+
+
+PERSONAL_INFO_CONTRACT_ADDRESS = "0x" + "06" * 20
+_TOKEN_PERSONAL_INFO: dict[str, str] = {}
+_token_counter = 0
+
+
+@pytest.fixture(scope="function", autouse=True)
+def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    global _token_counter
+    _TOKEN_PERSONAL_INFO.clear()
+    _token_counter = 0
+
+    async def get_token(self: Any):
+        self.personal_info_contract_address = _TOKEN_PERSONAL_INFO.get(
+            self.token_address, ZERO_ADDRESS
+        )
+        return self
+
+    def get_contract(contract_name: str, contract_address: str) -> FakeContract:
+        return FakeContract(contract_address)
+
+    monkeypatch.setattr(AsyncContractUtils, "get_contract", get_contract)
+    monkeypatch.setattr(IbetShareContract, "get", get_token)
 
 
 @pytest.fixture(scope="function")
@@ -106,40 +131,17 @@ class TestProcessor:
     ]
 
     @staticmethod
-    async def deploy_share_token_contract(
+    async def create_fake_share_token_contract(
         address: str,
-        private_key: bytes,
         personal_info_contract_address: str,
         tradable_exchange_contract_address: str | None = None,
         transfer_approval_required: bool | None = None,
     ):
-        arguments = [
-            "token.name",
-            "token.symbol",
-            20,
-            100,
-            3,
-            "token.dividend_record_date",
-            "token.dividend_payment_date",
-            "token.cancellation_date",
-            30,
-        ]
-        share_contract = IbetShareContract()
-        token_address, _, _ = await share_contract.create(
-            arguments, address, private_key
-        )
-        await share_contract.update(
-            tx_params=IbetShareUpdateParams(
-                transferable=True,
-                personal_info_contract_address=personal_info_contract_address,
-                tradable_exchange_contract_address=tradable_exchange_contract_address,
-                transfer_approval_required=transfer_approval_required,
-            ),
-            tx_sender=address,
-            tx_sender_key=private_key,
-        )
-
-        return ContractUtils.get_contract("IbetShare", token_address)
+        global _token_counter
+        _token_counter += 1
+        token_address = f"0x{0x700 + _token_counter:040x}"
+        _TOKEN_PERSONAL_INFO[token_address] = personal_info_contract_address
+        return FakeContract(token_address)
 
     ###########################################################################
     # Normal Case
@@ -152,12 +154,8 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -169,8 +167,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -204,12 +202,8 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -221,8 +215,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -316,12 +310,8 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
         _other_issuer = self.account_list[1]
 
         # Prepare data : Account
@@ -334,8 +324,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -482,12 +472,8 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
         _other_issuer = self.account_list[1]
 
         # Prepare data : Account
@@ -500,8 +486,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -634,17 +620,13 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -745,13 +727,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -763,8 +741,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -881,13 +859,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -899,8 +873,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -1017,13 +991,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         _account = self.account_list[0]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_account["keyfile"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -1050,8 +1020,8 @@ EK7Y4zFFnfKP3WIA3atUbbcCAwEAAQ==
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await self.deploy_share_token_contract(
-            _account["address"], issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await self.create_fake_share_token_contract(
+            _account["address"], PERSONAL_INFO_CONTRACT_ADDRESS
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()

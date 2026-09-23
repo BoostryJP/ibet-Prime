@@ -22,19 +22,19 @@ import json
 import logging
 from collections.abc import Generator
 from typing import Any, Sequence
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from eth_keyfile.keyfile import decode_keyfile_json
+from eth_utils.address import to_checksum_address
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
 from web3.contract import Contract
-from web3.middleware import ExtraDataToPOAMiddleware
 
+import batch.indexer_personal_info as indexer_personal_info
 from app.model.db import (
     Account,
     IDXPersonalInfo,
@@ -48,17 +48,185 @@ from app.model.db import (
     TokenVersion,
 )
 from app.model.ibet import IbetStraightBondContract
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.utils.e2ee_utils import E2EEUtils
 from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_personal_info import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
+from config import CHAIN_ID, TX_GAS_LIMIT, ZERO_ADDRESS
 from tests.account_config import default_eth_account
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+PERSONAL_INFO_CONTRACT_ADDRESS = to_checksum_address(
+    "0x0000000000000000000000000000000000000401"
+)
+PERSONAL_INFO_CONTRACT_ADDRESS_2 = to_checksum_address(
+    "0x0000000000000000000000000000000000000402"
+)
+
+
+class FakeChain:
+    def __init__(self) -> None:
+        self.latest_block = 100
+        self.transaction_index = 0
+
+    def mine(self) -> int:
+        self.latest_block += 1
+        self.transaction_index += 1
+        return self.latest_block
+
+
+class FakePersonalInfoFunction:
+    def __init__(
+        self,
+        contract_address: str,
+        event_name: str,
+        account_address: str | None,
+        link_address: str,
+        encrypted_info: str,
+    ) -> None:
+        self.contract_address = contract_address
+        self.event_name = event_name
+        self.account_address = account_address
+        self.link_address = link_address
+        self.encrypted_info = encrypted_info
+
+    def build_transaction(self, tx_params: dict[str, Any]) -> dict[str, Any]:
+        return {
+            **tx_params,
+            "_contract_address": self.contract_address,
+            "_event_name": self.event_name,
+            "_account_address": self.account_address or tx_params["from"],
+            "_link_address": self.link_address,
+            "_encrypted_info": self.encrypted_info,
+        }
+
+
+class FakePersonalInfoFunctions:
+    def __init__(self, contract_address: str) -> None:
+        self.contract_address = contract_address
+
+    def register(self, link_address: str, encrypted_info: str):
+        return FakePersonalInfoFunction(
+            self.contract_address,
+            "Register",
+            None,
+            link_address,
+            encrypted_info,
+        )
+
+    def modify(self, account_address: str, encrypted_info: str):
+        return FakePersonalInfoFunction(
+            self.contract_address,
+            "Modify",
+            account_address,
+            "",
+            encrypted_info,
+        )
+
+
+class FakePersonalInfoContract:
+    def __init__(self, logger: Any, issuer: Any, contract_address: str) -> None:
+        self.logger = logger
+        self.issuer = issuer
+        self.contract_address = contract_address
+        self.address = contract_address
+        self.functions = FakePersonalInfoFunctions(contract_address)
+
+    async def get_register_event(
+        self, block_from: int | None, block_to: int | None
+    ) -> list[dict[str, Any]]:
+        return get_events(self.contract_address, "Register", block_from, block_to)
+
+    async def get_modify_event(
+        self, block_from: int | None, block_to: int | None
+    ) -> list[dict[str, Any]]:
+        return get_events(self.contract_address, "Modify", block_from, block_to)
+
+    async def get_info(
+        self, account_address: str, default_value: Any | None = None
+    ) -> dict[str, Any]:
+        values = _PERSONAL_INFO_VALUES.get((self.contract_address, account_address), [])
+        if values:
+            return values.pop(0)
+        return {}
+
+
+class FakeAsyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    @property
+    def block_number(self):
+        return self._get_block_number()
+
+    async def _get_block_number(self) -> int:
+        return self.chain.latest_block
+
+    async def get_block(self, block_number: int) -> dict[str, int]:
+        return {"timestamp": 1_700_000_000 + block_number}
+
+
+class FakeAsyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeAsyncEth(chain)
+
+
+class FakeSyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    @property
+    def block_number(self) -> int:
+        return self.chain.latest_block
+
+
+class FakeSyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeSyncEth(chain)
+
+
+_CHAIN = FakeChain()
+web3 = FakeSyncWeb3(_CHAIN)
+_EVENTS: dict[tuple[str, str], list[dict[str, Any]]] = {}
+_PERSONAL_INFO_VALUES: dict[tuple[str, str], list[dict[str, Any]]] = {}
+_ENCRYPTED_PERSONAL_INFO: dict[str, dict[str, Any]] = {}
+_TOKEN_PERSONAL_INFO: dict[str, str] = {}
+_token_counter = 0
+_deployed_personal_info_counter = 0
+
+
+def get_events(
+    contract_address: str,
+    event_name: str,
+    block_from: int | None,
+    block_to: int | None,
+) -> list[dict[str, Any]]:
+    return [
+        event
+        for event in _EVENTS.get((contract_address, event_name), [])
+        if (block_from is None or event["blockNumber"] >= block_from)
+        and (block_to is None or event["blockNumber"] <= block_to)
+    ]
+
+
+def fake_send_transaction(transaction: dict[str, Any], private_key: bytes):
+    block_number = _CHAIN.mine()
+    transaction_hash = f"0x{_CHAIN.transaction_index:064x}"
+    event_name = transaction["_event_name"]
+    contract_address = transaction["_contract_address"]
+    account_address = transaction["_account_address"]
+    link_address = transaction["_link_address"] or transaction["from"]
+    _EVENTS.setdefault((contract_address, event_name), []).append(
+        {
+            "args": {
+                "account_address": account_address,
+                "link_address": link_address,
+            },
+            "blockNumber": block_number,
+        }
+    )
+    _PERSONAL_INFO_VALUES.setdefault((contract_address, account_address), []).append(
+        _ENCRYPTED_PERSONAL_INFO[transaction["_encrypted_info"]]
+    )
+    return transaction_hash, {"blockNumber": block_number}
 
 
 @pytest.fixture(scope="function")
@@ -85,40 +253,83 @@ def processor(
     LOG.setLevel(default_log_level)
 
 
-async def deploy_bond_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
-    tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-) -> Contract:
-    arguments = [
-        "token.name",
-        "token.symbol",
-        100,
-        20,
-        "JPY",
-        "token.redemption_date",
-        30,
-        "JPY",
-        "token.return_date",
-        "token.return_amount",
-        "token.purpose",
-    ]
-    bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
-    await bond_contrat.update(
-        tx_params=IbetStraightBondUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
+@pytest.fixture(scope="function", autouse=True)
+def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    global _token_counter, _deployed_personal_info_counter
+    _CHAIN.latest_block = 100
+    _CHAIN.transaction_index = 0
+    _token_counter = 0
+    _deployed_personal_info_counter = 0
+    _EVENTS.clear()
+    _PERSONAL_INFO_VALUES.clear()
+    _ENCRYPTED_PERSONAL_INFO.clear()
+    _TOKEN_PERSONAL_INFO.clear()
+
+    monkeypatch.setattr(indexer_personal_info, "web3", FakeAsyncWeb3(_CHAIN))
+    monkeypatch.setattr(
+        indexer_personal_info, "PersonalInfoContract", FakePersonalInfoContract
     )
 
-    return ContractUtils.get_contract("IbetStraightBond", token_address)
+    async def get_token(
+        self: IbetStraightBondContract,
+    ) -> IbetStraightBondContract:
+        self.personal_info_contract_address = _TOKEN_PERSONAL_INFO.get(
+            self.token_address, ZERO_ADDRESS
+        )
+        return self
+
+    monkeypatch.setattr(IbetStraightBondContract, "get", get_token)
+    monkeypatch.setattr(ContractUtils, "send_transaction", fake_send_transaction)
+
+    def deploy_contract(
+        contract_name: str,
+        args: list[Any],
+        deployer: str,
+        private_key: bytes,
+    ) -> tuple[str, dict[str, Any], str]:
+        global _deployed_personal_info_counter
+        addresses = [
+            PERSONAL_INFO_CONTRACT_ADDRESS,
+            PERSONAL_INFO_CONTRACT_ADDRESS_2,
+        ]
+        address = addresses[_deployed_personal_info_counter]
+        _deployed_personal_info_counter += 1
+        return address, {}, "tx_hash"
+
+    monkeypatch.setattr(ContractUtils, "deploy_contract", deploy_contract)
+
+    def get_contract(
+        contract_name: str, contract_address: str
+    ) -> FakePersonalInfoContract:
+        return FakePersonalInfoContract(
+            logging.getLogger("unittest"), MagicMock(), contract_address
+        )
+
+    monkeypatch.setattr(ContractUtils, "get_contract", get_contract)
+
+
+@pytest.fixture(scope="function")
+def ibet_personal_info_contract() -> FakePersonalInfoContract:
+    return FakePersonalInfoContract(
+        logging.getLogger("unittest"), MagicMock(), PERSONAL_INFO_CONTRACT_ADDRESS
+    )
+
+
+async def create_fake_bond_token_contract(
+    personal_info_contract_address: str,
+) -> Contract:
+    global _token_counter
+    _token_counter += 1
+    token_address = to_checksum_address(f"0x{0x500 + _token_counter:040x}")
+    _TOKEN_PERSONAL_INFO[token_address] = personal_info_contract_address
+    return get_fake_token_contract(token_address)
+
+
+def get_fake_token_contract(token_address: str) -> MagicMock:
+    contract = MagicMock()
+    contract.address = token_address
+    contract.abi = {}
+    return contract
 
 
 def encrypt_personal_info(
@@ -129,6 +340,7 @@ def encrypt_personal_info(
     ciphertext = base64.encodebytes(
         cipher.encrypt(json.dumps(personal_info).encode("utf-8"))
     )
+    _ENCRYPTED_PERSONAL_INFO[ciphertext.decode("utf-8")] = personal_info
     return ciphertext
 
 
@@ -212,9 +424,6 @@ class TestProcessor:
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
@@ -232,8 +441,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await create_fake_bond_token_contract(
+            ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -299,9 +508,6 @@ class TestProcessor:
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
@@ -324,8 +530,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await create_fake_bond_token_contract(
+            ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -448,8 +654,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await create_fake_bond_token_contract(
+            ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -620,8 +826,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await create_fake_bond_token_contract(
+            ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -873,11 +1079,8 @@ class TestProcessor:
         )
 
         # Issuer1 issues bond token.
-        token_contract1 = await deploy_bond_token_contract(
-            issuer_address_1,
-            issuer_private_key_1,
-            personal_info_contract_1.address,
-            transfer_approval_required=False,
+        token_contract1 = await create_fake_bond_token_contract(
+            personal_info_contract_1.address
         )
         token_address_1 = token_contract1.address
         token_1 = Token()
@@ -890,11 +1093,8 @@ class TestProcessor:
         async_db.add(token_1)
 
         # Issuer2 issues bond token.
-        token_contract2 = await deploy_bond_token_contract(
-            issuer_address_2,
-            issuer_private_key_2,
-            personal_info_contract_2.address,
-            transfer_approval_required=False,
+        token_contract2 = await create_fake_bond_token_contract(
+            personal_info_contract_2.address
         )
         token_address_2 = token_contract2.address
         token_2 = Token()
@@ -1053,9 +1253,6 @@ class TestProcessor:
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
@@ -1078,8 +1275,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await create_fake_bond_token_contract(
+            ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
@@ -1187,9 +1384,6 @@ class TestProcessor:
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         issuer_rsa_private_key = user_1["rsa_private_key"]
         issuer_rsa_public_key = user_1["rsa_public_key"]
         issuer_rsa_passphrase = "password"
@@ -1212,8 +1406,8 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
+        token_contract_1 = await create_fake_bond_token_contract(
+            ibet_personal_info_contract.address
         )
         token_address_1 = token_contract_1.address
         token_1 = Token()
