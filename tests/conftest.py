@@ -93,22 +93,14 @@ async def async_db(async_db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession,
         yield session
         await session.rollback()
 
-        # Remove DB tables
+        # Reset all tables together, including their owned sequences. Listing all
+        # tables also handles foreign keys without disabling their triggers.
         await session.begin()
-        for table in Base.metadata.sorted_tables:
-            await session.execute(
-                text(f'ALTER TABLE "{table.name}" DISABLE TRIGGER ALL;')
-            )
-            await session.execute(text(f'TRUNCATE TABLE "{table.name}";'))
-            if table.autoincrement_column is not None:
-                await session.execute(
-                    text(
-                        f"ALTER SEQUENCE {table.name}_{table.autoincrement_column.name}_seq RESTART WITH 1;"
-                    )
-                )
-            await session.execute(
-                text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;')
-            )
+        preparer = async_db_engine.dialect.identifier_preparer
+        table_names = ", ".join(
+            preparer.format_table(table) for table in Base.metadata.sorted_tables
+        )
+        await session.execute(text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY"))
         await session.commit()
 
     app.dependency_overrides[db_async_session] = db_async_session

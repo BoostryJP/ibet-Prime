@@ -18,7 +18,6 @@ SPDX-License-Identifier: Apache-2.0
 from typing import cast
 
 import pytest
-from eth_keyfile.keyfile import decode_keyfile_json
 from web3.contract import Contract
 from web3.types import TxParams
 
@@ -43,9 +42,7 @@ def _build_tx_params(from_address: str) -> TxParams:
 def ibet_personal_info_contract() -> Contract:
     user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
+    deployer_private_key = bytes.fromhex(user_1["private_key"])
 
     contract_address, _, _ = IbetContractUtils.deploy_contract(
         "PersonalInfo", [], deployer_address, deployer_private_key
@@ -57,9 +54,7 @@ def ibet_personal_info_contract() -> Contract:
 def ibet_exchange_contract() -> Contract:
     user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
+    deployer_private_key = bytes.fromhex(user_1["private_key"])
 
     payment_gateway_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "PaymentGateway", [], deployer_address, deployer_private_key
@@ -97,9 +92,7 @@ def ibet_exchange_contract() -> Contract:
 def ibet_escrow_contract() -> Contract:
     user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
+    deployer_private_key = bytes.fromhex(user_1["private_key"])
 
     storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "EscrowStorage", [], deployer_address, deployer_private_key
@@ -123,9 +116,7 @@ def ibet_escrow_contract() -> Contract:
 def ibet_security_token_escrow_contract() -> Contract:
     user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
+    deployer_private_key = bytes.fromhex(user_1["private_key"])
 
     storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "EscrowStorage", [], deployer_address, deployer_private_key
@@ -152,9 +143,7 @@ def ibet_security_token_escrow_contract() -> Contract:
 def ibet_security_token_dvp_contract() -> Contract:
     user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
+    deployer_private_key = bytes.fromhex(user_1["private_key"])
 
     storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
         "DVPStorage", [], deployer_address, deployer_private_key
@@ -181,9 +170,7 @@ def ibet_security_token_dvp_contract() -> Contract:
 def ibet_e2e_messaging_contract() -> Contract:
     user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
+    deployer_private_key = bytes.fromhex(user_1["private_key"])
 
     contract_address, _, _ = IbetContractUtils.deploy_contract(
         "E2EMessaging", [], deployer_address, deployer_private_key
@@ -195,9 +182,7 @@ def ibet_e2e_messaging_contract() -> Contract:
 def ibet_freeze_log_contract() -> Contract:
     user_1 = default_eth_account("user1")
     deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
+    deployer_private_key = bytes.fromhex(user_1["private_key"])
 
     contract_address, _, _ = IbetContractUtils.deploy_contract(
         "FreezeLog", [], deployer_address, deployer_private_key

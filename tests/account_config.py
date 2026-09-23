@@ -18,6 +18,8 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import json
+from copy import deepcopy
+from functools import cache
 from typing import Any, cast
 
 import yaml
@@ -31,11 +33,15 @@ web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
 
-# Account Address(from local config)
-def default_eth_account(name: str) -> UnitTestAccount:
+@cache
+def _load_account_config() -> dict[str, RawUnitTestAccount]:
     with open("tests/data/account_config.yml", "r") as fp:
-        account_config = cast(dict[str, RawUnitTestAccount], yaml.safe_load(fp))
-    raw_account = account_config[name]
+        return cast(dict[str, RawUnitTestAccount], yaml.safe_load(fp))
+
+
+@cache
+def _load_account(name: str) -> UnitTestAccount:
+    raw_account = _load_account_config()[name]
     return {
         "address": raw_account["address"],
         "private_key": raw_account["private_key"],
@@ -44,3 +50,9 @@ def default_eth_account(name: str) -> UnitTestAccount:
         "rsa_private_key": raw_account["rsa_private_key"],
         "rsa_public_key": raw_account["rsa_public_key"],
     }
+
+
+# Account Address(from local config)
+def default_eth_account(name: str) -> UnitTestAccount:
+    # Tests may mutate nested keyfile fields; never expose the cached objects.
+    return deepcopy(_load_account(name))

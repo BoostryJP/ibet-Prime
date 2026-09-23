@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:17
+    command: ["postgres", "-c", "checkpoint_timeout=30s"]
     ports:
       - "5432:5432"
     environment:
