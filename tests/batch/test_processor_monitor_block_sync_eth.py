@@ -17,24 +17,54 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from types import SimpleNamespace
 from typing import Any, Sequence
 from unittest import mock
-from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
 
 from app.model.db import EthereumNode
 from batch.processor_monitor_block_sync_eth import Processor
 from eth_config import ETH_WEB3_HTTP_PROVIDER
 
-web3 = Web3(Web3.HTTPProvider(ETH_WEB3_HTTP_PROVIDER))
+BLOCK_NUMBER = 1000
+FAILED_ENDPOINTS = {"http://localhost:1000", "http://localhost:2000"}
+
+
+class FakeEth:
+    def __init__(self, provider: Any):
+        self.provider = provider
+        self.call_count = 0
+        self.syncing: bool | dict[str, int] = False
+
+    @property
+    def block_number(self) -> int:
+        if self.provider.endpoint_uri in FAILED_ENDPOINTS:
+            raise ConnectionError("fake node is unavailable")
+        block_numbers = [BLOCK_NUMBER, BLOCK_NUMBER, BLOCK_NUMBER - 3]
+        block_number = block_numbers[min(self.call_count, len(block_numbers) - 1)]
+        self.call_count += 1
+        return block_number
+
+    def get_block(self, block_number: int) -> dict[str, int]:
+        if self.provider.endpoint_uri in FAILED_ENDPOINTS:
+            raise ConnectionError("fake node is unavailable")
+        return {"number": block_number, "timestamp": 1_700_000_000}
+
+
+class FakeWeb3:
+    def __init__(self, provider: Any):
+        self.manager = SimpleNamespace(provider=provider)
+        self.eth = FakeEth(provider)
 
 
 @pytest.fixture(scope="function")
-def processor(async_db: AsyncSession):
+def processor(async_db: AsyncSession, monkeypatch: pytest.MonkeyPatch):
+    import batch.processor_monitor_block_sync_eth as processor_module
+
+    monkeypatch.setattr(processor_module, "Web3", FakeWeb3)
     return Processor()
 
 
@@ -97,13 +127,12 @@ class TestProcessor:
 
         # Run 4th: Abnormal state
         # - An error occurs when the difference between highestBlock and currentBlock exceeds a threshold.
-        block_number = web3.eth.block_number
-        is_syncing_mock = MagicMock()
-        is_syncing_mock.return_value = {
-            "highestBlock": block_number,
-            "currentBlock": block_number - 3,
-        }
-        with mock.patch("web3.eth.Eth.syncing", is_syncing_mock()):
+        node_web3 = processor.node_info[ETH_WEB3_HTTP_PROVIDER]["web3"]
+        with mock.patch.object(
+            node_web3.eth,
+            "syncing",
+            {"highestBlock": BLOCK_NUMBER, "currentBlock": BLOCK_NUMBER - 3},
+        ):
             await processor.process()
             await async_db.rollback()
             async_db.expire_all()
@@ -115,13 +144,11 @@ class TestProcessor:
 
         # Run 5th: Return to normal state
         # - Since the difference between highestBlock and currentBlock is within the threshold, no error occurs.
-        block_number = web3.eth.block_number
-        is_syncing_mock = MagicMock()
-        is_syncing_mock.return_value = {
-            "highestBlock": block_number,
-            "currentBlock": block_number - 2,
-        }
-        with mock.patch("web3.eth.Eth.syncing", is_syncing_mock()):
+        with mock.patch.object(
+            node_web3.eth,
+            "syncing",
+            {"highestBlock": BLOCK_NUMBER, "currentBlock": BLOCK_NUMBER - 2},
+        ):
             await processor.process()
             await async_db.rollback()
             async_db.expire_all()

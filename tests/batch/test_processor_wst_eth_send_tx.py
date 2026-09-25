@@ -1,6 +1,3 @@
-from app.model.db import AccountRsaStatus
-from app.utils.e2ee_utils import E2EEUtils
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -33,6 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     EthIbetWSTTx,
     IbetWSTAuthorization,
     IbetWSTTxParamsAcceptTrade,
@@ -49,6 +47,7 @@ from app.model.db import (
     IbetWSTTxType,
     IbetWSTVersion,
 )
+from app.utils.e2ee_utils import E2EEUtils
 from batch.processor_wst_eth_send_tx import LOG, ProcessorEthWSTSendTx
 from tests.account_config import default_eth_account
 

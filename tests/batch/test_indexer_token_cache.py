@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -22,43 +20,34 @@ SPDX-License-Identifier: Apache-2.0
 import logging
 from collections.abc import Awaitable, Callable, Generator
 from datetime import UTC, datetime
+from typing import Any
 from unittest import mock
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from _pytest.logging import LogCaptureFixture
-from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
-from web3.contract import Contract
-from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     Token,
     TokenCache,
     TokenStatus,
     TokenType,
     TokenVersion,
 )
-from app.model.ibet import IbetShareContract, IbetStraightBondContract
-from app.model.ibet.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import ContractUtils
 from batch.indexer_token_cache import LOG, Processor, main
-from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
+from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+BOND_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000101"
+SHARE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000102"
+PERSONAL_INFO_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000103"
 
 
 @pytest.fixture(scope="function")
@@ -85,74 +74,82 @@ def processor(
     LOG.setLevel(default_log_level)
 
 
-async def deploy_bond_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
-    tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-) -> Contract:
-    arguments: list[str | int] = [
-        "token.name",
-        "token.symbol",
-        100,
-        20,
-        "JPY",
-        "token.redemption_date",
-        30,
-        "JPY",
-        "token.return_date",
-        "token.return_amount",
-        "token.purpose",
-    ]
-    bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
-    await bond_contrat.update(
-        tx_params=IbetStraightBondUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
+def get_fake_contract(contract_name: str, contract_address: str) -> MagicMock:
+    contract = MagicMock()
+    contract.address = contract_address
+    return contract
+
+
+def get_token_call_function(issuer_address: str):
+    bond_attributes: dict[str, Any] = {
+        "owner": issuer_address,
+        "name": "token.name",
+        "symbol": "token.symbol",
+        "totalSupply": 100,
+        "tradableExchange": ZERO_ADDRESS,
+        "contactInformation": "",
+        "privacyPolicy": "",
+        "status": True,
+        "personalInfoAddress": PERSONAL_INFO_CONTRACT_ADDRESS,
+        "requirePersonalInfoRegistered": True,
+        "transferable": True,
+        "isOffering": False,
+        "transferApprovalRequired": False,
+        "faceValue": 20,
+        "faceValueCurrency": "JPY",
+        "interestRate": 0,
+        "interestPaymentCurrency": "",
+        "interestPaymentDate": "",
+        "redemptionDate": "token.redemption_date",
+        "redemptionValue": 30,
+        "redemptionValueCurrency": "JPY",
+        "returnDate": "token.return_date",
+        "returnAmount": "token.return_amount",
+        "baseFXRate": "",
+        "purpose": "token.purpose",
+        "memo": "",
+        "isRedeemed": False,
+    }
+    share_attributes: dict[str, Any] = {
+        "owner": issuer_address,
+        "name": "token.name",
+        "symbol": "token.symbol",
+        "totalSupply": 100,
+        "tradableExchange": ZERO_ADDRESS,
+        "contactInformation": "",
+        "privacyPolicy": "",
+        "status": True,
+        "personalInfoAddress": PERSONAL_INFO_CONTRACT_ADDRESS,
+        "requirePersonalInfoRegistered": True,
+        "transferable": True,
+        "isOffering": False,
+        "transferApprovalRequired": False,
+        "issuePrice": 20,
+        "cancellationDate": "token.cancellation_date",
+        "memo": "",
+        "principalValue": 30,
+        "isCanceled": False,
+        "dividendInformation": (
+            3,
+            "token.dividend_record_date",
+            "token.dividend_payment_date",
         ),
-        tx_sender=address,
-        tx_sender_key=private_key,
-    )
+    }
 
-    return ContractUtils.get_contract("IbetStraightBond", token_address)
+    def call_function(
+        contract: MagicMock,
+        function_name: str,
+        args: tuple[Any, ...],
+        default_returns: Any = None,
+    ) -> Any:
+        attributes = (
+            bond_attributes
+            if contract.address == BOND_TOKEN_ADDRESS
+            else share_attributes
+        )
+        return attributes.get(function_name, default_returns)
 
-
-async def deploy_share_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
-    tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-) -> Contract:
-    arguments: list[str | int] = [
-        "token.name",
-        "token.symbol",
-        20,
-        100,
-        3,
-        "token.dividend_record_date",
-        "token.dividend_payment_date",
-        "token.cancellation_date",
-        30,
-    ]
-    share_contract = IbetShareContract()
-    token_address, _, _ = await share_contract.create(arguments, address, private_key)
-    await share_contract.update(
-        tx_params=IbetShareUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
-    )
-
-    return ContractUtils.get_contract("IbetShare", token_address)
+    return call_function
 
 
 class TestProcessor:
@@ -168,7 +165,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -210,13 +206,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key: bytes = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -228,29 +220,23 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
-        token_address_1 = token_contract_1.address
+        token_address_1 = BOND_TOKEN_ADDRESS
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
-        token_1.abi = token_contract_1.abi
+        token_1.abi = {}
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
         # Prepare data : Token
-        token_contract_2 = await deploy_share_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
-        token_address_2 = token_contract_2.address
+        token_address_2 = SHARE_TOKEN_ADDRESS
         token_2 = Token()
         token_2.type = TokenType.IBET_SHARE
         token_2.token_address = token_address_2
         token_2.issuer_address = issuer_address
-        token_2.abi = token_contract_2.abi
+        token_2.abi = {}
         token_2.tx_hash = "tx_hash"
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
@@ -274,7 +260,17 @@ class TestProcessor:
         sleep_mock.return_value = 0
 
         # Run target process
-        with mock.patch("asyncio.sleep", sleep_mock):
+        with (
+            patch(
+                "app.model.ibet.token.AsyncContractUtils.get_contract",
+                side_effect=get_fake_contract,
+            ),
+            patch(
+                "app.model.ibet.token.AsyncContractUtils.call_function",
+                side_effect=get_token_call_function(issuer_address),
+            ),
+            mock.patch("asyncio.sleep", sleep_mock),
+        ):
             await processor.process()
             async_db.expire_all()
 
@@ -286,7 +282,7 @@ class TestProcessor:
         ).all()
         assert len(_cache_list) == 2
 
-        assert _cache_list[0].token_address == token_contract_1.address
+        assert _cache_list[0].token_address == token_address_1
         assert _cache_list[0].cached_datetime is not None
         assert _cache_list[0].expiration_datetime is not None
         assert _cache_list[0].cached_datetime >= before_cache_time
@@ -302,7 +298,7 @@ class TestProcessor:
             "contact_information": "",
             "privacy_policy": "",
             "status": True,
-            "personal_info_contract_address": ibet_personal_info_contract.address,
+            "personal_info_contract_address": PERSONAL_INFO_CONTRACT_ADDRESS,
             "require_personal_info_registered": True,
             "transferable": True,
             "is_offering": False,
@@ -323,7 +319,7 @@ class TestProcessor:
             "interest_payment_date": ["", "", "", "", "", "", "", "", "", "", "", ""],
         }
 
-        assert _cache_list[1].token_address == token_contract_2.address
+        assert _cache_list[1].token_address == token_address_2
         assert _cache_list[1].cached_datetime is not None
         assert _cache_list[1].expiration_datetime is not None
         assert _cache_list[1].cached_datetime >= before_cache_time
@@ -341,7 +337,7 @@ class TestProcessor:
             "issuer_address": issuer_address,
             "memo": "",
             "name": "token.name",
-            "personal_info_contract_address": ibet_personal_info_contract.address,
+            "personal_info_contract_address": PERSONAL_INFO_CONTRACT_ADDRESS,
             "require_personal_info_registered": True,
             "principal_value": 30,
             "privacy_policy": "",
@@ -365,14 +361,10 @@ class TestProcessor:
         self,
         main_func: Callable[[], Awaitable[None]],
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         caplog: LogCaptureFixture,
     ) -> None:
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key: bytes = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -384,15 +376,12 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
-        token_address_1 = token_contract_1.address
+        token_address_1 = BOND_TOKEN_ADDRESS
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
         token_1.token_address = token_address_1
         token_1.issuer_address = issuer_address
-        token_1.abi = token_contract_1.abi
+        token_1.abi = {}
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
@@ -408,7 +397,7 @@ class TestProcessor:
             patch("batch.indexer_token_cache.INDEXER_SYNC_INTERVAL", None),
             patch("asyncio.sleep", sleep_mock),
             patch(
-                target="app.utils.ibet_contract_utils.AsyncContractUtils.call_function",
+                target="app.model.ibet.token.AsyncContractUtils.call_function",
                 side_effect=ServiceUnavailableError(),
             ),
             pytest.raises(TypeError),

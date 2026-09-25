@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -30,6 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     BulkTransfer,
     BulkTransferUpload,
     Notification,

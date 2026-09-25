@@ -59,7 +59,7 @@ from app.model.ibet.tx_params.ibet_share import (
 from app.utils.ibet_contract_utils import AsyncContractUtils, ContractUtils
 from config import TOKEN_CACHE_TTL, WEB3_HTTP_PROVIDER, ZERO_ADDRESS
 from tests.account_config import default_eth_account
-from tests.contract_utils import (
+from tests.app.model.ibet.contract_utils import (
     IbetSecurityTokenContractTestUtils,
     PersonalInfoContractTestUtils,
 )

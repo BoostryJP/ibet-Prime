@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -24,16 +22,13 @@ import logging
 from typing import Any, Sequence, TypedDict
 
 import pytest
-from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
-from web3.contract import Contract
-from web3.middleware import ExtraDataToPOAMiddleware
 
 from app.model.db import (
     Account,
     AccountRsaKeyTemporary,
+    AccountRsaStatus,
     IDXPersonalInfo,
     PersonalInfoDataSource,
     Token,
@@ -45,21 +40,131 @@ from app.model.ibet import (
     IbetStraightBondContract,
     PersonalInfoContract,
 )
-from app.model.ibet.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.processor_modify_personal_info import Processor
-from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
+from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
 from tests.types import UnitTestAccount
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+
+class FakeContract:
+    def __init__(self, address: str):
+        self.address = address
+
+
+_TOKEN_PERSONAL_INFO: dict[str, str] = {}
+_PERSONAL_INFO_REGISTERED: set[tuple[str, str, str]] = set()
+_PERSONAL_INFO_VALUES: dict[
+    tuple[str, str, str], tuple[dict[str, Any], str | None]
+] = {}
+_personal_info_counter = 0
+_token_counter = 0
+
+
+def _default_personal_info(default_value: Any | None = None) -> dict[str, Any]:
+    return {
+        "key_manager": default_value,
+        "name": default_value,
+        "postal_code": default_value,
+        "address": default_value,
+        "email": default_value,
+        "birth": default_value,
+        "is_corporate": default_value,
+        "tax_category": default_value,
+    }
+
+
+def _normalize_personal_info(data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "key_manager": data.get("key_manager"),
+        "name": data.get("name"),
+        "postal_code": data.get("postal_code"),
+        "address": data.get("address"),
+        "email": data.get("email"),
+        "birth": data.get("birth"),
+        "is_corporate": data.get("is_corporate"),
+        "tax_category": data.get("tax_category"),
+    }
+
+
+@pytest.fixture(scope="function", autouse=True)
+def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    global _personal_info_counter, _token_counter
+    _TOKEN_PERSONAL_INFO.clear()
+    _PERSONAL_INFO_REGISTERED.clear()
+    _PERSONAL_INFO_VALUES.clear()
+    _personal_info_counter = 0
+    _token_counter = 0
+
+    async def get_token(self: Any):
+        self.personal_info_contract_address = _TOKEN_PERSONAL_INFO.get(
+            self.token_address, ZERO_ADDRESS
+        )
+        return self
+
+    async def call_function(
+        contract: FakeContract,
+        function_name: str,
+        args: tuple[Any, ...],
+        default_returns: Any = None,
+    ) -> Any:
+        if function_name == "isRegistered":
+            account_address, issuer_address = args
+            return (
+                contract.address,
+                account_address,
+                issuer_address,
+            ) in _PERSONAL_INFO_REGISTERED
+        if function_name == "personal_info":
+            account_address, issuer_address = args
+            state = _PERSONAL_INFO_VALUES.get(
+                (contract.address, account_address, issuer_address)
+            )
+            encrypted_info = "encrypted" if state is not None else ""
+            return [ZERO_ADDRESS, ZERO_ADDRESS, encrypted_info]
+        return default_returns
+
+    async def get_info(
+        self: PersonalInfoContract,
+        account_address: str,
+        default_value: Any | None = None,
+    ) -> dict[str, Any]:
+        key = (
+            self.personal_info_contract.address,
+            account_address,
+            self.issuer.issuer_address,
+        )
+        state = _PERSONAL_INFO_VALUES.get(key)
+        if state is None or state[1] != self.issuer.rsa_private_key:
+            return _default_personal_info(default_value)
+        return dict(state[0])
+
+    async def modify_info(
+        self: PersonalInfoContract,
+        account_address: str,
+        data: dict[str, Any],
+        default_value: Any | None = None,
+    ) -> None:
+        key = (
+            self.personal_info_contract.address,
+            account_address,
+            self.issuer.issuer_address,
+        )
+        _PERSONAL_INFO_VALUES[key] = (
+            _normalize_personal_info(data),
+            self.issuer.rsa_private_key,
+        )
+
+    def get_contract(contract_name: str, contract_address: str) -> FakeContract:
+        return FakeContract(contract_address)
+
+    monkeypatch.setattr(AsyncContractUtils, "call_function", call_function)
+    monkeypatch.setattr(AsyncContractUtils, "get_contract", get_contract)
+    monkeypatch.setattr(IbetShareContract, "get", get_token)
+    monkeypatch.setattr(IbetStraightBondContract, "get", get_token)
+    monkeypatch.setattr(PersonalInfoContract, "get_info", get_info)
+    monkeypatch.setattr(PersonalInfoContract, "modify_info", modify_info)
 
 
 @pytest.fixture(scope="function")
@@ -73,18 +178,10 @@ def processor(async_db: AsyncSession):
     LOG.setLevel(default_log_level)
 
 
-def deploy_personal_info_contract(issuer_user: UnitTestAccount) -> str:
-    address = issuer_user["address"]
-    keyfile = issuer_user["keyfile_json"]
-    eoa_password = "password"
-
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile, password=eoa_password.encode("utf-8")
-    )
-    contract_address, _, _ = ContractUtils.deploy_contract(
-        "PersonalInfo", [], address, private_key
-    )
-    return contract_address
+def create_fake_personal_info_contract(issuer_user: UnitTestAccount) -> str:
+    global _personal_info_counter
+    _personal_info_counter += 1
+    return f"0x{0x900 + _personal_info_counter:040x}"
 
 
 class PersonalInfoSender(TypedDict):
@@ -97,104 +194,35 @@ async def set_personal_info_contract(
     issuer_account: Account,
     sender_list: Sequence[PersonalInfoSender],
 ) -> None:
-    contract = ContractUtils.get_contract("PersonalInfo", contract_address)
-
     for sender in sender_list:
-        sender_address = Web3.to_checksum_address(sender["user"]["address"])
-        tx = contract.functions.register(
-            issuer_account.issuer_address, ""
-        ).build_transaction(
-            {
-                "nonce": web3.eth.get_transaction_count(sender_address),
-                "chainId": CHAIN_ID,
-                "from": sender_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        private_key = decode_keyfile_json(
-            raw_keyfile_json=sender["user"]["keyfile_json"],
-            password="password".encode("utf-8"),
-        )
-        ContractUtils.send_transaction(tx, private_key)
-
+        sender_address = sender["user"]["address"]
+        key = (contract_address, sender_address, issuer_account.issuer_address)
+        _PERSONAL_INFO_REGISTERED.add(key)
         if isinstance(sender["data"], dict):
-            personal_info = PersonalInfoContract(
-                logging.getLogger("unittest"), issuer_account, contract_address
+            _PERSONAL_INFO_VALUES[key] = (
+                _normalize_personal_info(sender["data"]),
+                issuer_account.rsa_private_key,
             )
-            await personal_info.modify_info(sender_address, sender["data"])
 
 
-async def deploy_bond_token_contract(
+async def create_fake_bond_token_contract(
     issuer_user: UnitTestAccount, personal_info_contract_address: str | None
 ) -> str:
-    address = issuer_user["address"]
-    keyfile = issuer_user["keyfile_json"]
-    eoa_password = "password"
-
-    arguments = [
-        "token.name",
-        "token.symbol",
-        10,
-        20,
-        "JPY",
-        "token.redemption_date",
-        30,
-        "JPY",
-        "token.return_date",
-        "token.return_amount",
-        "token.purpose",
-    ]
-
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile, password=eoa_password.encode("utf-8")
-    )
-
-    bond_contract = IbetStraightBondContract()
-    contract_address, _, _ = await bond_contract.create(arguments, address, private_key)
-
-    if personal_info_contract_address:
-        data = IbetStraightBondUpdateParams()
-        data.personal_info_contract_address = personal_info_contract_address
-        await bond_contract.update(data, address, private_key)
-
-    return contract_address
+    global _token_counter
+    _token_counter += 1
+    token_address = f"0x{0x700 + _token_counter:040x}"
+    _TOKEN_PERSONAL_INFO[token_address] = personal_info_contract_address or ZERO_ADDRESS
+    return token_address
 
 
-async def deploy_share_token_contract(
+async def create_fake_share_token_contract(
     issuer_user: UnitTestAccount, personal_info_contract_address: str | None
 ) -> str:
-    address = issuer_user["address"]
-    keyfile = issuer_user["keyfile_json"]
-    eoa_password = "password"
-
-    arguments = [
-        "token.name",
-        "token.symbol",
-        10,
-        20,
-        3,
-        "token.dividend_record_date",
-        "token.dividend_payment_date",
-        "token.cancellation_date",
-        10,
-    ]
-
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile, password=eoa_password.encode("utf-8")
-    )
-
-    share_contract = IbetShareContract()
-    contract_address, _, _ = await share_contract.create(
-        arguments, address, private_key
-    )
-
-    if personal_info_contract_address:
-        data = IbetShareUpdateParams()
-        data.personal_info_contract_address = personal_info_contract_address
-        await share_contract.update(data, address, private_key)
-
-    return contract_address
+    global _token_counter
+    _token_counter += 1
+    token_address = f"0x{0x800 + _token_counter:040x}"
+    _TOKEN_PERSONAL_INFO[token_address] = personal_info_contract_address or ZERO_ADDRESS
+    return token_address
 
 
 class TestProcessor:
@@ -212,7 +240,6 @@ class TestProcessor:
         processor: Processor,
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address_1 = user_1["address"]
@@ -240,8 +267,8 @@ class TestProcessor:
         async_db.add(temporary)
 
         # token
-        personal_info_contract_address_1 = deploy_personal_info_contract(user_1)
-        token_contract_address_1 = await deploy_bond_token_contract(
+        personal_info_contract_address_1 = create_fake_personal_info_contract(user_1)
+        token_contract_address_1 = await create_fake_bond_token_contract(
             user_1, personal_info_contract_address_1
         )
         token_1 = Token()
@@ -253,8 +280,8 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        personal_info_contract_address_2 = deploy_personal_info_contract(user_1)
-        token_contract_address_2 = await deploy_share_token_contract(
+        personal_info_contract_address_2 = create_fake_personal_info_contract(user_1)
+        token_contract_address_2 = await create_fake_share_token_contract(
             user_1, personal_info_contract_address_2
         )
         token_2 = Token()
@@ -266,7 +293,7 @@ class TestProcessor:
         token_2.version = TokenVersion.V_25_09
         async_db.add(token_2)
 
-        token_contract_address_3 = await deploy_bond_token_contract(user_1, None)
+        token_contract_address_3 = await create_fake_bond_token_contract(user_1, None)
         token_3 = Token()
         token_3.type = TokenType.IBET_STRAIGHT_BOND
         token_3.tx_hash = "tx_hash"
@@ -276,7 +303,7 @@ class TestProcessor:
         token_3.version = TokenVersion.V_25_09
         async_db.add(token_3)
 
-        token_contract_address_4 = await deploy_share_token_contract(user_1, None)
+        token_contract_address_4 = await create_fake_share_token_contract(user_1, None)
         token_4 = Token()
         token_4.type = TokenType.IBET_SHARE
         token_4.tx_hash = "tx_hash"
