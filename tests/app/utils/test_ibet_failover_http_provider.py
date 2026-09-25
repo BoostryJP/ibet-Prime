@@ -21,7 +21,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from eth_typing import URI
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, Timeout as RequestsTimeout
 from web3.types import RPCEndpoint
 
 from app.utils.ibet_web3_utils import AsyncFailOverHTTPProvider, FailOverHTTPProvider
@@ -104,6 +104,42 @@ class TestFailOverHTTPProvider:
             patch(
                 "web3.providers.rpc.rpc.HTTPProvider.make_request",
                 side_effect=[ConnectionError(), {"result": "ok"}],
+            ) as make_request,
+        ):
+            response = provider.make_request(method, [])
+
+        assert response == {"result": "ok"}
+        assert provider.endpoint_uri == standby_endpoint
+        assert fake_session.scalars.call_count == 2
+        assert make_request.call_count == 2
+        assert fake_session.close.call_count == 1
+
+    # <Normal_3>
+    # Cached primary endpoint timeout falls back to the standby endpoint.
+    def test_normal_3(self, monkeypatch: pytest.MonkeyPatch):
+        provider = _FailOverHTTPProviderForTest()
+        primary_endpoint = URI("http://primary.example:8545")
+        standby_endpoint = URI("http://standby.example:8545")
+        provider.seed_cached_endpoint_uri(primary_endpoint)
+        fake_session = MagicMock()
+        fake_session.scalars.side_effect = [
+            MagicMock(first=MagicMock(return_value=object())),
+            MagicMock(
+                first=MagicMock(
+                    return_value=SimpleNamespace(endpoint_uri=str(standby_endpoint))
+                )
+            ),
+        ]
+        fake_session.close = MagicMock()
+
+        monkeypatch.setattr(FailOverHTTPProvider, "fail_over_mode", True)
+        method = RPCEndpoint("eth_chainId")
+
+        with (
+            patch("app.utils.ibet_web3_utils.Session", return_value=fake_session),
+            patch(
+                "web3.providers.rpc.rpc.HTTPProvider.make_request",
+                side_effect=[RequestsTimeout(), {"result": "ok"}],
             ) as make_request,
         ):
             response = provider.make_request(method, [])
@@ -200,6 +236,49 @@ class TestAsyncFailOverHTTPProvider:
                         {"result": "ok"},
                     ]
                 ),
+            ) as make_request,
+        ):
+            response = await provider.make_request(method, [])
+
+        assert response == {"result": "ok"}
+        assert provider.endpoint_uri == standby_endpoint
+        assert fake_session.scalars.await_count == 2
+        assert make_request.await_count == 2
+        assert fake_session.close.await_count == 1
+
+    # <Normal_3>
+    # Cached primary endpoint timeout falls back to the standby endpoint.
+    async def test_normal_3(self, monkeypatch: pytest.MonkeyPatch):
+        provider = _AsyncFailOverHTTPProviderForTest(
+            session_manager=KeepAliveHTTPSessionManager()
+        )
+        primary_endpoint = URI("http://primary.example:8545")
+        standby_endpoint = URI("http://standby.example:8545")
+        provider.seed_cached_endpoint_uri(primary_endpoint)
+        fake_session = MagicMock()
+        fake_session.scalars = AsyncMock(
+            side_effect=[
+                MagicMock(first=MagicMock(return_value=object())),
+                MagicMock(
+                    first=MagicMock(
+                        return_value=SimpleNamespace(endpoint_uri=str(standby_endpoint))
+                    )
+                ),
+            ]
+        )
+        fake_session.close = AsyncMock()
+
+        monkeypatch.setattr(AsyncFailOverHTTPProvider, "fail_over_mode", True)
+        method = RPCEndpoint("eth_chainId")
+
+        with (
+            patch(
+                "app.utils.ibet_web3_utils.AsyncSession",
+                return_value=fake_session,
+            ),
+            patch(
+                "web3.providers.rpc.async_rpc.AsyncHTTPProvider.make_request",
+                AsyncMock(side_effect=[TimeoutError(), {"result": "ok"}]),
             ) as make_request,
         ):
             response = await provider.make_request(method, [])

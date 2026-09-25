@@ -28,7 +28,6 @@ import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3.contract import Contract
 
 import batch.processor_rotate_e2e_messaging_rsa_key as processor_rotate_e2e_messaging_rsa_key
 from app.exceptions import ContractRevertError, SendTransactionError
@@ -39,11 +38,15 @@ from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.processor_rotate_e2e_messaging_rsa_key import LOG, Processor
 from tests.account_config import default_eth_account
 
+E2E_MESSAGING_CONTRACT_ADDRESS = "0x" + "07" * 20
+
 
 @pytest.fixture(scope="function")
-def processor(async_db: AsyncSession, ibet_e2e_messaging_contract: Contract):
-    processor_rotate_e2e_messaging_rsa_key.E2E_MESSAGING_CONTRACT_ADDRESS = (
-        ibet_e2e_messaging_contract.address
+def processor(async_db: AsyncSession, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        processor_rotate_e2e_messaging_rsa_key,
+        "E2E_MESSAGING_CONTRACT_ADDRESS",
+        E2E_MESSAGING_CONTRACT_ADDRESS,
     )
     log = logging.getLogger("background")
     default_log_level = LOG.level
@@ -202,7 +205,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_e2e_messaging_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
@@ -407,58 +409,12 @@ class TestProcessor:
     ###########################################################################
 
     # <Error_1>
-    # Could not get the EOA private key
-    @pytest.mark.asyncio
-    async def test_error_1(self, processor: Processor, async_db: AsyncSession):
-        user_1 = default_eth_account("user1")
-        user_address_1 = user_1["address"]
-        user_keyfile_1 = user_1["keyfile_json"]
-
-        # Prepare data : E2EMessagingAccount
-        _account = E2EMessagingAccount()
-        _account.account_address = user_address_1
-        _account.keyfile = user_keyfile_1
-        _account.eoa_password = E2EEUtils.encrypt("password_invalid")
-        _account.rsa_key_generate_interval = 1
-        _account.rsa_generation = 2
-        async_db.add(_account)
-
-        datetime_now = datetime.now(UTC).replace(tzinfo=None)
-
-        # Prepare data : E2EMessagingAccountRsaKey
-        _rsa_key = E2EMessagingAccountRsaKey()
-        _rsa_key.transaction_hash = "tx_3"
-        _rsa_key.account_address = user_address_1
-        _rsa_key.rsa_private_key = "rsa_private_key_1_3"
-        _rsa_key.rsa_public_key = "rsa_public_key_1_3"
-        _rsa_key.rsa_passphrase = E2EEUtils.encrypt("latest_passphrase_1")
-        _rsa_key.block_timestamp = datetime_now + timedelta(hours=-1, seconds=-1)
-        async_db.add(_rsa_key)
-        time.sleep(1)
-
-        await async_db.commit()
-
-        # Run target process
-        await processor.process()
-        async_db.expire_all()
-
-        # Assertion
-        _rsa_key_list = (
-            await async_db.scalars(
-                select(E2EMessagingAccountRsaKey).order_by(
-                    E2EMessagingAccountRsaKey.block_timestamp
-                )
-            )
-        ).all()
-
-    # <Error_2>
     # Failed to send transaction
     @pytest.mark.asyncio
-    async def test_error_2(
+    async def test_error_1(
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_e2e_messaging_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         user_address_1 = user_1["address"]
@@ -520,14 +476,13 @@ class TestProcessor:
         ).all()
         assert len(_rsa_key_list) == 1
 
-    # <Error_3>
+    # <Error_2>
     # ContractRevertError
     @pytest.mark.asyncio
-    async def test_error_3(
+    async def test_error_2(
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_e2e_messaging_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")

@@ -21,6 +21,7 @@ import base64
 import json
 import os
 from datetime import UTC, datetime
+from typing import Any, cast
 
 import pytest
 from Crypto import Random
@@ -28,11 +29,10 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 from eth_keyfile.keyfile import decode_keyfile_json
+from hexbytes import HexBytes
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
 from web3.contract import Contract
-from web3.middleware import ExtraDataToPOAMiddleware
 from web3.types import TxReceipt
 
 import batch.indexer_e2e_messaging as indexer_e2e_messaging
@@ -44,12 +44,69 @@ from app.model.db import (
 )
 from app.model.ibet import E2EMessaging
 from app.utils.e2ee_utils import E2EEUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.indexer_e2e_messaging import Processor
-from config import WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+E2E_MESSAGING_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000601"
+
+
+class FakeContract:
+    def __init__(self, address: str) -> None:
+        self.address = address
+
+
+class FakeChain:
+    def __init__(self) -> None:
+        self.latest_block = 100
+        self.transaction_index = 0
+
+    def mine(self) -> int:
+        self.latest_block += 1
+        self.transaction_index += 1
+        return self.latest_block
+
+
+class FakeAsyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    @property
+    def block_number(self):
+        return self._get_block_number()
+
+    async def _get_block_number(self) -> int:
+        return self.chain.latest_block
+
+    async def get_block(self, block_number: int) -> dict[str, int]:
+        return {"timestamp": 1_700_000_000 + block_number}
+
+
+class FakeAsyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeAsyncEth(chain)
+
+
+class FakeSyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    @property
+    def block_number(self) -> int:
+        return self.chain.latest_block
+
+    def get_block(self, block_number: int) -> dict[str, int]:
+        return {"timestamp": 1_700_000_000 + block_number}
+
+
+class FakeSyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeSyncEth(chain)
+
+
+_CHAIN = FakeChain()
+web3 = FakeSyncWeb3(_CHAIN)
+_EVENTS: list[dict[str, Any]] = []
 
 
 @pytest.fixture(scope="function")
@@ -60,6 +117,66 @@ def processor(
         ibet_e2e_messaging_contract.address
     )
     return Processor()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Fixture to mock the blockchain for testing purposes.
+    """
+
+    _CHAIN.latest_block = 100
+    _CHAIN.transaction_index = 0
+    _EVENTS.clear()
+
+    monkeypatch.setattr(indexer_e2e_messaging, "web3", FakeAsyncWeb3(_CHAIN))
+
+    def get_contract(contract_name: str, contract_address: str) -> FakeContract:
+        return FakeContract(contract_address)
+
+    async def get_event_logs(
+        contract: Any,
+        event: str,
+        block_from: int,
+        block_to: int,
+    ) -> list[dict[str, Any]]:
+        return [
+            message_event
+            for message_event in _EVENTS
+            if block_from <= message_event["blockNumber"] <= block_to
+        ]
+
+    async def send_message(
+        self: E2EMessaging,
+        to_address: str,
+        message: str,
+        tx_sender: str,
+        tx_sender_key: bytes,
+    ) -> tuple[str, TxReceipt]:
+        block_number = _CHAIN.mine()
+        transaction_hash = f"0x{_CHAIN.transaction_index:064x}"
+        _EVENTS.append(
+            {
+                "transactionHash": HexBytes(transaction_hash),
+                "blockNumber": block_number,
+                "args": {
+                    "sender": tx_sender,
+                    "receiver": to_address,
+                    "time": 1_700_000_000 + block_number,
+                    "text": message,
+                },
+            }
+        )
+        return transaction_hash, cast(TxReceipt, {"blockNumber": block_number})
+
+    monkeypatch.setattr(AsyncContractUtils, "get_contract", get_contract)
+    monkeypatch.setattr(AsyncContractUtils, "get_event_logs", get_event_logs)
+    monkeypatch.setattr(E2EMessaging, "send_message", send_message)
+
+
+@pytest.fixture(scope="function")
+def ibet_e2e_messaging_contract() -> FakeContract:
+    return FakeContract(E2E_MESSAGING_CONTRACT_ADDRESS)
 
 
 def _get_block_number(tx_receipt: TxReceipt) -> int:

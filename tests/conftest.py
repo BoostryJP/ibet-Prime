@@ -22,15 +22,13 @@ from typing import cast
 
 import pytest
 import pytest_asyncio
-from eth_keyfile.keyfile import decode_keyfile_json
 from httpx import ASGITransport, AsyncClient
 from pytest_asyncio import is_async_test
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from web3 import Web3
-from web3.contract import Contract
 from web3.middleware import ExtraDataToPOAMiddleware
-from web3.types import RPCEndpoint, RPCResponse, TxParams
+from web3.types import RPCEndpoint, RPCResponse
 
 from app.database import (
     AsyncSessionLocal,
@@ -39,25 +37,11 @@ from app.database import (
 )
 from app.main import app
 from app.model.db import Base
-from app.utils.ibet_contract_utils import ContractUtils as IbetContractUtils
-from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
-from tests.account_config import default_eth_account
+from config import WEB3_HTTP_PROVIDER
 from tests.helpers.anvil_transaction_sync import install_anvil_transaction_sync_patch
 
 web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-
-
-def _build_tx_params(from_address: str) -> TxParams:
-    return cast(
-        TxParams,
-        {
-            "chainId": CHAIN_ID,
-            "from": from_address,
-            "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
-        },
-    )
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
@@ -109,29 +93,21 @@ async def async_db(async_db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession,
         yield session
         await session.rollback()
 
-        # Remove DB tables
+        # Reset all tables together, including their owned sequences. Listing all
+        # tables also handles foreign keys without disabling their triggers.
         await session.begin()
-        for table in Base.metadata.sorted_tables:
-            await session.execute(
-                text(f'ALTER TABLE "{table.name}" DISABLE TRIGGER ALL;')
-            )
-            await session.execute(text(f'TRUNCATE TABLE "{table.name}";'))
-            if table.autoincrement_column is not None:
-                await session.execute(
-                    text(
-                        f"ALTER SEQUENCE {table.name}_{table.autoincrement_column.name}_seq RESTART WITH 1;"
-                    )
-                )
-            await session.execute(
-                text(f'ALTER TABLE "{table.name}" ENABLE TRIGGER ALL;')
-            )
+        preparer = async_db_engine.dialect.identifier_preparer
+        table_names = ", ".join(
+            preparer.format_table(table) for table in Base.metadata.sorted_tables
+        )
+        await session.execute(text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY"))
         await session.commit()
 
     app.dependency_overrides[db_async_session] = db_async_session
 
 
 #####################################################
-# ibet: Blockchain & Smart Contract
+# ibet: Blockchain
 #####################################################
 @pytest.fixture(scope="session", autouse=True)
 def anvil_transaction_sync_patch() -> Iterator[None]:
@@ -169,189 +145,3 @@ def ibet_block_number(request: pytest.FixtureRequest) -> None:
         )
 
     request.addfinalizer(teardown)
-
-
-@pytest.fixture(scope="function")
-def ibet_personal_info_contract() -> Contract:
-    user_1 = default_eth_account("user1")
-    deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
-
-    # Deploy personal info contract
-    contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "PersonalInfo", [], deployer_address, deployer_private_key
-    )
-    return IbetContractUtils.get_contract("PersonalInfo", contract_address)
-
-
-@pytest.fixture(scope="function")
-def ibet_exchange_contract() -> Contract:
-    user_1 = default_eth_account("user1")
-    deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
-
-    # Deploy payment gateway contract
-    payment_gateway_contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "PaymentGateway", [], deployer_address, deployer_private_key
-    )
-    payment_gateway_contract = IbetContractUtils.get_contract(
-        "PaymentGateway", payment_gateway_contract_address
-    )
-    tx = payment_gateway_contract.functions.addAgent(
-        deployer_address
-    ).build_transaction(_build_tx_params(deployer_address))
-    IbetContractUtils.send_transaction(tx, deployer_private_key)
-
-    # Deploy storage contract
-    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "ExchangeStorage", [], deployer_address, deployer_private_key
-    )
-
-    # Deploy exchange contract
-    contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "IbetExchange",
-        [payment_gateway_contract_address, storage_contract_address],
-        deployer_address,
-        deployer_private_key,
-    )
-
-    # Upgrade version
-    storage_contract = IbetContractUtils.get_contract(
-        "ExchangeStorage", storage_contract_address
-    )
-    tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
-        _build_tx_params(deployer_address)
-    )
-    IbetContractUtils.send_transaction(tx, deployer_private_key)
-
-    return IbetContractUtils.get_contract("IbetExchange", contract_address)
-
-
-@pytest.fixture(scope="function")
-def ibet_escrow_contract() -> Contract:
-    user_1 = default_eth_account("user1")
-    deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
-
-    # Deploy storage contract
-    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "EscrowStorage", [], deployer_address, deployer_private_key
-    )
-
-    # Deploy escrow contract
-    contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "IbetEscrow", [storage_contract_address], deployer_address, deployer_private_key
-    )
-
-    # Upgrade version
-    storage_contract = IbetContractUtils.get_contract(
-        "EscrowStorage", storage_contract_address
-    )
-    tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
-        _build_tx_params(deployer_address)
-    )
-    IbetContractUtils.send_transaction(tx, deployer_private_key)
-
-    return IbetContractUtils.get_contract("IbetEscrow", contract_address)
-
-
-@pytest.fixture(scope="function")
-def ibet_security_token_escrow_contract() -> Contract:
-    user_1 = default_eth_account("user1")
-    deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
-
-    # Deploy storage contract
-    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "EscrowStorage", [], deployer_address, deployer_private_key
-    )
-
-    # Deploy security token escrow contract
-    contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "IbetSecurityTokenEscrow",
-        [storage_contract_address],
-        deployer_address,
-        deployer_private_key,
-    )
-
-    # Upgrade version
-    storage_contract = IbetContractUtils.get_contract(
-        "EscrowStorage", storage_contract_address
-    )
-    tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
-        _build_tx_params(deployer_address)
-    )
-    IbetContractUtils.send_transaction(tx, deployer_private_key)
-
-    return IbetContractUtils.get_contract("IbetSecurityTokenEscrow", contract_address)
-
-
-@pytest.fixture(scope="function")
-def ibet_security_token_dvp_contract() -> Contract:
-    user_1 = default_eth_account("user1")
-    deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
-
-    # Deploy storage contract
-    storage_contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "DVPStorage", [], deployer_address, deployer_private_key
-    )
-
-    # Deploy security token DVP contract
-    contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "IbetSecurityTokenDVP",
-        [storage_contract_address],
-        deployer_address,
-        deployer_private_key,
-    )
-
-    # Upgrade version
-    storage_contract = IbetContractUtils.get_contract(
-        "DVPStorage", storage_contract_address
-    )
-    tx = storage_contract.functions.upgradeVersion(contract_address).build_transaction(
-        _build_tx_params(deployer_address)
-    )
-    IbetContractUtils.send_transaction(tx, deployer_private_key)
-
-    return IbetContractUtils.get_contract("IbetSecurityTokenDVP", contract_address)
-
-
-@pytest.fixture(scope="function")
-def ibet_e2e_messaging_contract() -> Contract:
-    user_1 = default_eth_account("user1")
-    deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
-
-    # Deploy e2e messaging contract
-    contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "E2EMessaging", [], deployer_address, deployer_private_key
-    )
-    return IbetContractUtils.get_contract("E2EMessaging", contract_address)
-
-
-@pytest.fixture(scope="function")
-def ibet_freeze_log_contract() -> Contract:
-    user_1 = default_eth_account("user1")
-    deployer_address = user_1["address"]
-    deployer_private_key = decode_keyfile_json(
-        raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-    )
-
-    # Deploy e2e messaging contract
-    contract_address, _, _ = IbetContractUtils.deploy_contract(
-        "FreezeLog", [], deployer_address, deployer_private_key
-    )
-    return IbetContractUtils.get_contract("FreezeLog", contract_address)

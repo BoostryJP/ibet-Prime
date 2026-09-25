@@ -20,16 +20,18 @@ SPDX-License-Identifier: Apache-2.0
 import logging
 import uuid
 from collections.abc import Generator, Sequence
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any, cast
+from unittest.mock import MagicMock, patch
 
 import pytest
-from eth_keyfile.keyfile import decode_keyfile_json
+from eth_utils.address import to_checksum_address
+from hexbytes import HexBytes
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
 from web3.contract import Contract
-from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import TxReceipt
 
+import batch.indexer_token_holders as indexer_token_holders
 from app.model.db import (
     Token,
     TokenHolder,
@@ -39,26 +41,143 @@ from app.model.db import (
     TokenVersion,
 )
 from app.model.ibet import IbetShareContract, IbetStraightBondContract
-from app.model.ibet.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
-from app.utils.ibet_contract_utils import ContractUtils
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.indexer_token_holders import LOG, Processor, main
-from config import WEB3_HTTP_PROVIDER, ZERO_ADDRESS
+from config import ZERO_ADDRESS
 from tests.account_config import default_eth_account
-from tests.contract_utils import (
-    IbetExchangeContractTestUtils,
-    IbetSecurityTokenContractTestUtils as STContractUtils,
-    IbetSecurityTokenEscrowContractTestUtils as STEscrowContractUtils,
-    PersonalInfoContractTestUtils,
-)
-from tests.types import UnitTestAccount
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+PERSONAL_INFO_ADDRESS = to_checksum_address("0x" + "08" * 20)
+EXCHANGE_ADDRESS = to_checksum_address("0x" + "09" * 20)
+ESCROW_ADDRESS = to_checksum_address("0x" + "0a" * 20)
+
+
+class FakeChain:
+    def __init__(self) -> None:
+        self.latest_block = 100
+        self.transaction_index = 0
+
+    def mine(self) -> int:
+        self.latest_block += 1
+        self.transaction_index += 1
+        return self.latest_block
+
+
+class FakeContract:
+    def __init__(self, address: str) -> None:
+        self.address = address
+        self.abi: dict[str, Any] = {}
+        self.events = MagicMock()
+
+
+class FakeAsyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    async def get_code(self, address: str) -> HexBytes:
+        if address in _CONTRACT_ADDRESSES:
+            return HexBytes("0xdeadbeef")
+        return HexBytes("0x")
+
+
+class FakeAsyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeAsyncEth(chain)
+
+
+class FakeSyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    @property
+    def block_number(self) -> int:
+        return self.chain.latest_block
+
+
+class FakeSyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeSyncEth(chain)
+
+
+_CHAIN = FakeChain()
+web3 = FakeSyncWeb3(_CHAIN)
+_EVENTS: dict[tuple[str, str], list[dict[str, Any]]] = {}
+_TOKEN_EXCHANGES: dict[str, str] = {}
+_CONTRACT_ADDRESSES = {EXCHANGE_ADDRESS, ESCROW_ADDRESS}
+_token_counter = 0
+
+
+def get_events(
+    contract_address: str,
+    event_name: str,
+    block_from: int,
+    block_to: int,
+    argument_filters: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    events = [
+        event
+        for event in _EVENTS.get((contract_address, event_name), [])
+        if block_from <= event["blockNumber"] <= block_to
+    ]
+    if not argument_filters:
+        return events
+    return [
+        event
+        for event in events
+        if all(
+            event["args"].get(key) == value for key, value in argument_filters.items()
+        )
+    ]
+
+
+def add_event(
+    contract_address: str,
+    event_name: str,
+    args: dict[str, Any],
+    log_index: int = 0,
+) -> tuple[str, TxReceipt]:
+    block_number = _CHAIN.mine()
+    transaction_hash = f"0x{_CHAIN.transaction_index:064x}"
+    _EVENTS.setdefault((contract_address, event_name), []).append(
+        {
+            "event": event_name,
+            "transactionHash": HexBytes(transaction_hash),
+            "blockNumber": block_number,
+            "logIndex": log_index,
+            "args": args,
+        }
+    )
+    return transaction_hash, cast(TxReceipt, {"blockNumber": block_number})
+
+
+def record_token_event(
+    token_address: str,
+    event_name: str,
+    args: dict[str, Any],
+    log_index: int = 0,
+) -> tuple[str, TxReceipt]:
+    return add_event(token_address, event_name, args, log_index)
+
+
+def record_exchange_event(
+    exchange_address: str,
+    event_name: str,
+    token_address: str,
+    from_address: str,
+    to_address: str,
+    amount: int,
+    log_index: int = 0,
+) -> tuple[str, TxReceipt]:
+    return add_event(
+        exchange_address,
+        event_name,
+        {
+            "token": token_address,
+            "from": from_address,
+            "to": to_address,
+            "value": amount,
+        },
+        log_index,
+    )
 
 
 @pytest.fixture(scope="function")
@@ -83,88 +202,80 @@ def processor(async_db: AsyncSession) -> Generator[Processor, None, None]:
     LOG.setLevel(default_log_level)
 
 
-def deploy_personal_info_contract(issuer_user: UnitTestAccount) -> str:
-    address = issuer_user["address"]
-    keyfile = issuer_user["keyfile_json"]
-    eoa_password = "password"
+@pytest.fixture(scope="function", autouse=True)
+def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Fixture to mock blockchain interactions for testing.
+    """
+    global _token_counter
+    _CHAIN.latest_block = 100
+    _CHAIN.transaction_index = 0
+    _token_counter = 0
+    _EVENTS.clear()
+    _TOKEN_EXCHANGES.clear()
+    _CONTRACT_ADDRESSES.clear()
+    _CONTRACT_ADDRESSES.update({EXCHANGE_ADDRESS, ESCROW_ADDRESS})
 
-    private_key = decode_keyfile_json(
-        raw_keyfile_json=keyfile, password=eoa_password.encode("utf-8")
-    )
-    contract_address, _, _ = ContractUtils.deploy_contract(
-        "PersonalInfo", [], address, private_key
-    )
-    return contract_address
+    monkeypatch.setattr(indexer_token_holders, "web3", FakeAsyncWeb3(_CHAIN))
+
+    async def get_event_logs(
+        contract: FakeContract,
+        event: str,
+        block_from: int,
+        block_to: int,
+        **kwargs: Any,
+    ) -> list[dict[str, Any]]:
+        return get_events(
+            contract.address,
+            event,
+            block_from,
+            block_to,
+            kwargs.get("argument_filters"),
+        )
+
+    async def get_token(self: Any):
+        self.tradable_exchange_contract_address = _TOKEN_EXCHANGES.get(
+            self.token_address, ZERO_ADDRESS
+        )
+        return self
+
+    def get_contract(contract_name: str, contract_address: str) -> FakeContract:
+        return FakeContract(to_checksum_address(contract_address))
+
+    monkeypatch.setattr(AsyncContractUtils, "get_event_logs", get_event_logs)
+    monkeypatch.setattr(AsyncContractUtils, "get_contract", get_contract)
+    monkeypatch.setattr(IbetStraightBondContract, "get", get_token)
+    monkeypatch.setattr(IbetShareContract, "get", get_token)
 
 
-async def deploy_bond_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
+@pytest.fixture(scope="function")
+def ibet_exchange_contract() -> FakeContract:
+    return FakeContract(EXCHANGE_ADDRESS)
+
+
+@pytest.fixture(scope="function")
+def ibet_security_token_escrow_contract() -> FakeContract:
+    return FakeContract(ESCROW_ADDRESS)
+
+
+async def create_fake_bond_token_contract(
     tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-) -> Contract:
-    arguments = [
-        "token.name",
-        "token.symbol",
-        100000000,
-        20,
-        "JPY",
-        "token.redemption_date",
-        30,
-        "JPY",
-        "token.return_date",
-        "token.return_amount",
-        "token.purpose",
-    ]
-    bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
-    await bond_contrat.update(
-        tx_params=IbetStraightBondUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
-    )
-
-    return ContractUtils.get_contract("IbetStraightBond", token_address)
+) -> FakeContract:
+    global _token_counter
+    _token_counter += 1
+    token_address = to_checksum_address(f"0x{0x700 + _token_counter:040x}")
+    _TOKEN_EXCHANGES[token_address] = tradable_exchange_contract_address or ZERO_ADDRESS
+    return FakeContract(token_address)
 
 
-async def deploy_share_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
+async def create_fake_share_token_contract(
     tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-) -> Contract:
-    arguments = [
-        "token.name",
-        "token.symbol",
-        20,
-        100000000,
-        3,
-        "token.dividend_record_date",
-        "token.dividend_payment_date",
-        "token.cancellation_date",
-        30,
-    ]
-    share_contract = IbetShareContract()
-    token_address, _, _ = await share_contract.create(arguments, address, private_key)
-    await share_contract.update(
-        tx_params=IbetShareUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
-    )
-
-    return ContractUtils.get_contract("IbetShare", token_address)
+) -> FakeContract:
+    global _token_counter
+    _token_counter += 1
+    token_address = to_checksum_address(f"0x{0x800 + _token_counter:040x}")
+    _TOKEN_EXCHANGES[token_address] = tradable_exchange_contract_address or ZERO_ADDRESS
+    return FakeContract(token_address)
 
 
 def token_holders_list(
@@ -271,33 +382,19 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -309,270 +406,121 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 30000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 30000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": exchange_contract.address, "value": 10000},
         )
         # user1: 30000 user2: 10000
 
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
-        )
-        IbetExchangeContractTestUtils.create_order(
+        # Record Exchange events
+        record_exchange_event(
             exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
             user_address_1,
-            user_pk_1,
-            [token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.cancel_order(
-            exchange_contract.address, user_address_1, user_pk_1, [latest_order_id]
-        )
-        # user1: 30000 user2: 10000
-
-        STContractUtils.transfer(
-            token_contract.address,
             user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
+            10000,
         )
-        IbetExchangeContractTestUtils.create_order(
+        record_exchange_event(
             exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
             user_address_1,
-            user_pk_1,
-            [token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.force_cancel_order(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id],
-        )
-        # user1: 30000 user2: 10000
-
-        STContractUtils.transfer(
-            token_contract.address,
             user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
+            10000,
         )
-        IbetExchangeContractTestUtils.create_order(
+        record_exchange_event(
             exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
             user_address_1,
-            user_pk_1,
-            [token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
             user_address_2,
-            user_pk_2,
-            [latest_order_id, 10000, True],
+            10000,
         )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.confirm_agreement(
+        record_exchange_event(
             exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
-        )
-        # user1: 20000 user2: 20000
-
-        STContractUtils.transfer(
-            token_contract.address,
+            "HolderChanged",
+            token_address_1,
             user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 4000],
+            user_address_1,
+            4000,
         )
-        IbetExchangeContractTestUtils.create_order(
+        record_exchange_event(
             exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
+            user_address_1,
             user_address_2,
-            user_pk_2,
-            [token_contract.address, 4000, 100, True, issuer_address],
+            4000,
         )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
-            user_address_1,
-            user_pk_1,
-            [latest_order_id, 4000, False],
-        )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.cancel_agreement(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
-        )
-        # user1: 20000 user2: 20000
 
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 4000],
+        # Record Issue, Redeem, and Lock events
+        record_token_event(
+            token_address_1,
+            "Issue",
+            {
+                "targetAddress": issuer_address,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 40000,
+            },
         )
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address,
-            user_address_2,
-            user_pk_2,
-            [token_contract.address, 4000, 100, True, issuer_address],
+        record_token_event(
+            token_address_1,
+            "Redeem",
+            {
+                "targetAddress": user_address_2,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 10000,
+            },
         )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
+        record_token_event(
+            token_address_1,
+            "Issue",
+            {
+                "targetAddress": user_address_2,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 30000,
+            },
         )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
-            user_address_1,
-            user_pk_1,
-            [latest_order_id, 4000, False],
+        record_token_event(
+            token_address_1,
+            "Redeem",
+            {
+                "targetAddress": issuer_address,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 10000,
+            },
         )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.confirm_agreement(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
-        )
-        # user1: 16000 user2: 24000
-
-        STContractUtils.issue_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ZERO_ADDRESS, 40000],
-        )
-        STContractUtils.redeem_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, ZERO_ADDRESS, 10000],
-        )
-        # user1: 16000 user2: 14000
-
-        STContractUtils.issue_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, ZERO_ADDRESS, 30000],
-        )
-        STContractUtils.redeem_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ZERO_ADDRESS, 10000],
-        )
-        # user1: 16000 user2: 44000
-
-        STContractUtils.lock(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, 3000, ""],
+        record_token_event(
+            token_address_1,
+            "Lock",
+            {"accountAddress": user_address_1, "value": 3000},
         )
         # user1: (hold: 13000, locked: 3000) user2: 44000
 
         # Issuer issues other token to create exchange event
-        other_token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        other_token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
-        STContractUtils.transfer(
-            other_token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 10000],
-        )
-        STContractUtils.transfer(
+        record_exchange_event(
+            exchange_contract.address,
+            "HolderChanged",
             other_token_contract.address,
             user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
-        )
-        STContractUtils.transfer(
-            other_token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
-        )
-
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address,
-            user_address_1,
-            user_pk_1,
-            [other_token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
             user_address_2,
-            user_pk_2,
-            [latest_order_id, 10000, True],
-        )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.confirm_agreement(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
+            10000,
         )
 
         # Insert collection record with above token and current block number
@@ -584,14 +532,6 @@ class TestProcessor:
         async_db.add(_token_holders_list)
         await async_db.commit()
         token_holders_list_id = _token_holders_list.id
-
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
 
         # Then execute processor.
         await processor.collect()
@@ -633,32 +573,18 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_security_token_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -670,139 +596,82 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [ibet_security_token_escrow_contract.address, 10000],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {
+                "from": user_address_1,
+                "to": ibet_security_token_escrow_contract.address,
+                "value": 10000,
+            },
         )
         # user1: 20000 user2: 0
 
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [True]
-        )
-        STContractUtils.apply_for_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 10000, "to user1#1"],
-        )
-        STContractUtils.apply_for_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000, "to user2#1"],
-        )
-
-        STContractUtils.cancel_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [0, "to user1#1"],
-        )
-        STContractUtils.approve_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [1, "to user2#1"],
+        # Record additional Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
         )
         # user1: 20000 user2: 10000
 
-        STEscrowContractUtils.create_escrow(
+        # Record Exchange events
+        record_exchange_event(
             ibet_security_token_escrow_contract.address,
+            "HolderChanged",
+            token_address_1,
             user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 7000, issuer_address, "", ""],
-        )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(
-            ibet_security_token_escrow_contract.address
-        )
-        STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id],
-        )
-        STEscrowContractUtils.approve_transfer(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id, ""],
+            user_address_2,
+            7000,
         )
         # user1: 13000 user2: 17000
 
-        STEscrowContractUtils.create_escrow(
-            ibet_security_token_escrow_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 2000, issuer_address, "", ""],
+        # Record Lock, ForceLock, Unlock, ForceUnlock, and ForceChangeLockedAccount events
+        record_token_event(
+            token_address_1,
+            "Lock",
+            {"accountAddress": user_address_1, "value": 2000},
         )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(
-            ibet_security_token_escrow_contract.address
+        record_token_event(
+            token_address_1,
+            "ForceLock",
+            {"accountAddress": user_address_1, "value": 2000},
         )
-        STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id],
+        record_token_event(
+            token_address_1,
+            "Unlock",
+            {
+                "accountAddress": user_address_1,
+                "recipientAddress": user_address_2,
+                "value": 1500,
+            },
+        )
+        record_token_event(
+            token_address_1,
+            "ForceUnlock",
+            {
+                "accountAddress": user_address_1,
+                "recipientAddress": user_address_2,
+                "value": 1500,
+            },
+        )
+        record_token_event(
+            token_address_1,
+            "ForceChangeLockedAccount",
+            {
+                "beforeAccountAddress": user_address_1,
+                "afterAccountAddress": user_address_2,
+                "value": 500,
+            },
         )
         # user1: 13000 user2: 17000
 
-        STContractUtils.lock(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, 2000, ""],
-        )
-        STContractUtils.force_lock(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, user_address_1, 2000, ""],
-        )
-        STContractUtils.unlock(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, user_address_2, 1500, ""],
-        )
-        STContractUtils.force_unlock(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, user_address_1, user_address_2, 1500, ""],
-        )
-        STContractUtils.force_change_locked_account(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, user_address_1, user_address_2, 500, ""],
-        )
         # user1: 9000 user2: 20000
         # user1(locked): 500, user2(locked): 500
 
@@ -815,17 +684,6 @@ class TestProcessor:
         async_db.add(_token_holders_list)
         await async_db.commit()
         token_holders_list_id = _token_holders_list.id
-
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [False]
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
 
         # Then execute processor.
         await processor.collect()
@@ -857,32 +715,18 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_security_token_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -894,83 +738,39 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
+        )
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {
+                "from": user_address_1,
+                "to": ibet_security_token_escrow_contract.address,
+                "value": 10000,
+            },
+        )
+        # user1: 20000 user2: 10000
+
+        # Pending approval does not change holder balances.
+        # user1: 20000 user2: 10000
+
+        # Record Exchange events
+        record_exchange_event(
+            ibet_security_token_escrow_contract.address,
+            "HolderChanged",
+            token_address_1,
+            user_address_1,
             user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [ibet_security_token_escrow_contract.address, 10000],
-        )
-        # user1: 20000 user2: 10000
-
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [True]
-        )
-        STContractUtils.apply_for_transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [user_address_2, 10000, "to user2#1"],
-        )
-        # user1: 20000 user2: 10000
-
-        STEscrowContractUtils.create_escrow(
-            ibet_security_token_escrow_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 7000, issuer_address, "", ""],
-        )
-        STEscrowContractUtils.create_escrow(
-            ibet_security_token_escrow_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 3000, issuer_address, "", ""],
-        )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(
-            ibet_security_token_escrow_contract.address
-        )
-
-        STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id],
-        )
-        STEscrowContractUtils.approve_transfer(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id, ""],
+            3000,
         )
         # user1: 17000 user2: 13000
 
@@ -983,17 +783,6 @@ class TestProcessor:
         async_db.add(_token_holders_list)
         await async_db.commit()
         token_holders_list_id = _token_holders_list.id
-
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [False]
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
 
         # Then execute processor.
         await processor.collect()
@@ -1030,33 +819,19 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues share token.
-        token_contract = await deploy_share_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_share_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -1068,284 +843,135 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
+        )
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": exchange_contract.address, "value": 10000},
+        )
+        # user1: 20000 user2: 10000
+
+        # Record Exchange events
+        record_exchange_event(
+            exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
+            user_address_1,
+            user_address_1,
+            10000,
+        )
+        # user1: 20000 user2: 10000
+
+        record_exchange_event(
+            exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
+            user_address_1,
+            user_address_1,
+            10000,
+        )
+        # user1: 20000 user2: 10000
+
+        record_exchange_event(
+            exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
+            user_address_1,
             user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
-        )
-        # user1: 20000 user2: 10000
-
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
-        )
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.cancel_order(
-            exchange_contract.address, user_address_1, user_pk_1, [latest_order_id]
-        )
-        # user1: 20000 user2: 10000
-
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
-        )
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.force_cancel_order(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id],
-        )
-        # user1: 20000 user2: 10000
-
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
-        )
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
-            user_address_2,
-            user_pk_2,
-            [latest_order_id, 10000, True],
-        )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.confirm_agreement(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
+            10000,
         )
         # user1: 10000 user2: 20000
 
-        STContractUtils.transfer(
-            token_contract.address,
+        record_exchange_event(
+            exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
             user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 4000],
-        )
-        IbetExchangeContractTestUtils.create_order(
-            exchange_contract.address,
-            user_address_2,
-            user_pk_2,
-            [token_contract.address, 4000, 100, True, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
             user_address_1,
-            user_pk_1,
-            [latest_order_id, 4000, False],
-        )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.cancel_agreement(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
+            4000,
         )
         # user1: 10000 user2: 20000
 
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 4000],
-        )
-        IbetExchangeContractTestUtils.create_order(
+        record_exchange_event(
             exchange_contract.address,
+            "HolderChanged",
+            token_address_1,
+            user_address_1,
             user_address_2,
-            user_pk_2,
-            [token_contract.address, 4000, 100, True, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
-            user_address_1,
-            user_pk_1,
-            [latest_order_id, 4000, False],
-        )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.confirm_agreement(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
+            4000,
         )
         # user1: 6000 user2: 24000
 
-        STContractUtils.issue_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ZERO_ADDRESS, 40000],
+        # Record Issue and Redeem events
+        record_token_event(
+            token_address_1,
+            "Issue",
+            {
+                "targetAddress": issuer_address,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 40000,
+            },
         )
-        STContractUtils.redeem_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, ZERO_ADDRESS, 10000],
+        record_token_event(
+            token_address_1,
+            "Redeem",
+            {
+                "targetAddress": user_address_2,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 10000,
+            },
         )
         # user1: 6000 user2: 14000
 
-        STContractUtils.issue_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, ZERO_ADDRESS, 30000],
+        record_token_event(
+            token_address_1,
+            "Issue",
+            {
+                "targetAddress": user_address_2,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 30000,
+            },
         )
-        STContractUtils.redeem_from(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ZERO_ADDRESS, 10000],
+        record_token_event(
+            token_address_1,
+            "Redeem",
+            {
+                "targetAddress": issuer_address,
+                "lockAddress": ZERO_ADDRESS,
+                "amount": 10000,
+            },
         )
         # user1: 6000 user2: 44000
 
-        STContractUtils.lock(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, 3000, ""],
+        # Record Lock event
+        record_token_event(
+            token_address_1,
+            "Lock",
+            {"accountAddress": user_address_1, "value": 3000},
         )
         # user1: (hold: 3000, locked: 3000) user2: 44000
 
         # Issuer issues other token to create exchange event
-        other_token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        other_token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
-
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            other_token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 10000],
-        )
-        STContractUtils.transfer(
-            other_token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [exchange_contract.address, 10000],
-        )
-        STContractUtils.transfer(
-            other_token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
-        )
-
-        IbetExchangeContractTestUtils.create_order(
+        record_exchange_event(
             exchange_contract.address,
+            "HolderChanged",
+            other_token_contract.address,
             user_address_1,
-            user_pk_1,
-            [other_token_contract.address, 10000, 100, False, issuer_address],
-        )
-        latest_order_id = IbetExchangeContractTestUtils.get_latest_order_id(
-            exchange_contract.address
-        )
-        IbetExchangeContractTestUtils.execute_order(
-            exchange_contract.address,
             user_address_2,
-            user_pk_2,
-            [latest_order_id, 10000, True],
-        )
-        latest_agreement_id = IbetExchangeContractTestUtils.get_latest_agreementid(
-            exchange_contract.address, latest_order_id
-        )
-        IbetExchangeContractTestUtils.confirm_agreement(
-            exchange_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_order_id, latest_agreement_id],
+            10000,
         )
 
         # Insert collection record with above token and current block number
@@ -1357,14 +983,6 @@ class TestProcessor:
         async_db.add(_token_holders_list)
         await async_db.commit()
         token_holders_list_id = _token_holders_list.id
-
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
 
         # Then execute processor.
         await processor.collect()
@@ -1406,32 +1024,18 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_security_token_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues share token.
-        token_contract = await deploy_share_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_share_token_contract(
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -1443,139 +1047,81 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [ibet_security_token_escrow_contract.address, 10000],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {
+                "from": user_address_1,
+                "to": ibet_security_token_escrow_contract.address,
+                "value": 10000,
+            },
         )
         # user1: 20000 user2: 0
 
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [True]
-        )
-        STContractUtils.apply_for_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 10000, "to user1#1"],
-        )
-        STContractUtils.apply_for_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000, "to user2#1"],
-        )
-
-        STContractUtils.cancel_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [0, "to user1#1"],
-        )
-        STContractUtils.approve_transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [1, "to user2#1"],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
         )
         # user1: 20000 user2: 10000
 
-        STEscrowContractUtils.create_escrow(
+        # Record Exchange events
+        record_exchange_event(
             ibet_security_token_escrow_contract.address,
+            "HolderChanged",
+            token_address_1,
             user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 7000, issuer_address, "", ""],
-        )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(
-            ibet_security_token_escrow_contract.address
-        )
-        STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id],
-        )
-        STEscrowContractUtils.approve_transfer(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id, ""],
+            user_address_2,
+            7000,
         )
         # user1: 13000 user2: 17000
 
-        STEscrowContractUtils.create_escrow(
-            ibet_security_token_escrow_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 2000, issuer_address, "", ""],
+        # Record Lock, ForceLock, Unlock, ForceUnlock, and ForceChangeLockedAccount events
+        record_token_event(
+            token_address_1,
+            "Lock",
+            {"accountAddress": user_address_1, "value": 2000},
         )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(
-            ibet_security_token_escrow_contract.address
+        record_token_event(
+            token_address_1,
+            "ForceLock",
+            {"accountAddress": user_address_1, "value": 2000},
         )
-        STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id],
+        record_token_event(
+            token_address_1,
+            "Unlock",
+            {
+                "accountAddress": user_address_1,
+                "recipientAddress": user_address_2,
+                "value": 1500,
+            },
+        )
+        record_token_event(
+            token_address_1,
+            "ForceUnlock",
+            {
+                "accountAddress": user_address_1,
+                "recipientAddress": user_address_2,
+                "value": 1500,
+            },
+        )
+        record_token_event(
+            token_address_1,
+            "ForceChangeLockedAccount",
+            {
+                "beforeAccountAddress": user_address_1,
+                "afterAccountAddress": user_address_2,
+                "value": 500,
+            },
         )
         # user1: 13000 user2: 17000
 
-        STContractUtils.lock(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, 2000, ""],
-        )
-        STContractUtils.force_lock(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, user_address_1, 2000, ""],
-        )
-        STContractUtils.unlock(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, user_address_2, 1500, ""],
-        )
-        STContractUtils.force_unlock(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, user_address_1, user_address_2, 1500, ""],
-        )
-        STContractUtils.force_change_locked_account(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, user_address_1, user_address_2, 500, ""],
-        )
         # user1: 9000, user2: 20000
         # user1(locked): 500, user2(locked): 500
 
@@ -1588,17 +1134,6 @@ class TestProcessor:
         async_db.add(_token_holders_list)
         await async_db.commit()
         token_holders_list_id = _token_holders_list.id
-
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [False]
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
 
         # Then execute processor.
         await processor.collect()
@@ -1630,32 +1165,18 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_security_token_escrow_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues share token.
-        token_contract = await deploy_share_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_share_token_contract(
             tradable_exchange_contract_address=ibet_security_token_escrow_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -1667,84 +1188,39 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
+        )
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {
+                "from": user_address_1,
+                "to": ibet_security_token_escrow_contract.address,
+                "value": 10000,
+            },
+        )
+        # user1: 20000 user2: 10000
+
+        # Pending approval does not change holder balances.
+        # user1: 20000 user2: 10000
+
+        # Record Exchange events
+        record_exchange_event(
+            ibet_security_token_escrow_contract.address,
+            "HolderChanged",
+            token_address_1,
+            user_address_1,
             user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [ibet_security_token_escrow_contract.address, 10000],
-        )
-        # user1: 20000 user2: 10000
-
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [True]
-        )
-        STContractUtils.apply_for_transfer(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [user_address_2, 10000, "to user2#1"],
-        )
-        # user1: 20000 user2: 10000
-
-        STEscrowContractUtils.create_escrow(
-            ibet_security_token_escrow_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 7000, issuer_address, "", ""],
-        )
-        # user1: 20000 user2: 10000
-        STEscrowContractUtils.create_escrow(
-            ibet_security_token_escrow_contract.address,
-            user_address_1,
-            user_pk_1,
-            [token_contract.address, user_address_2, 3000, issuer_address, "", ""],
-        )
-        latest_security_escrow_id = STEscrowContractUtils.get_latest_escrow_id(
-            ibet_security_token_escrow_contract.address
-        )
-
-        STEscrowContractUtils.finish_escrow(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id],
-        )
-        STEscrowContractUtils.approve_transfer(
-            ibet_security_token_escrow_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [latest_security_escrow_id, ""],
+            3000,
         )
         # user1: 17000 user2: 13000
 
@@ -1757,17 +1233,6 @@ class TestProcessor:
         async_db.add(_token_holders_list)
         await async_db.commit()
         token_holders_list_id = _token_holders_list.id
-
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.set_transfer_approve_required(
-            token_contract.address, issuer_address, issuer_private_key, [False]
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
 
         # Then execute processor.
         await processor.collect()
@@ -1797,7 +1262,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1811,27 +1275,14 @@ class TestProcessor:
 
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -1843,25 +1294,6 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())
         block_number = web3.eth.block_number
@@ -1872,23 +1304,21 @@ class TestProcessor:
         await async_db.commit()
         token_holders_list1_id = _token_holders_list1.list_id
 
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
         )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": exchange_contract.address, "value": 10000},
         )
 
         # Insert collection record with above token and current block number
@@ -1922,7 +1352,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -1930,27 +1359,14 @@ class TestProcessor:
 
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -1962,48 +1378,28 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": exchange_contract.address, "value": 10000},
         )
 
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
-        )
-        STContractUtils.lock(
-            token_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, 10000, ""],
+        # Record Lock event
+        record_token_event(
+            token_address_1,
+            "Lock",
+            {"accountAddress": user_address_1, "value": 10000},
         )
 
         # Insert collection record with above token and current block number
@@ -2019,29 +1415,31 @@ class TestProcessor:
         await processor.collect()
         async_db.expire_all()
 
-        STContractUtils.unlock(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, user_address_2, 10000, ""],
+        # Record Unlock event
+        record_token_event(
+            token_address_1,
+            "Unlock",
+            {
+                "accountAddress": user_address_1,
+                "recipientAddress": user_address_2,
+                "value": 10000,
+            },
         )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 20000},
         )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 10000],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 10000},
         )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": exchange_contract.address, "value": 10000},
         )
 
         # Insert collection record with above token and current block number
@@ -2082,36 +1480,19 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
     ):
         exchange_contract = ibet_exchange_contract
         _user_1 = default_eth_account("user1")
         issuer_address = _user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_user_1["keyfile_json"],
-            password="password".encode("utf-8"),
-        )
         _user_2 = default_eth_account("user2")
         user_address_1 = _user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=_user_2["keyfile_json"],
-            password="password".encode("utf-8"),
-        )
         _user_3 = default_eth_account("user3")
         user_address_2 = _user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=_user_3["keyfile_json"],
-            password="password".encode("utf-8"),
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -2123,43 +1504,26 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
+        # Record Transfer events
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 30000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": user_address_1, "to": issuer_address, "value": 30000},
         )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 30000},
         )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 30000],
-        )
-        STContractUtils.transfer(
-            token_contract.address, user_address_1, user_pk_1, [issuer_address, 30000]
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 30000],
-        )
-        STContractUtils.transfer(
-            token_contract.address, user_address_2, user_pk_2, [issuer_address, 30000]
+        record_token_event(
+            token_address_1,
+            "Transfer",
+            {"from": user_address_2, "to": issuer_address, "value": 30000},
         )
         # user1: 0 user2: 0
 
@@ -2181,20 +1545,6 @@ class TestProcessor:
         async_db.add(former_holder)
 
         await async_db.commit()
-
-        # Issuer transfers issued token to user1 again to proceed block_number on chain.
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_2, 20000],
-        )
 
         # Then execute processor.
         await processor.collect()
@@ -2220,7 +1570,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2230,18 +1579,10 @@ class TestProcessor:
 
         _user_1 = default_eth_account("user1")
         issuer_address = _user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=_user_1["keyfile_json"],
-            password="password".encode("utf-8"),
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -2271,11 +1612,7 @@ class TestProcessor:
         target_holders_list_id = target_holders_list.id
 
         # Setting stored index to 9,999,999
-        with patch(
-            "app.utils.ibet_contract_utils.AsyncContractUtils.get_event_logs",
-            new=AsyncMock(return_value=[]),
-        ):
-            await processor.collect()
+        await processor.collect()
         async_db.expire_all()
 
         # Then processor call "__process_all" method 10 times.
@@ -2328,7 +1665,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2347,7 +1683,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
@@ -2391,34 +1726,16 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         ibet_exchange_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         exchange_contract = ibet_exchange_contract
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
-        user_2 = default_eth_account("user2")
-        user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
-        user_3 = default_eth_account("user3")
-        user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Issuer issues bond token.
-        token_contract = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
+        token_contract = await create_fake_bond_token_contract(
             tradable_exchange_contract_address=exchange_contract.address,
-            transfer_approval_required=False,
         )
         token_address_1 = token_contract.address
         token_1 = Token()
@@ -2429,38 +1746,6 @@ class TestProcessor:
         token_1.tx_hash = "tx_hash"
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
-
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [user_address_1, 20000],
-        )
-        STContractUtils.transfer(
-            token_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [exchange_contract.address, 10000],
-        )
 
         # Insert collection record with above token and current block number
         list_id = str(uuid.uuid4())

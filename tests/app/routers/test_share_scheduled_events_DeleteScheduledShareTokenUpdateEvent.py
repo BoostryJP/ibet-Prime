@@ -1,0 +1,358 @@
+"""
+Copyright BOOSTRY Co., Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+
+You may obtain a copy of the License at
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+See the License for the specific language governing permissions and
+limitations under the License.
+
+SPDX-License-Identifier: Apache-2.0
+"""
+
+import uuid
+from datetime import UTC, datetime
+
+import pytest
+import pytz
+from httpx import AsyncClient
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.model.db import (
+    Account,
+    AccountRsaStatus,
+    ScheduledEvents,
+    ScheduledEventType,
+    TokenType,
+)
+from app.model.db.scheduled_events import ScheduledEventStatus
+from app.utils.e2ee_utils import E2EEUtils
+from config import TZ
+from tests.account_config import default_eth_account
+
+
+class TestDeleteScheduledShareTokenUpdateEvent:
+    # target API endpoint
+    base_url = "/share/tokens/{}/scheduled_events/{}"
+    local_tz = pytz.timezone(TZ)
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+
+    # <Normal_1>
+    # soft_delete = False (default)
+    @pytest.mark.asyncio
+    async def test_normal_1(self, async_client: AsyncClient, async_db: AsyncSession):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
+        datetime_now_str = (
+            pytz.timezone("UTC")
+            .localize(datetime_now_utc)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
+        data = {
+            "cancellation_date": "20221231",
+            "dividends": 345.67,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "is_canceled": False,
+            "memo": "memo_test1",
+        }
+        event_id = str(uuid.uuid4())
+
+        token_event = ScheduledEvents()
+        token_event.event_id = event_id
+        token_event.issuer_address = _issuer_address
+        token_event.token_address = _token_address
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc
+        token_event.status = ScheduledEventStatus.PROCESSING
+        token_event.data = data
+        token_event.created = datetime_now_utc
+        async_db.add(token_event)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.delete(
+            self.base_url.format(_token_address, event_id),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "scheduled_event_id": event_id,
+            "token_address": _token_address,
+            "token_type": TokenType.IBET_SHARE,
+            "scheduled_datetime": datetime_now_str,
+            "event_type": ScheduledEventType.UPDATE,
+            "status": 0,
+            "data": data,
+            "created": datetime_now_str,
+            "is_soft_deleted": False,
+        }
+        token_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.event_id == event_id)
+                .limit(1)
+            )
+        ).first()
+        assert token_event is None
+
+    # <Normal_2>
+    # soft_delete = True
+    @pytest.mark.asyncio
+    async def test_normal_2(self, async_client: AsyncClient, async_db: AsyncSession):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        datetime_now_utc = datetime.now(UTC).replace(tzinfo=None)
+        datetime_now_str = (
+            pytz.timezone("UTC")
+            .localize(datetime_now_utc)
+            .astimezone(self.local_tz)
+            .isoformat()
+        )
+        data = {
+            "cancellation_date": "20221231",
+            "dividends": 345.67,
+            "dividend_record_date": "20211231",
+            "dividend_payment_date": "20211231",
+            "tradable_exchange_contract_address": "0xe883A6f441Ad5682d37DF31d34fc012bcB07A740",
+            "personal_info_contract_address": "0xa4CEe3b909751204AA151860ebBE8E7A851c2A1a",
+            "transferable": False,
+            "status": False,
+            "is_offering": False,
+            "contact_information": "問い合わせ先test",
+            "privacy_policy": "プライバシーポリシーtest",
+            "is_canceled": False,
+            "memo": "memo_test1",
+        }
+        event_id = str(uuid.uuid4())
+
+        token_event = ScheduledEvents()
+        token_event.event_id = event_id
+        token_event.issuer_address = _issuer_address
+        token_event.token_address = _token_address
+        token_event.token_type = TokenType.IBET_SHARE
+        token_event.event_type = ScheduledEventType.UPDATE
+        token_event.scheduled_datetime = datetime_now_utc
+        token_event.status = ScheduledEventStatus.PROCESSING
+        token_event.data = data
+        token_event.created = datetime_now_utc
+        async_db.add(token_event)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.delete(
+            self.base_url.format(_token_address, event_id),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+            params={"soft_delete": True},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "scheduled_event_id": event_id,
+            "token_address": _token_address,
+            "token_type": TokenType.IBET_SHARE,
+            "scheduled_datetime": datetime_now_str,
+            "event_type": ScheduledEventType.UPDATE,
+            "status": 0,
+            "data": data,
+            "created": datetime_now_str,
+            "is_soft_deleted": True,
+        }
+        token_event = (
+            await async_db.scalars(
+                select(ScheduledEvents)
+                .where(ScheduledEvents.event_id == event_id)
+                .limit(1)
+            )
+        ).first()
+        assert token_event is not None
+        assert token_event.is_soft_deleted is True
+
+    #########################################################################
+    # Error Case
+    ###########################################################################
+
+    # <Error_1>
+    # RequestValidationError
+    # invalid issuer_address, password not encrypted
+    @pytest.mark.asyncio
+    async def test_error_1(self, async_client: AsyncClient, async_db: AsyncSession):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "token_address_test"
+
+        # request target API
+        resp = await async_client.delete(
+            self.base_url.format(_token_address, "test_event_id"),
+            headers={
+                "issuer-address": _issuer_address[:-1],  # too short
+                "eoa-password": "password",  # not encrypted
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 422
+        assert resp.json()["meta"] == {"code": 1, "title": "RequestValidationError"}
+        assert resp.json()["detail"] == [
+            {
+                "input": _issuer_address[:-1],
+                "loc": ["header", "issuer-address"],
+                "msg": "issuer-address is not a valid address",
+                "type": "value_error",
+            },
+            {
+                "input": "password",
+                "loc": ["header", "eoa-password"],
+                "msg": "eoa-password is not a Base64-encoded encrypted data",
+                "type": "value_error",
+            },
+        ]
+
+    # <Error_2>
+    # AuthorizationError
+    # issuer_address does not exists
+    @pytest.mark.asyncio
+    async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _token_address = "token_address_test"
+
+        # request target API
+        resp = await async_client.delete(
+            self.base_url.format(_token_address, "test_event_id"),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json()["meta"] == {"code": 1, "title": "AuthorizationError"}
+        assert resp.json()["detail"] == "issuer does not exist, or password mismatch"
+
+    # <Error_3>
+    # AuthorizationError
+    # password mismatch
+    @pytest.mark.asyncio
+    async def test_error_3(self, async_client: AsyncClient, async_db: AsyncSession):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.delete(
+            self.base_url.format(_token_address, "test_event_id"),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("mismatch_password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 401
+        assert resp.json()["meta"] == {"code": 1, "title": "AuthorizationError"}
+        assert resp.json()["detail"] == "issuer does not exist, or password mismatch"
+
+    # <Error_4>
+    # NotFound
+    # event not found
+    @pytest.mark.asyncio
+    async def test_error_4(self, async_client: AsyncClient, async_db: AsyncSession):
+        test_account = default_eth_account("user1")
+        _issuer_address = test_account["address"]
+        _keyfile = test_account["keyfile_json"]
+        _token_address = "token_address_test"
+
+        # prepare data
+        account = Account()
+        account.rsa_status = AccountRsaStatus.UNSET.value
+        account.is_deleted = False
+        account.issuer_address = _issuer_address
+        account.keyfile = _keyfile
+        account.eoa_password = E2EEUtils.encrypt("password")
+        async_db.add(account)
+
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.delete(
+            self.base_url.format(_token_address, "test_event_id"),
+            headers={
+                "issuer-address": _issuer_address,
+                "eoa-password": E2EEUtils.encrypt("password"),
+            },
+        )
+
+        # assertion
+        assert resp.status_code == 404
+        assert resp.json()["meta"] == {"code": 1, "title": "NotFound"}
+        assert resp.json()["detail"] == "event not found"

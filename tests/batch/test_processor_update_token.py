@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -31,6 +29,7 @@ from app.exceptions import SendTransactionError
 from app.model.db import (
     UTXO,
     Account,
+    AccountRsaStatus,
     IDXPosition,
     Notification,
     NotificationType,

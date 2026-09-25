@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -33,6 +31,7 @@ from web3.datastructures import AttributeDict
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     Notification,
     NotificationType,
     ScheduledEvents,

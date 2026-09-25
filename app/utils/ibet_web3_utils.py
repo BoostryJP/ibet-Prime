@@ -27,7 +27,7 @@ from weakref import WeakKeyDictionary
 
 from aiohttp import ClientError, ClientTimeout
 from eth_typing import URI
-from requests.exceptions import ConnectionError, HTTPError
+from requests.exceptions import ConnectionError, HTTPError, Timeout as RequestsTimeout
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
@@ -55,6 +55,13 @@ LOG = log.get_logger()
 # do not accidentally share the same provider/session.
 AsyncWeb3TimeoutKey = tuple[Any, Any, Any, Any]
 AsyncWeb3CacheMap = dict[AsyncWeb3TimeoutKey, AsyncWeb3[Any]]
+_SYNC_RETRYABLE_RPC_EXCEPTIONS = (
+    ConnectionError,
+    HTTPError,
+    RequestsTimeout,
+    JSONDecodeError,
+)
+_ASYNC_RETRYABLE_RPC_EXCEPTIONS = (ClientError, TimeoutError, JSONDecodeError)
 
 
 class Web3Wrapper:
@@ -247,7 +254,7 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
                     self.endpoint_uri = cached_endpoint_uri
                     try:
                         return super().make_request(method, params)
-                    except ConnectionError, JSONDecodeError, HTTPError:
+                    except _SYNC_RETRYABLE_RPC_EXCEPTIONS:
                         self._clear_cached_endpoint_uri()
                         failed_endpoint_uris.add(cached_endpoint_uri)
                         LOG.warning(
@@ -273,7 +280,7 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
                     self.endpoint_uri = endpoint_uri
                     try:
                         return super().make_request(method, params)
-                    except ConnectionError, JSONDecodeError, HTTPError:
+                    except _SYNC_RETRYABLE_RPC_EXCEPTIONS:
                         # NOTE:
                         #  JSONDecodeError will be raised if a request is sent
                         #  while Quorum is terminating.
@@ -353,7 +360,7 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                     self.endpoint_uri = cached_endpoint_uri
                     try:
                         return await super().make_request(method, params)
-                    except ClientError, JSONDecodeError:
+                    except _ASYNC_RETRYABLE_RPC_EXCEPTIONS:
                         self._clear_cached_endpoint_uri()
                         failed_endpoint_uris.add(cached_endpoint_uri)
                         LOG.warning(
@@ -379,7 +386,7 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
                     self.endpoint_uri = endpoint_uri
                     try:
                         return await super().make_request(method, params)
-                    except ClientError, JSONDecodeError:
+                    except _ASYNC_RETRYABLE_RPC_EXCEPTIONS:
                         # NOTE:
                         #  JSONDecodeError will be raised if a request is sent
                         #  while Quorum is terminating.

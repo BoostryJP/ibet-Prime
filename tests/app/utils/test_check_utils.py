@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -29,7 +27,7 @@ from freezegun.api import FrozenDateTimeFactory
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import AuthorizationError
-from app.model.db import Account, AuthToken
+from app.model.db import Account, AccountRsaStatus, AuthToken
 from app.utils.check_utils import check_auth
 from app.utils.e2ee_utils import E2EEUtils
 from tests.account_config import default_eth_account

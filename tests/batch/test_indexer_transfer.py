@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -22,23 +20,23 @@ SPDX-License-Identifier: Apache-2.0
 import json
 import logging
 from datetime import UTC, datetime
-from typing import Iterator
+from typing import Any, Iterator, cast
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from eth_keyfile.keyfile import decode_keyfile_json
+from eth_utils.address import to_checksum_address
+from hexbytes import HexBytes
 from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
-from web3.contract import Contract
-from web3.middleware import ExtraDataToPOAMiddleware
 from web3.types import TxReceipt
 
+import batch.indexer_transfer as indexer_transfer
 from app.exceptions import ServiceUnavailableError
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     IDXTransfer,
     IDXTransferBlockNumber,
     IDXTransferSourceEventType,
@@ -47,23 +45,154 @@ from app.model.db import (
     TokenType,
     TokenVersion,
 )
-from app.model.ibet import IbetShareContract, IbetStraightBondContract
-from app.model.ibet.tx_params.ibet_share import (
-    UpdateParams as IbetShareUpdateParams,
-)
-from app.model.ibet.tx_params.ibet_straight_bond import (
-    UpdateParams as IbetStraightBondUpdateParams,
-)
 from app.utils.e2ee_utils import E2EEUtils
-from app.utils.ibet_contract_utils import ContractUtils
-from app.utils.ibet_web3_utils import AsyncWeb3Wrapper
+from app.utils.ibet_contract_utils import AsyncContractUtils
 from batch.indexer_transfer import LOG, Processor, main
-from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
-from tests.contract_utils import PersonalInfoContractTestUtils
 
-web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+
+class FakeChain:
+    def __init__(self) -> None:
+        self.latest_block = 100
+        self.transaction_index = 0
+
+    def mine(self) -> int:
+        self.latest_block += 1
+        self.transaction_index += 1
+        return self.latest_block
+
+
+class FakeContract:
+    def __init__(self, address: str) -> None:
+        self.address = address
+        self.abi: dict[str, Any] = {}
+        self.events = MagicMock()
+
+
+class FakeAsyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    @property
+    def block_number(self):
+        return self._get_block_number()
+
+    async def _get_block_number(self) -> int:
+        return self.chain.latest_block
+
+    def contract(self, address: str, abi: Any) -> FakeContract:
+        return FakeContract(address)
+
+    async def get_block(self, block_number: int) -> dict[str, int]:
+        return {"timestamp": 1_700_000_000 + block_number}
+
+
+class FakeAsyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeAsyncEth(chain)
+
+
+class FakeSyncEth:
+    def __init__(self, chain: FakeChain) -> None:
+        self.chain = chain
+
+    @property
+    def block_number(self) -> int:
+        return self.chain.latest_block
+
+    def get_block(self, block_number: int) -> dict[str, int]:
+        return {"timestamp": 1_700_000_000 + block_number}
+
+
+class FakeSyncWeb3:
+    def __init__(self, chain: FakeChain) -> None:
+        self.eth = FakeSyncEth(chain)
+
+
+_CHAIN = FakeChain()
+web3 = FakeSyncWeb3(_CHAIN)
+_EVENTS: dict[tuple[str, str], list[dict[str, Any]]] = {}
+_TRANSACTIONS: dict[str, HexBytes] = {}
+_token_counter = 0
+
+
+def get_events(
+    contract_address: str,
+    event_name: str,
+    block_from: int,
+    block_to: int,
+) -> list[dict[str, Any]]:
+    return [
+        event
+        for event in _EVENTS.get((contract_address, event_name), [])
+        if block_from <= event["blockNumber"] <= block_to
+    ]
+
+
+def add_event(
+    contract_address: str,
+    event_name: str,
+    transaction_hash: str,
+    block_number: int,
+    args: dict[str, Any],
+    log_index: int = 0,
+) -> None:
+    _EVENTS.setdefault((contract_address, event_name), []).append(
+        {
+            "event": event_name,
+            "transactionHash": HexBytes(transaction_hash),
+            "blockNumber": block_number,
+            "logIndex": log_index,
+            "args": args,
+        }
+    )
+
+
+def _record_event_transaction(transaction_input: str = "") -> tuple[str, TxReceipt]:
+    block_number = _CHAIN.mine()
+    transaction_hash = f"0x{_CHAIN.transaction_index:064x}"
+    _TRANSACTIONS[transaction_hash] = HexBytes("0x" + transaction_input)
+    return transaction_hash, cast(TxReceipt, {"blockNumber": block_number})
+
+
+def record_transfer_event(
+    token_address: str,
+    event_name: str,
+    args: dict[str, Any],
+    transaction_input: str = "",
+    log_index: int = 0,
+) -> tuple[str, TxReceipt]:
+    transaction_hash, receipt = _record_event_transaction(transaction_input)
+    add_event(
+        token_address,
+        event_name,
+        transaction_hash,
+        int(receipt["blockNumber"]),
+        args,
+        log_index,
+    )
+    return transaction_hash, receipt
+
+
+def record_bulk_transfer_event(
+    token_address: str,
+    sender: str,
+    recipient_list: list[str],
+    amount_list: list[int],
+) -> tuple[str, TxReceipt]:
+    transaction_hash, receipt = _record_event_transaction()
+    for log_index, (recipient, amount) in enumerate(
+        zip(recipient_list, amount_list, strict=True)
+    ):
+        add_event(
+            token_address,
+            "Transfer",
+            transaction_hash,
+            int(receipt["blockNumber"]),
+            {"from": sender, "to": recipient, "value": amount},
+            log_index,
+        )
+    return transaction_hash, receipt
 
 
 @pytest.fixture(scope="function")
@@ -90,76 +219,48 @@ def processor(
     LOG.setLevel(default_log_level)
 
 
-async def deploy_bond_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
-    tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-) -> Contract:
-    arguments = [
-        "token.name",
-        "token.symbol",
-        1000,
-        20,
-        "JPY",
-        "token.redemption_date",
-        30,
-        "JPY",
-        "token.return_date",
-        "token.return_amount",
-        "token.purpose",
-    ]
-    bond_contrat = IbetStraightBondContract()
-    token_address, _, _ = await bond_contrat.create(arguments, address, private_key)
-    await bond_contrat.update(
-        tx_params=IbetStraightBondUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-            require_personal_info_registered=False,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
-    )
+@pytest.fixture(scope="function", autouse=True)
+def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Fixture to mock blockchain interactions for testing.
+    """
+    global _token_counter
+    _CHAIN.latest_block = 100
+    _CHAIN.transaction_index = 0
+    _token_counter = 0
+    _EVENTS.clear()
+    _TRANSACTIONS.clear()
 
-    return ContractUtils.get_contract("IbetStraightBond", token_address)
+    monkeypatch.setattr(indexer_transfer, "web3", FakeAsyncWeb3(_CHAIN))
+
+    async def get_event_logs(
+        contract: Any,
+        event: str,
+        block_from: int,
+        block_to: int,
+        **kwargs: Any,
+    ) -> list[dict[str, Any]]:
+        return get_events(contract.address, event, block_from, block_to)
+
+    async def get_transaction(transaction_hash: str) -> dict[str, HexBytes]:
+        return {"input": _TRANSACTIONS[transaction_hash]}
+
+    monkeypatch.setattr(AsyncContractUtils, "get_event_logs", get_event_logs)
+    monkeypatch.setattr(AsyncContractUtils, "get_transaction", get_transaction)
 
 
-async def deploy_share_token_contract(
-    address: str,
-    private_key: bytes,
-    personal_info_contract_address: str,
-    tradable_exchange_contract_address: str | None = None,
-    transfer_approval_required: bool | None = None,
-) -> Contract:
-    arguments = [
-        "token.name",
-        "token.symbol",
-        20,
-        100,
-        3,
-        "token.dividend_record_date",
-        "token.dividend_payment_date",
-        "token.cancellation_date",
-        30,
-    ]
-    share_contract = IbetShareContract()
-    token_address, _, _ = await share_contract.create(arguments, address, private_key)
-    await share_contract.update(
-        tx_params=IbetShareUpdateParams(
-            transferable=True,
-            personal_info_contract_address=personal_info_contract_address,
-            tradable_exchange_contract_address=tradable_exchange_contract_address,
-            transfer_approval_required=transfer_approval_required,
-            require_personal_info_registered=False,
-        ),
-        tx_sender=address,
-        tx_sender_key=private_key,
-    )
+async def create_fake_bond_token_contract() -> FakeContract:
+    global _token_counter
+    _token_counter += 1
+    token_address = to_checksum_address(f"0x{0x700 + _token_counter:040x}")
+    return FakeContract(token_address)
 
-    return ContractUtils.get_contract("IbetShare", token_address)
+
+async def create_fake_share_token_contract() -> FakeContract:
+    global _token_counter
+    _token_counter += 1
+    token_address = to_checksum_address(f"0x{0x700 + _token_counter:040x}")
+    return FakeContract(token_address)
 
 
 def _get_block_number(tx_receipt: TxReceipt) -> int:
@@ -189,7 +290,6 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
@@ -231,18 +331,12 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -300,23 +394,11 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
-
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-
-        lock_account = default_eth_account("user3")
-        lock_account_pk = decode_keyfile_json(
-            raw_keyfile_json=lock_account["keyfile_json"],
-            password=lock_account["password"].encode("utf-8"),
-        )
-
         # Prepare data : Account
         account = Account()
         account.rsa_status = AccountRsaStatus.UNSET.value
@@ -327,9 +409,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -353,154 +433,63 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # Emit Transfer events
-        tx_1 = token_contract_1.functions.transfer(
-            user_address_1, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(
-            tx_1, issuer_private_key
+        tx_hash_1, tx_receipt_1 = record_transfer_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 40},
         )
 
-        # Emit Unlock events
-        # - lock -> unlock (Unlock, ForceUnlock)
-        tx_2_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            json.dumps({"message": "garnishment"}),
-        ).build_transaction(
+        tx_hash_3, tx_receipt_3 = record_transfer_event(
+            token_address_1,
+            "Unlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"message": "garnishment"}),
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_2_1, issuer_private_key)
-
-        tx_2_2 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            json.dumps({"message": "garnishment"}),
-        ).build_transaction(
+        tx_hash_4, tx_receipt_4 = record_transfer_event(
+            token_address_1,
+            "ForceUnlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 5,
+                "data": json.dumps({"message": "force_unlock"}),
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_2_2, issuer_private_key)
-
-        tx_2_3 = token_contract_1.functions.unlock(
-            issuer_address, user_address_1, 10, json.dumps({"message": "garnishment"})
-        ).build_transaction(
+        tx_hash_5, tx_receipt_5 = record_transfer_event(
+            token_address_1,
+            "ForceUnlock",
             {
-                "chainId": CHAIN_ID,
-                "from": lock_account["address"],
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(
-            tx_2_3, lock_account_pk
-        )
-        tx_2_4 = token_contract_1.functions.forceUnlock(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            5,
-            json.dumps({"message": "force_unlock"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(
-            tx_2_4, issuer_private_key
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 5,
+                "data": json.dumps({"message": "ibet_wst_bridge"}),
+            },
         )
 
-        tx_2_5 = token_contract_1.functions.forceUnlock(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            5,
-            json.dumps({"message": "ibet_wst_bridge"}),
-        ).build_transaction(
+        tx_hash_6, tx_receipt_6 = record_transfer_event(
+            token_address_1,
+            "ForceChangeLockedAccount",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_5, tx_receipt_5 = ContractUtils.send_transaction(
-            tx_2_5, issuer_private_key
+                "beforeAccountAddress": issuer_address,
+                "afterAccountAddress": user_address_1,
+                "value": 5,
+                "data": json.dumps({"message": "ibet_wst_bridge"}),
+            },
         )
 
-        # Emit ForceChangeLockedAccount events
-        # - lock -> forceChangeLockedAccount
-        tx_3_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            "",
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        _, _ = ContractUtils.send_transaction(tx_3_1, issuer_private_key)
-
-        tx_3_2 = token_contract_1.functions.forceChangeLockedAccount(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            5,
-            json.dumps({"message": "ibet_wst_bridge"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_6, tx_receipt_6 = ContractUtils.send_transaction(
-            tx_3_2, issuer_private_key
-        )
-
-        # Emit Transfer events
-        # - Transfer with annotation data
-        tx_4 = token_contract_1.functions.transfer(
-            user_address_1, 10
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
         marker = b"\xc0\xff\xee\x00"
         annotation_data = json.dumps(
             {"purpose": "Reallocation"}, separators=(",", ":")
         ).encode("utf-8")
-        tx_4["data"] += marker.hex() + annotation_data.hex()
-
-        tx_hash_7, tx_receipt_7 = ContractUtils.send_transaction(
-            tx_4, issuer_private_key
+        tx_hash_7, tx_receipt_7 = record_transfer_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 10},
+            transaction_input=marker.hex() + annotation_data.hex(),
         )
 
         # Run target process
@@ -602,19 +591,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
-
-        lock_account = default_eth_account("user3")
-        lock_account_pk = decode_keyfile_json(
-            raw_keyfile_json=lock_account["keyfile_json"],
-            password=lock_account["password"].encode("utf-8"),
-        )
 
         # Prepare data : Account
         account = Account()
@@ -626,9 +605,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -652,58 +629,26 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # Unlock (lock -> unlock)
-        tx_1_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, json.dumps({"message": "garnishment"})
-        ).build_transaction(
+        record_transfer_event(
+            token_address_1,
+            "Unlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": issuer_address,
+                "value": 10,
+                "data": json.dumps({"message": "unlock"}),
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_1_1, issuer_private_key)
-
-        tx_1_2 = token_contract_1.functions.lock(
-            lock_account["address"], 10, json.dumps({"message": "garnishment"})
-        ).build_transaction(
+        record_transfer_event(
+            token_address_1,
+            "ForceUnlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": issuer_address,
+                "value": 10,
+                "data": json.dumps({"message": "force_unlock"}),
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_1_2, issuer_private_key)
-
-        tx_1_3 = token_contract_1.functions.unlock(
-            issuer_address, issuer_address, 10, json.dumps({"message": "unlock"})
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": lock_account["address"],
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        _, _ = ContractUtils.send_transaction(tx_1_3, lock_account_pk)
-
-        tx_1_4 = token_contract_1.functions.forceUnlock(
-            lock_account["address"],
-            issuer_address,
-            issuer_address,
-            10,
-            json.dumps({"message": "force_unlock"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        _, _ = ContractUtils.send_transaction(tx_1_4, issuer_private_key)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -731,22 +676,12 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-
-        lock_account = default_eth_account("user3")
-        lock_account_pk = decode_keyfile_json(
-            raw_keyfile_json=lock_account["keyfile_json"],
-            password=lock_account["password"].encode("utf-8"),
-        )
 
         # Prepare data : Account
         account = Account()
@@ -758,9 +693,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -784,83 +717,31 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # Transfer
-        tx_1 = token_contract_1.functions.transferFrom(
-            issuer_address, user_address_1, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(
-            tx_1, issuer_private_key
+        tx_hash_1, tx_receipt_1 = record_transfer_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 40},
         )
 
-        # Unlock (lock -> unlock)
-        tx_2_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            json.dumps({"message": "garnishment"}),
-        ).build_transaction(
+        tx_hash_3, tx_receipt_3 = record_transfer_event(
+            token_address_1,
+            "Unlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 10,
+                "data": "null",
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_2_1, issuer_private_key)
-
-        tx_2_2 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            json.dumps({"message": "garnishment"}),
-        ).build_transaction(
+        tx_hash_4, tx_receipt_4 = record_transfer_event(
+            token_address_1,
+            "ForceUnlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        _, _ = ContractUtils.send_transaction(tx_2_2, issuer_private_key)
-
-        tx_2_3 = token_contract_1.functions.unlock(
-            issuer_address,
-            user_address_1,
-            10,
-            "null",  # invalid data schema
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": lock_account["address"],
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(
-            tx_2_3, lock_account_pk
-        )
-
-        tx_2_4 = token_contract_1.functions.forceUnlock(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"invalid_message": "invalid_value"}),  # invalid data schema
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(
-            tx_2_4, issuer_private_key
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"invalid_message": "invalid_value"}),
+            },
         )
 
         # Run target process
@@ -926,25 +807,15 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
 
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-
-        lock_account = default_eth_account("user4")
-        lock_account_pk = decode_keyfile_json(
-            raw_keyfile_json=lock_account["keyfile_json"],
-            password=lock_account["password"].encode("utf-8"),
-        )
 
         # Prepare data : Account
         account = Account()
@@ -956,9 +827,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -969,7 +838,6 @@ class TestProcessor:
         token_1.version = TokenVersion.V_25_09
         async_db.add(token_1)
 
-        # Prepare data : Token(processing token)
         token_2 = Token()
         token_2.type = TokenType.IBET_STRAIGHT_BOND
         token_2.token_address = "test1"
@@ -982,214 +850,76 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # Emit Transfer events
-        tx_1 = token_contract_1.functions.transferFrom(
-            issuer_address, user_address_1, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_1, tx_receipt_1 = record_transfer_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 40},
         )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(
-            tx_1, issuer_private_key
-        )  # 1st transfer
-
-        tx_2 = token_contract_1.functions.transferFrom(
-            issuer_address, user_address_2, 20
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_2, tx_receipt_2 = record_transfer_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 20},
         )
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(
-            tx_2, issuer_private_key
-        )  # 2nd transfer
-
-        # Emit Unlock events (lock -> unlock)
-        tx_3_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, json.dumps({"message": "garnishment"})
-        ).build_transaction(
+        tx_hash_3, tx_receipt_3 = record_transfer_event(
+            token_address_1,
+            "Unlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"message": "garnishment"}),
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_3_1, issuer_private_key)
-
-        tx_3_2 = token_contract_1.functions.unlock(
-            issuer_address, user_address_1, 10, json.dumps({"message": "garnishment"})
-        ).build_transaction(
+        tx_hash_4, tx_receipt_4 = record_transfer_event(
+            token_address_1,
+            "Unlock",
             {
-                "chainId": CHAIN_ID,
-                "from": lock_account["address"],
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"message": "inheritance"}),
+            },
         )
-        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(
-            tx_3_2, lock_account_pk
-        )  # 1st unlock
-
-        tx_4_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, json.dumps({"message": "inheritance"})
-        ).build_transaction(
+        tx_hash_5, tx_receipt_5 = record_transfer_event(
+            token_address_1,
+            "ForceUnlock",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"message": "force_unlock"}),
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_4_1, issuer_private_key)
-
-        tx_4_2 = token_contract_1.functions.unlock(
-            issuer_address, user_address_1, 10, json.dumps({"message": "inheritance"})
-        ).build_transaction(
+        tx_hash_6, tx_receipt_6 = record_transfer_event(
+            token_address_1,
+            "ForceUnlock",
             {
-                "chainId": CHAIN_ID,
-                "from": lock_account["address"],
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "accountAddress": issuer_address,
+                "recipientAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"message": "force_unlock"}),
+            },
         )
-        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(
-            tx_4_2, lock_account_pk
-        )  # 2nd unlock
-
-        # Emit ForceUnlock events (lock -> forceUnlock)
-        tx_5_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, json.dumps({"message": "garnishment"})
-        ).build_transaction(
+        tx_hash_7, tx_receipt_7 = record_transfer_event(
+            token_address_1,
+            "ForceChangeLockedAccount",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "beforeAccountAddress": issuer_address,
+                "afterAccountAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"message": "ibet_wst_bridge"}),
+            },
         )
-        _, _ = ContractUtils.send_transaction(tx_5_1, issuer_private_key)
-
-        tx_5_2 = token_contract_1.functions.forceUnlock(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"message": "force_unlock"}),
-        ).build_transaction(
+        tx_hash_8, tx_receipt_8 = record_transfer_event(
+            token_address_1,
+            "ForceChangeLockedAccount",
             {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+                "beforeAccountAddress": issuer_address,
+                "afterAccountAddress": user_address_1,
+                "value": 10,
+                "data": json.dumps({"message": "ibet_wst_bridge"}),
+            },
         )
-        tx_hash_5, tx_receipt_5 = ContractUtils.send_transaction(
-            tx_5_2, issuer_private_key
-        )  # 1st forceUnlock
-
-        tx_6_1 = token_contract_1.functions.lock(
-            lock_account["address"], 10, json.dumps({"message": "garnishment"})
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        _, _ = ContractUtils.send_transaction(tx_6_1, issuer_private_key)
-
-        tx_6_2 = token_contract_1.functions.forceUnlock(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"message": "force_unlock"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_6, tx_receipt_6 = ContractUtils.send_transaction(
-            tx_6_2, issuer_private_key
-        )  # 2nd forceUnlock
-
-        # Emit ForceChangeLockedAccount events
-        # - lock -> forceChangeLockedAccount
-        tx_7_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            json.dumps({"message": "ibet_wst_bridge"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        _, _ = ContractUtils.send_transaction(tx_7_1, issuer_private_key)
-
-        tx_7_2 = token_contract_1.functions.forceChangeLockedAccount(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"message": "ibet_wst_bridge"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_7, tx_receipt_7 = ContractUtils.send_transaction(
-            tx_7_2, issuer_private_key
-        )  # 1st forceChangeLockedAccount
-
-        tx_8_1 = token_contract_1.functions.lock(
-            lock_account["address"],
-            10,
-            json.dumps({"message": "ibet_wst_bridge"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        _, _ = ContractUtils.send_transaction(tx_8_1, issuer_private_key)
-
-        tx_8_2 = token_contract_1.functions.forceChangeLockedAccount(
-            lock_account["address"],
-            issuer_address,
-            user_address_1,
-            10,
-            json.dumps({"message": "ibet_wst_bridge"}),
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
-        )
-        tx_hash_8, tx_receipt_8 = ContractUtils.send_transaction(
-            tx_8_2, issuer_private_key
-        )  # 2nd forceChangeLockedAccount
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1316,33 +1046,21 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
+
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
-        user_pk_1 = decode_keyfile_json(
-            raw_keyfile_json=user_2["keyfile_json"], password="password".encode("utf-8")
-        )
+
         user_3 = default_eth_account("user3")
         user_address_2 = user_3["address"]
-        user_pk_2 = decode_keyfile_json(
-            raw_keyfile_json=user_3["keyfile_json"], password="password".encode("utf-8")
-        )
+
         user_4 = default_eth_account("user3")
         user_address_3 = user_4["address"]
-        user_pk_3 = decode_keyfile_json(
-            raw_keyfile_json=user_4["keyfile_json"], password="password".encode("utf-8")
-        )
+
         user_5 = default_eth_account("user3")
         user_address_4 = user_5["address"]
-        user_pk_4 = decode_keyfile_json(
-            raw_keyfile_json=user_5["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -1354,9 +1072,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -1373,66 +1089,18 @@ class TestProcessor:
         await processor.sync_new_logs()
         async_db.expire_all()
 
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            issuer_address,
-            issuer_private_key,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_1,
-            user_pk_1,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_2,
-            user_pk_2,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_3,
-            user_pk_3,
-            [issuer_address, ""],
-        )
-        PersonalInfoContractTestUtils.register(
-            ibet_personal_info_contract.address,
-            user_address_4,
-            user_pk_4,
-            [issuer_address, ""],
-        )
-
-        # Bulk Transfer
+        # Record bulk transfer events
         address_list1 = [user_address_1, user_address_2, user_address_3]
         value_list1 = [10, 20, 30]
-        tx = token_contract_1.functions.bulkTransfer(
-            address_list1, value_list1
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_1, tx_receipt_1 = record_bulk_transfer_event(
+            token_address_1, issuer_address, address_list1, value_list1
         )
 
-        # BulkTransfer: 2nd
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
         address_list2 = [user_address_1, user_address_2, user_address_3, user_address_4]
         value_list2 = [1, 2, 3, 4]
-        tx = token_contract_1.functions.bulkTransfer(
-            address_list2, value_list2
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_2, tx_receipt_2 = record_bulk_transfer_event(
+            token_address_1, issuer_address, address_list2, value_list2
         )
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1483,13 +1151,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
         user_2 = default_eth_account("user2")
         user_address_1 = user_2["address"]
         user_3 = default_eth_account("user3")
@@ -1505,9 +1169,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token1
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -1519,9 +1181,7 @@ class TestProcessor:
         async_db.add(token_1)
 
         # Prepare data : Token2
-        token_contract_2 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_2 = await create_fake_bond_token_contract()
 
         token_address_2 = token_contract_2.address
         token_2 = Token()
@@ -1535,53 +1195,26 @@ class TestProcessor:
 
         await async_db.commit()
 
-        # Transfer(Token1)
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, user_address_1, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_1, tx_receipt_1 = record_transfer_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 40},
         )
-        tx_hash_1, tx_receipt_1 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_1.functions.transferFrom(
-            issuer_address, user_address_2, 30
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_2, tx_receipt_2 = record_transfer_event(
+            token_address_1,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 30},
         )
-        tx_hash_2, tx_receipt_2 = ContractUtils.send_transaction(tx, issuer_private_key)
-
-        # Transfer(Token2)
-        tx = token_contract_2.functions.transferFrom(
-            issuer_address, user_address_1, 40
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_3, tx_receipt_3 = record_transfer_event(
+            token_address_2,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_1, "value": 40},
         )
-        tx_hash_3, tx_receipt_3 = ContractUtils.send_transaction(tx, issuer_private_key)
-        tx = token_contract_2.functions.transferFrom(
-            issuer_address, user_address_2, 30
-        ).build_transaction(
-            {
-                "chainId": CHAIN_ID,
-                "from": issuer_address,
-                "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
-            }
+        tx_hash_4, tx_receipt_4 = record_transfer_event(
+            token_address_2,
+            "Transfer",
+            {"from": issuer_address, "to": user_address_2, "value": 30},
         )
-        tx_hash_4, tx_receipt_4 = ContractUtils.send_transaction(tx, issuer_private_key)
 
         # Run target process
         block_number = web3.eth.block_number
@@ -1671,15 +1304,9 @@ class TestProcessor:
         self,
         processor: Processor,
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
-        ibet_security_token_escrow_contract: Contract,
     ):
-        escrow_contract = ibet_security_token_escrow_contract
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -1691,13 +1318,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Issuer issues bond token.
-        token_contract1 = await deploy_bond_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
-            tradable_exchange_contract_address=escrow_contract.address,
-            transfer_approval_required=False,
-        )
+        token_contract1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -1718,13 +1339,7 @@ class TestProcessor:
         assert len(processor.token_list.keys()) == 1
 
         # Prepare additional token
-        token_contract2 = await deploy_share_token_contract(
-            issuer_address,
-            issuer_private_key,
-            ibet_personal_info_contract.address,
-            tradable_exchange_contract_address=escrow_contract.address,
-            transfer_approval_required=False,
-        )
+        token_contract2 = await create_fake_share_token_contract()
         token_address_2 = token_contract2.address
         token_2 = Token()
         token_2.type = TokenType.IBET_SHARE
@@ -1756,14 +1371,10 @@ class TestProcessor:
         self,
         main_func,  # type: ignore
         async_db: AsyncSession,
-        ibet_personal_info_contract: Contract,
         caplog: pytest.LogCaptureFixture,
     ):
         user_1 = default_eth_account("user1")
         issuer_address = user_1["address"]
-        issuer_private_key = decode_keyfile_json(
-            raw_keyfile_json=user_1["keyfile_json"], password="password".encode("utf-8")
-        )
 
         # Prepare data : Account
         account = Account()
@@ -1775,9 +1386,7 @@ class TestProcessor:
         async_db.add(account)
 
         # Prepare data : Token
-        token_contract_1 = await deploy_bond_token_contract(
-            issuer_address, issuer_private_key, ibet_personal_info_contract.address
-        )
+        token_contract_1 = await create_fake_bond_token_contract()
         token_address_1 = token_contract_1.address
         token_1 = Token()
         token_1.type = TokenType.IBET_STRAIGHT_BOND
@@ -1794,7 +1403,7 @@ class TestProcessor:
         with (
             patch("batch.indexer_transfer.INDEXER_SYNC_INTERVAL", None),
             patch.object(
-                AsyncWeb3Wrapper().eth,
+                indexer_transfer.web3.eth,
                 "contract",
                 side_effect=ServiceUnavailableError(),
             ),

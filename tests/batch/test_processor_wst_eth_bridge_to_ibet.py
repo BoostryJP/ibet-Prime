@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -31,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.exceptions import ContractRevertError
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     EthToIbetBridgeTx,
     IbetBridgeTxParamsForceChangeLockedAccount,
     IbetBridgeTxParamsForceUnlock,

@@ -1,5 +1,3 @@
-from app.model.db import AccountRsaStatus
-
 """
 Copyright BOOSTRY Co., Ltd.
 
@@ -28,11 +26,10 @@ from unittest.mock import AsyncMock
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import Web3
-from web3.types import RPCEndpoint
 
 from app.model.db import (
     Account,
+    AccountRsaStatus,
     AvaIbetWSTTx,
     AvaToIbetBridgeTx,
     IbetWSTBridgeSyncedBlockNumber,
@@ -46,20 +43,29 @@ from app.model.db import (
     TokenVersion,
 )
 from app.utils.e2ee_utils import E2EEUtils
-from avalanche_config import AVA_WEB3_HTTP_PROVIDER
 from batch.processor_wst_ava_monitor_bridge_events import (
     LOG,
     AvaWSTBridgeMonitoringProcessor,
 )
-from config import WEB3_HTTP_PROVIDER
 from tests.account_config import default_eth_account
 
-ibet_web3 = Web3(Web3.HTTPProvider(WEB3_HTTP_PROVIDER))
-ava_web3 = Web3(Web3.HTTPProvider(AVA_WEB3_HTTP_PROVIDER))
+LATEST_BLOCK = 100
 
 
 @pytest.fixture(scope="function")
-def processor(async_db: AsyncSession, caplog: pytest.LogCaptureFixture):
+def processor(
+    async_db: AsyncSession,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    async def get_latest_block_number(network: str) -> int:
+        return LATEST_BLOCK
+
+    monkeypatch.setattr(
+        AvaWSTBridgeMonitoringProcessor,
+        "get_latest_block_number",
+        staticmethod(get_latest_block_number),
+    )
     log = logging.getLogger("background")
     default_log_level = LOG.level
     log.setLevel(logging.DEBUG)
@@ -103,9 +109,6 @@ class TestProcessor:
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ):
-        # Generate empty block
-        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
-        ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         latest_block_ibet = await processor.get_latest_block_number("ibetfin")
         latest_block_eth = await processor.get_latest_block_number("avalanche")
 
@@ -174,9 +177,6 @@ class TestProcessor:
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ):
-        # Generate empty block
-        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
-        ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         latest_block_ibet = await processor.get_latest_block_number("ibetfin")
         latest_block_eth = await processor.get_latest_block_number("avalanche")
 
@@ -330,9 +330,6 @@ class TestProcessor:
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ):
-        # Generate empty block
-        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
-        ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         latest_block_ibet = await processor.get_latest_block_number("ibetfin")
         latest_block_eth = await processor.get_latest_block_number("avalanche")
 
@@ -454,9 +451,6 @@ class TestProcessor:
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ):
-        # Generate empty block
-        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
-        ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         latest_block_ibet = await processor.get_latest_block_number("ibetfin")
         latest_block_eth = await processor.get_latest_block_number("avalanche")
 
@@ -578,9 +572,6 @@ class TestProcessor:
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ):
-        # Generate empty block
-        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
-        ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         latest_block_ibet = await processor.get_latest_block_number("ibetfin")
         latest_block_eth = await processor.get_latest_block_number("avalanche")
 
@@ -682,9 +673,6 @@ class TestProcessor:
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ):
-        # Generate empty block
-        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
-        ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         latest_block_ibet = await processor.get_latest_block_number("ibetfin")
         latest_block_eth = await processor.get_latest_block_number("avalanche")
 
@@ -799,9 +787,6 @@ class TestProcessor:
         async_db: AsyncSession,
         caplog: pytest.LogCaptureFixture,
     ):
-        # Generate empty block
-        ibet_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
-        ava_web3.provider.make_request(RPCEndpoint("evm_mine"), [])
         latest_block_ibet = await processor.get_latest_block_number("ibetfin")
         latest_block_eth = await processor.get_latest_block_number("avalanche")
 

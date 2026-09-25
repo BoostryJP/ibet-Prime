@@ -132,10 +132,9 @@ class Processor:
                         raw_keyfile_json=keyfile_json,
                         password=decrypt_password.encode("utf-8"),
                     )
-                except Exception as err:
+                except Exception:
                     LOG.exception(
-                        f"Could not get the private key of the issuer of id:{_update_token.id}",
-                        err,
+                        f"Could not get the private key of the issuer of id:{_update_token.id}"
                     )
                     await self.__sink_on_finish_update_process(
                         db_session=db_session, record_id=_update_token.id, status=2

@@ -158,6 +158,47 @@ class TestAvaFailOverHTTPProvider:
         assert make_request.await_count == 2
         assert fake_session.close.await_count == 1
 
+    # Normal_5
+    # - Test that cached primary endpoint timeout falls back to the standby endpoint
+    async def test_normal_5(self):
+        provider = _AvaFailOverHTTPProviderForTest(
+            fail_over_mode=True,
+            session_manager=KeepAliveHTTPSessionManager(),
+        )
+        primary_endpoint = URI("http://primary.example:8545")
+        standby_endpoint = URI("http://standby.example:8545")
+        provider.seed_cached_endpoint_uri(primary_endpoint)
+        method = RPCEndpoint("eth_chainId")
+        fake_session = MagicMock()
+        fake_session.scalars = AsyncMock(
+            side_effect=[
+                MagicMock(first=MagicMock(return_value=object())),
+                MagicMock(
+                    first=MagicMock(
+                        return_value=SimpleNamespace(endpoint_uri=str(standby_endpoint))
+                    )
+                ),
+            ]
+        )
+        fake_session.close = AsyncMock()
+
+        with (
+            patch(
+                "app.utils.ava_contract_utils.AsyncSession", return_value=fake_session
+            ),
+            patch(
+                "web3.providers.rpc.async_rpc.AsyncHTTPProvider.make_request",
+                AsyncMock(side_effect=[TimeoutError(), {"result": "ok"}]),
+            ) as make_request,
+        ):
+            response = await provider.make_request(method, [])
+
+        assert response == {"result": "ok"}
+        assert provider.endpoint_uri == standby_endpoint
+        assert fake_session.scalars.await_count == 2
+        assert make_request.await_count == 2
+        assert fake_session.close.await_count == 1
+
     ########################################################
     # Error
     ########################################################
