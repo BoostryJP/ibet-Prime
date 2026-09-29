@@ -621,6 +621,13 @@ async def retrieve_token_holders_collection(
             TokenHolder.account_address.like("%" + get_query.account_address + "%")
         )
 
+    if get_query.holder_name is not None:
+        stmt = stmt.where(
+            IDXPersonalInfo._personal_info["name"]  # pyright: ignore[reportPrivateUsage]
+            .as_string()
+            .like("%" + get_query.holder_name + "%")
+        )
+
     if get_query.tax_category is not None:
         stmt = stmt.where(
             IDXPersonalInfo._personal_info["tax_category"].as_integer()  # pyright: ignore[reportPrivateUsage]
@@ -643,6 +650,8 @@ async def retrieve_token_holders_collection(
         sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()  # pyright: ignore[reportPrivateUsage]
     elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.key_manager:
         sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()  # pyright: ignore[reportPrivateUsage]
+    elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.holder_name:
+        sort_attr = IDXPersonalInfo._personal_info["name"].as_string()  # pyright: ignore[reportPrivateUsage]
     else:
         sort_attr = getattr(
             TokenHolder,
