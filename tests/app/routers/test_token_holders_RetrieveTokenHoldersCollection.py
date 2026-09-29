@@ -48,7 +48,7 @@ web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 HolderNameCollection = tuple[str, str, list[dict[str, object]]]
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="function", loop_scope="session")
 async def holder_name_collection(async_db: AsyncSession) -> HolderNameCollection:
     """Prepare names, duplicate names, NULLs, and another issuer's PersonalInfo."""
     issuer_address = default_eth_account("user1")["address"]
