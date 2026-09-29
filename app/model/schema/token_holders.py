@@ -131,6 +131,7 @@ class RetrieveTokenHoldersCollectionSortItem(StrEnum):
     locked_balance = "locked_balance"
     key_manager = "key_manager"
     tax_category = "tax_category"
+    holder_name = "holder_name"
 
 
 class RetrieveTokenHoldersCollectionQuery(BasePaginationQuery):
@@ -149,6 +150,7 @@ class RetrieveTokenHoldersCollectionQuery(BasePaginationQuery):
     )
     key_manager: Optional[str] = Field(None, description="Key manager(partial match)")
     tax_category: Optional[int] = Field(None, description="Tax category")
+    holder_name: Optional[str] = Field(None, description="Holder name(partial match)")
 
     sort_item: Optional[RetrieveTokenHoldersCollectionSortItem] = Field(
         RetrieveTokenHoldersCollectionSortItem.account_address, description="Sort item"
