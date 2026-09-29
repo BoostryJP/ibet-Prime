@@ -9360,6 +9360,16 @@ paths:
             description: Tax category
             title: Tax Category
           description: Tax category
+        - name: holder_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Holder name(partial match)
+            title: Holder Name
+          description: Holder name(partial match)
         - name: sort_item
           in: query
           required: false
@@ -18742,6 +18752,7 @@ components:
         - locked_balance
         - key_manager
         - tax_category
+        - holder_name
       title: RetrieveTokenHoldersCollectionSortItem
     RetrieveTokenHoldersListResponse:
       properties:
