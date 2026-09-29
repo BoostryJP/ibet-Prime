@@ -21,6 +21,7 @@ import uuid
 from unittest import mock
 
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
@@ -42,6 +43,88 @@ from tests.account_config import default_eth_account
 
 web3 = Web3(Web3.HTTPProvider(config.WEB3_HTTP_PROVIDER))
 web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+
+
+HolderNameCollection = tuple[str, str, list[dict[str, object]]]
+
+
+@pytest_asyncio.fixture(scope="function", loop_scope="session")
+async def holder_name_collection(async_db: AsyncSession) -> HolderNameCollection:
+    """Prepare names, duplicate names, NULLs, and another issuer's PersonalInfo."""
+    issuer_address = default_eth_account("user1")["address"]
+    token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+    async_db.add(
+        Token(
+            type=TokenType.IBET_STRAIGHT_BOND,
+            tx_hash="",
+            issuer_address=issuer_address,
+            token_address=token_address,
+            abi={},
+            version=TokenVersion.V_25_09,
+        )
+    )
+    collection = TokenHoldersList(
+        list_id=str(uuid.uuid4()),
+        token_address=token_address,
+        block_number=100,
+        batch_status=TokenHolderBatchStatus.DONE,
+    )
+    async_db.add(collection)
+    await async_db.flush()
+
+    holders: list[dict[str, object]] = []
+    # Numeric prefixes keep sort expectations independent of DB collation.
+    # Holders 2/3 and 5/6 share names to verify the address tie-breaker.
+    # Holder 7 has a NULL name; holder 8 has no PersonalInfo for this issuer.
+    names = [
+        "3Zoe",
+        "1Alice",
+        "1Alice",
+        "4alice",
+        "5山田太郎",
+        "5山田太郎",
+        None,
+        None,
+    ]
+    for holder_id, name in enumerate(names, start=1):
+        holder = TokenHolder(
+            holder_list_id=collection.id,
+            account_address=f"0x{holder_id:040x}",
+            hold_balance=holder_id * 100,
+            locked_balance=0,
+        )
+        async_db.add(holder)
+        info = IDXPersonalInfo(
+            issuer_address=issuer_address,
+            account_address=holder.account_address,
+            data_source=PersonalInfoDataSource.ON_CHAIN,
+        )
+        info.personal_info = {"name": name, "key_manager": f"manager_{holder_id}"}
+        if holder_id != 8:
+            async_db.add(info)
+        holders.append(
+            {
+                **holder.json(),
+                "personal_information": (
+                    info.personal_info
+                    if holder_id != 8
+                    else {key: None for key in info.personal_info}
+                ),
+            }
+        )
+
+    # A different issuer's matching name must not affect this collection.
+    other_issuer_info = IDXPersonalInfo(
+        issuer_address=default_eth_account("user2")["address"],
+        account_address=holders[7]["account_address"],
+        data_source=PersonalInfoDataSource.ON_CHAIN,
+    )
+    other_issuer_info.personal_info = {"name": "Alice"}
+    async_db.add(other_issuer_info)
+    await async_db.commit()
+
+    url = f"/token/holders/{token_address}/collection/{collection.list_id}"
+    return issuer_address, url, holders
 
 
 class TestAppRoutersHoldersTokenAddressCollectionIdGET:
@@ -882,7 +965,61 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             "holders": sorted_holders,
         }
 
-    # Normal_4
+    # Normal_3_6
+    # Search filter: holder_name
+    @pytest.mark.parametrize(
+        "params, expected_ids, count",
+        [
+            # Normal_3_6_1: Japanese names support partial matches.
+            ({"holder_name": "田太"}, [5, 6], 2),
+            # Normal_3_6_2: Uppercase search excludes lowercase names and other issuers.
+            ({"holder_name": "Ali"}, [2, 3], 2),
+            # Normal_3_6_3: Lowercase search excludes uppercase names.
+            ({"holder_name": "ali"}, [4], 1),
+            # Normal_3_6_4: No match returns an empty list and count=0.
+            ({"holder_name": "unknown"}, [], 0),
+            # Normal_3_6_5: Empty search matches non-NULL names only.
+            ({"holder_name": ""}, [1, 2, 3, 4, 5, 6], 6),
+            # Normal_3_6_6: Percent retains its SQL LIKE wildcard behavior.
+            ({"holder_name": "%"}, [1, 2, 3, 4, 5, 6], 6),
+            # Normal_3_6_7: Underscore matches one character as a SQL LIKE wildcard.
+            ({"holder_name": "A_ice"}, [2, 3], 2),
+            # Normal_3_6_8: Name and hold balance filters are combined with AND.
+            ({"holder_name": "Alice", "hold_balance": 300}, [3], 1),
+            # Normal_3_6_9: Name and key manager filters are combined with AND.
+            ({"holder_name": "Alice", "key_manager": "manager_2"}, [2], 1),
+        ],
+        ids=[f"normal_3_6_{case_number}" for case_number in range(1, 10)],
+    )
+    @pytest.mark.asyncio
+    async def test_normal_3_6(
+        self,
+        async_client: AsyncClient,
+        holder_name_collection: HolderNameCollection,
+        params: dict[str, str | int],
+        expected_ids: list[int],
+        count: int,
+    ):
+        issuer_address, url, holders = holder_name_collection
+        resp = await async_client.get(
+            url,
+            headers={"issuer-address": issuer_address},
+            params=params,
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": count,
+                "offset": params.get("offset"),
+                "limit": params.get("limit"),
+                "total": 8,
+            },
+            "status": TokenHolderBatchStatus.DONE,
+            "holders": [holders[holder_id - 1] for holder_id in expected_ids],
+        }
+
+    # Normal_4_1
     # Sort
     @pytest.mark.parametrize(
         "sort_item",
@@ -895,7 +1032,7 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
         ],
     )
     @pytest.mark.asyncio
-    async def test_normal_4(
+    async def test_normal_4_1(
         self, sort_item: str, async_client: AsyncClient, async_db: AsyncSession
     ):
         # Issue Token
@@ -969,10 +1106,60 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             "holders": sorted_holders,
         }
 
-    # Normal_5
+    # Normal_4_2
+    # Sort: holder_name and default order
+    @pytest.mark.parametrize(
+        "params, expected_ids, count",
+        [
+            # Normal_4_2_1: Ascending names, address-ascending ties, NULLs last.
+            (
+                {"sort_item": "holder_name", "sort_order": 0},
+                [2, 3, 1, 4, 5, 6, 7, 8],
+                8,
+            ),
+            # Normal_4_2_2: Descending names, address-ascending ties, NULLs first.
+            (
+                {"sort_item": "holder_name", "sort_order": 1},
+                [7, 8, 5, 6, 4, 1, 2, 3],
+                8,
+            ),
+            # Normal_4_2_3: No parameters preserves address order and NULL names.
+            ({}, [1, 2, 3, 4, 5, 6, 7, 8], 8),
+        ],
+        ids=[f"normal_4_2_{case_number}" for case_number in range(1, 4)],
+    )
+    @pytest.mark.asyncio
+    async def test_normal_4_2(
+        self,
+        async_client: AsyncClient,
+        holder_name_collection: HolderNameCollection,
+        params: dict[str, str | int],
+        expected_ids: list[int],
+        count: int,
+    ):
+        issuer_address, url, holders = holder_name_collection
+        resp = await async_client.get(
+            url,
+            headers={"issuer-address": issuer_address},
+            params=params,
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": count,
+                "offset": params.get("offset"),
+                "limit": params.get("limit"),
+                "total": 8,
+            },
+            "status": TokenHolderBatchStatus.DONE,
+            "holders": [holders[holder_id - 1] for holder_id in expected_ids],
+        }
+
+    # Normal_5_1
     # Pagination
     @pytest.mark.asyncio
-    async def test_normal_5(self, async_client: AsyncClient, async_db: AsyncSession):
+    async def test_normal_5_1(self, async_client: AsyncClient, async_db: AsyncSession):
         # Issue Token
         user = default_eth_account("user1")
         issuer_address = user["address"]
@@ -1036,6 +1223,79 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             "result_set": {"count": 3, "offset": 1, "limit": 1, "total": 3},
             "status": TokenHolderBatchStatus.DONE,
             "holders": [sorted_holders[1]],
+        }
+
+    # Normal_5_2
+    # Pagination with holder name search and sort
+    @pytest.mark.parametrize(
+        "params, expected_ids, count",
+        [
+            # Normal_5_2_1: Pagination follows ascending sort; count stays unpaged.
+            (
+                {"sort_item": "holder_name", "sort_order": 0, "offset": 1, "limit": 2},
+                [3, 1],
+                8,
+            ),
+            # Normal_5_2_2: Pagination follows descending sort, including NULLs.
+            (
+                {"sort_item": "holder_name", "sort_order": 1, "offset": 1, "limit": 2},
+                [8, 5],
+                8,
+            ),
+            # Normal_5_2_3: Filter, default ascending sort, then paginate.
+            # Count is filtered but unpaged; total remains unfiltered.
+            (
+                {
+                    "holder_name": "",
+                    "sort_item": "holder_name",
+                    "offset": 1,
+                    "limit": 2,
+                },
+                [3, 1],
+                6,
+            ),
+            # Normal_5_2_4: Filter, descending sort, then paginate.
+            # Count is filtered but unpaged; total remains unfiltered.
+            (
+                {
+                    "holder_name": "",
+                    "sort_item": "holder_name",
+                    "sort_order": 1,
+                    "offset": 1,
+                    "limit": 2,
+                },
+                [6, 4],
+                6,
+            ),
+        ],
+        ids=[f"normal_5_2_{case_number}" for case_number in range(1, 5)],
+    )
+    @pytest.mark.asyncio
+    async def test_normal_5_2(
+        self,
+        async_client: AsyncClient,
+        holder_name_collection: HolderNameCollection,
+        params: dict[str, str | int],
+        expected_ids: list[int],
+        count: int,
+    ):
+        issuer_address, url, holders = holder_name_collection
+        resp = await async_client.get(
+            url,
+            headers={"issuer-address": issuer_address},
+            params=params,
+        )
+
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": count,
+                "offset": params.get("offset"),
+                "limit": params.get("limit"),
+                "total": 8,
+            },
+            "status": TokenHolderBatchStatus.DONE,
+            "holders": [holders[holder_id - 1] for holder_id in expected_ids],
         }
 
     ####################################################################
