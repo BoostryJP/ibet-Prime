@@ -586,6 +586,21 @@ async def retrieve_token_holders_collection(
         stmt.with_only_columns(func.count()).select_from(TokenHolder).order_by(None)
     )
 
+    total_balance = func.coalesce(TokenHolder.hold_balance, 0) + func.coalesce(
+        TokenHolder.locked_balance, 0
+    )
+    if (
+        get_query.total_balance is not None
+        and get_query.total_balance_operator is not None
+    ):
+        match get_query.total_balance_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(total_balance == get_query.total_balance)
+            case ValueOperator.GTE:
+                stmt = stmt.where(total_balance >= get_query.total_balance)
+            case ValueOperator.LTE:
+                stmt = stmt.where(total_balance <= get_query.total_balance)
+
     if (
         get_query.hold_balance is not None
         and get_query.hold_balance_operator is not None
@@ -646,7 +661,9 @@ async def retrieve_token_holders_collection(
     )
 
     # Sort
-    if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.tax_category:
+    if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.total_balance:
+        sort_attr = total_balance
+    elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.tax_category:
         sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()  # pyright: ignore[reportPrivateUsage]
     elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.key_manager:
         sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()  # pyright: ignore[reportPrivateUsage]
@@ -695,6 +712,8 @@ async def retrieve_token_holders_collection(
     token_holders = [
         {
             **_token_holder[0].json(),
+            "total_balance": (_token_holder[0].hold_balance or 0)
+            + (_token_holder[0].locked_balance or 0),
             "personal_information": (
                 _token_holder[1].personal_info
                 if _token_holder[1] is not None

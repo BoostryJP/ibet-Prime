@@ -9334,6 +9334,29 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: total_balance
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Sum of hold_balance and locked_balance
+            title: Total Balance
+          description: Sum of hold_balance and locked_balance
+        - name: total_balance_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: Search condition of total balance(0:equal, 1:greater
+              than or equal, 2:less than or equal)
+            default: 0
+            title: Total Balance Operator
+          description: Search condition of total balance(0:equal, 1:greater than
+            or equal, 2:less than or equal)
         - name: hold_balance
           in: query
           required: false
@@ -18807,6 +18830,7 @@ components:
         - account_address
         - hold_balance
         - locked_balance
+        - total_balance
         - key_manager
         - tax_category
         - holder_name
@@ -18834,6 +18858,7 @@ components:
             - account_address: '0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB'
               hold_balance: 30000
               locked_balance: 0
+              total_balance: 30000
           status: done
     ScheduleEventErrorMetaInfo:
       properties:
@@ -19282,6 +19307,10 @@ components:
           type: integer
           title: Locked Balance
           description: Amount of locked balance.
+        total_balance:
+          type: integer
+          title: Total Balance
+          description: Sum of hold_balance and locked_balance
         personal_information:
           $ref: '#/components/schemas/PersonalInfo'
       type: object
@@ -19289,6 +19318,7 @@ components:
         - account_address
         - hold_balance
         - locked_balance
+        - total_balance
         - personal_information
       title: TokenHoldersCollectionHolder
     TokenNotExistErrorCode:
