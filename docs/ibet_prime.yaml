@@ -2263,6 +2263,31 @@ paths:
             title: Balance And Pending Transfer Operator
           description: search condition of balance plus pending 
             transfer(0:equal, 1:greater than or equal, 2:less than or equal）
+        - name: total_balance
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Sum of balance, pending_transfer, locked,
+              exchange_balance, and exchange_commitment
+            title: Total Balance
+          description: Sum of balance, pending_transfer, locked,
+            exchange_balance, and exchange_commitment
+        - name: total_balance_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: Search condition of total balance(0:equal, 1:greater
+              than or equal, 2:less than or equal)
+            default: 0
+            title: Total Balance Operator
+          description: Search condition of total balance(0:equal, 1:greater than
+            or equal, 2:less than or equal)
         - name: account_address
           in: query
           required: false
@@ -6886,6 +6911,31 @@ paths:
             title: Balance And Pending Transfer Operator
           description: search condition of balance plus pending 
             transfer(0:equal, 1:greater than or equal, 2:less than or equal）
+        - name: total_balance
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Sum of balance, pending_transfer, locked,
+              exchange_balance, and exchange_commitment
+            title: Total Balance
+          description: Sum of balance, pending_transfer, locked,
+            exchange_balance, and exchange_commitment
+        - name: total_balance_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: Search condition of total balance(0:equal, 1:greater
+              than or equal, 2:less than or equal)
+            default: 0
+            title: Total Balance Operator
+          description: Search condition of total balance(0:equal, 1:greater than
+            or equal, 2:less than or equal)
         - name: account_address
           in: query
           required: false
@@ -14446,6 +14496,11 @@ components:
         locked:
           type: integer
           title: Locked
+        total_balance:
+          type: integer
+          title: Total Balance
+          description: Sum of balance, pending_transfer, locked,
+            exchange_balance, and exchange_commitment
         modified:
           anyOf:
             - type: string
@@ -14462,6 +14517,7 @@ components:
         - exchange_commitment
         - pending_transfer
         - locked
+        - total_balance
         - modified
       title: HolderResponse
       description: Holder schema (Response)
@@ -16992,6 +17048,7 @@ components:
         - pending_transfer
         - locked
         - balance_and_pending_transfer
+        - total_balance
         - key_manager
         - holder_name
       title: ListAllHoldersSortItem

@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
@@ -216,6 +216,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T00:02:00",
                 }
             ],
@@ -360,6 +361,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T00:02:00",
                 }
             ],
@@ -578,6 +580,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
                 {
@@ -605,6 +608,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -632,6 +636,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -759,6 +764,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 0,
+                    "total_balance": 73,
                     "modified": "2023-10-24T02:00:00",
                 },
             ],
@@ -889,6 +895,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 0,
+                    "total_balance": 17,
                     "modified": "2023-10-24T01:00:00",
                 },
                 {
@@ -916,6 +923,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 0,
                     "pending_transfer": 0,
                     "locked": 0,
+                    "total_balance": 41,
                     "modified": "2023-10-24T03:00:00",
                 },
             ],
@@ -1053,6 +1061,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 0,
+                    "total_balance": 17,
                     "modified": "2023-10-24T01:00:00",
                 },
                 {
@@ -1080,6 +1089,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 0,
                     "pending_transfer": 0,
                     "locked": 0,
+                    "total_balance": 41,
                     "modified": "2023-10-24T02:00:00",
                 },
                 {
@@ -1107,6 +1117,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 0,
                     "pending_transfer": 0,
                     "locked": 0,
+                    "total_balance": 0,
                     "modified": "2023-10-24T03:00:00",
                 },
             ],
@@ -1316,6 +1327,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
             ],
@@ -1525,6 +1537,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -1552,6 +1565,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -1761,6 +1775,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
                 {
@@ -1788,6 +1803,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
             ],
@@ -1997,6 +2013,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
             ],
@@ -2206,6 +2223,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -2233,6 +2251,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -2442,6 +2461,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
                 {
@@ -2469,6 +2489,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
             ],
@@ -2678,6 +2699,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
             ],
@@ -2887,6 +2909,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -2914,6 +2937,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -3143,6 +3167,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
                 {
@@ -3170,6 +3195,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -3197,6 +3223,7 @@ class TestListAllBondTokenHolders:
                     "exchange_balance": 99,
                     "exchange_commitment": 99,
                     "locked": 0,
+                    "total_balance": 396,
                     "modified": "2023-10-24T03:00:00",
                 },
             ],
@@ -3409,6 +3436,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
             ],
@@ -3621,6 +3649,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -3648,6 +3677,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -3860,6 +3890,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -4067,6 +4098,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -4274,6 +4306,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
                 {
@@ -4301,6 +4334,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -4508,6 +4542,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -4718,6 +4753,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -4745,6 +4781,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -4772,6 +4809,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -4982,6 +5020,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -5009,6 +5048,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -5036,6 +5076,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -5246,6 +5287,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -5273,6 +5315,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -5300,6 +5343,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -5510,6 +5554,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -5537,6 +5582,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -5564,6 +5610,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -5774,6 +5821,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -5801,6 +5849,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -5828,6 +5877,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -6038,6 +6088,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -6065,6 +6116,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -6092,6 +6144,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -6315,6 +6368,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -6342,6 +6396,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 100,
                     "pending_transfer": 100,
                     "locked": 0,
+                    "total_balance": 400,
                     "modified": "2023-10-24T06:00:00",
                 },
                 {
@@ -6369,6 +6424,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -6396,6 +6452,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -6619,6 +6676,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -6646,6 +6704,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 100,
                     "pending_transfer": 100,
                     "locked": 0,
+                    "total_balance": 400,
                     "modified": "2023-10-24T06:00:00",
                 },
                 {
@@ -6673,6 +6732,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
                 {
@@ -6700,6 +6760,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 12,
                     "pending_transfer": 5,
                     "locked": 10,
+                    "total_balance": 48,
                     "modified": "2023-10-24T01:10:00",
                 },
             ],
@@ -6907,6 +6968,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 22,
                     "pending_transfer": 10,
                     "locked": 20,
+                    "total_balance": 93,
                     "modified": "2023-10-24T02:20:00",
                 },
                 {
@@ -6934,6 +6996,7 @@ class TestListAllBondTokenHolders:
                     "exchange_commitment": 99,
                     "pending_transfer": 99,
                     "locked": 30,
+                    "total_balance": 426,
                     "modified": "2023-10-24T05:00:00",
                 },
             ],
@@ -7118,6 +7181,315 @@ class TestListAllBondTokenHolders:
             "holders": [],
         }
 
+    # <Normal_7_1>
+    # Total balance: response, filtering, sorting and pagination
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("params", "indices", "count"),
+        [
+            ({}, [0, 1, 2, 3, 5], 5),
+            ({"include_former_holder": True}, [0, 1, 2, 3, 4, 5], 6),
+            ({"total_balance": 13}, [3, 5], 2),
+            ({"total_balance": 13, "total_balance_operator": 0}, [3, 5], 2),
+            ({"total_balance": 13, "total_balance_operator": 1}, [0, 3, 5], 3),
+            ({"total_balance": 13, "total_balance_operator": 2}, [1, 2, 3, 5], 4),
+            ({"total_balance": 31}, [0], 1),
+            ({"total_balance": 7}, [1], 1),
+            ({"total_balance": 11}, [2], 1),
+            ({"total_balance": 0}, [], 0),
+            ({"total_balance": 0, "include_former_holder": True}, [4], 1),
+            ({"total_balance": 32, "total_balance_operator": 1}, [], 0),
+            ({"total_balance_operator": 1}, [0, 1, 2, 3, 5], 5),
+            ({"total_balance": 13, "balance": 0, "locked": 13}, [3], 1),
+            ({"total_balance": 13, "balance_and_pending_transfer": 13}, [5], 1),
+            ({"sort_item": "total_balance", "sort_order": 0}, [1, 2, 3, 5, 0], 5),
+            ({"sort_item": "total_balance", "sort_order": 1}, [0, 3, 5, 2, 1], 5),
+            (
+                {"sort_item": "total_balance", "include_former_holder": True},
+                [4, 1, 2, 3, 5, 0],
+                6,
+            ),
+            (
+                {
+                    "total_balance": 11,
+                    "total_balance_operator": 1,
+                    "sort_item": "total_balance",
+                    "sort_order": 1,
+                    "offset": 1,
+                    "limit": 2,
+                },
+                [3, 5],
+                4,
+            ),
+        ],
+    )
+    async def test_normal_7_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        params: dict[str, int | str | bool],
+        indices: list[int],
+        count: int,
+    ):
+        # prepare data
+        issuer = default_eth_account("user1")["address"]
+        token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        addresses = [f"0x{i:040x}" for i in range(1, 7)]
+        async_db.add(
+            Account(
+                issuer_address=issuer,
+                keyfile=default_eth_account("user1")["keyfile_json"],
+                eoa_password=E2EEUtils.encrypt("password"),
+            )
+        )
+        async_db.add(
+            Token(
+                type=TokenType.IBET_STRAIGHT_BOND,
+                issuer_address=issuer,
+                token_address=token_address,
+                tx_hash="",
+                abi={},
+                version=TokenVersion.V_25_09,
+            )
+        )
+        # Totals: 31, 7, 11, 13, 0, 13. Include exchange-only and locked-only holders.
+        amounts = [
+            (2, 3, 5, 7),
+            (0, 0, 7, 0),
+            (0, 0, 0, 11),
+            (0, 0, 0, 0),
+            (0, 0, 0, 0),
+            (13, 0, 0, 0),
+        ]
+        for i, (address, (balance, pending, exchange, commitment)) in enumerate(
+            zip(addresses, amounts)
+        ):
+            timestamp = datetime(2023, 10, 24) + timedelta(minutes=i)
+            async_db.add(
+                IDXPosition(
+                    token_address=token_address,
+                    account_address=address,
+                    balance=balance,
+                    pending_transfer=pending,
+                    exchange_balance=exchange,
+                    exchange_commitment=commitment,
+                    created=timestamp,
+                    modified=timestamp,
+                )
+            )
+        for account, lock, value in [
+            (addresses[0], 1, 6),
+            (addresses[0], 2, 8),
+            (addresses[3], 1, 13),
+        ]:
+            async_db.add(
+                IDXLockedPosition(
+                    token_address=token_address,
+                    account_address=account,
+                    lock_address=f"0x{lock + 100:040x}",
+                    value=value,
+                    modified=datetime(2023, 10, 24),
+                )
+            )
+        # The same holder's locks for another token must not be included.
+        async_db.add(
+            IDXLockedPosition(
+                token_address="0x" + "f" * 40,
+                account_address=addresses[0],
+                lock_address="0x" + "e" * 40,
+                value=1000,
+                modified=datetime(2023, 10, 24),
+            )
+        )
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(token_address),
+            headers={"issuer-address": issuer},
+            params=params,
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        data = resp.json()
+        assert [holder["account_address"] for holder in data["holders"]] == [
+            addresses[i] for i in indices
+        ]
+        totals = [31, 7, 11, 13, 0, 13]
+        assert [holder["total_balance"] for holder in data["holders"]] == [
+            totals[i] for i in indices
+        ]
+        assert data["result_set"] == {
+            "count": count,
+            "total": 6,
+            "offset": params.get("offset"),
+            "limit": params.get("limit"),
+        }
+
+    # <Normal_7_2>
+    # Total balance: NULL amounts are treated as zero
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("null_fields", "totals"),
+        [
+            (["balance"], [29, 7, 11, 13, 0, 0]),
+            (["pending_transfer"], [28, 7, 11, 13, 0, 13]),
+            (["exchange_balance"], [26, 0, 11, 13, 0, 13]),
+            (["exchange_commitment"], [24, 7, 0, 13, 0, 13]),
+            (
+                [
+                    "balance",
+                    "pending_transfer",
+                    "exchange_balance",
+                    "exchange_commitment",
+                ],
+                [14, 0, 0, 13, 0, 0],
+            ),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "params",
+        [
+            {"sort_item": "total_balance", "sort_order": 0},
+            {"sort_item": "total_balance", "sort_order": 1},
+            {"total_balance": 0, "total_balance_operator": 0},
+            {"total_balance": 13, "total_balance_operator": 0},
+            {"total_balance": 13, "total_balance_operator": 1},
+            {"total_balance": 13, "total_balance_operator": 2},
+        ],
+    )
+    async def test_normal_7_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        null_fields: list[str],
+        totals: list[int],
+        params: dict[str, int | str],
+    ):
+        # prepare data
+        issuer = default_eth_account("user1")["address"]
+        token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        addresses = [f"0x{i:040x}" for i in range(1, 7)]
+        async_db.add(
+            Account(
+                issuer_address=issuer,
+                keyfile=default_eth_account("user1")["keyfile_json"],
+                eoa_password=E2EEUtils.encrypt("password"),
+            )
+        )
+        async_db.add(
+            Token(
+                type=TokenType.IBET_STRAIGHT_BOND,
+                issuer_address=issuer,
+                token_address=token_address,
+                tx_hash="",
+                abi={},
+                version=TokenVersion.V_25_09,
+            )
+        )
+        # Totals: 31, 7, 11, 13, 0, 13. Include exchange-only and locked-only holders.
+        amounts = [
+            (2, 3, 5, 7),
+            (0, 0, 7, 0),
+            (0, 0, 0, 11),
+            (0, 0, 0, 0),
+            (0, 0, 0, 0),
+            (13, 0, 0, 0),
+        ]
+        for i, (address, (balance, pending, exchange, commitment)) in enumerate(
+            zip(addresses, amounts)
+        ):
+            timestamp = datetime(2023, 10, 24) + timedelta(minutes=i)
+            async_db.add(
+                IDXPosition(
+                    token_address=token_address,
+                    account_address=address,
+                    balance=None if "balance" in null_fields else balance,
+                    pending_transfer=None
+                    if "pending_transfer" in null_fields
+                    else pending,
+                    exchange_balance=None
+                    if "exchange_balance" in null_fields
+                    else exchange,
+                    exchange_commitment=None
+                    if "exchange_commitment" in null_fields
+                    else commitment,
+                    created=timestamp,
+                    modified=timestamp,
+                )
+            )
+        for account, lock, value in [
+            (addresses[0], 1, 6),
+            (addresses[0], 2, 8),
+            (addresses[3], 1, 13),
+        ]:
+            async_db.add(
+                IDXLockedPosition(
+                    token_address=token_address,
+                    account_address=account,
+                    lock_address=f"0x{lock + 100:040x}",
+                    value=value,
+                    modified=datetime(2023, 10, 24),
+                )
+            )
+        # The same holder's locks for another token must not be included.
+        async_db.add(
+            IDXLockedPosition(
+                token_address="0x" + "f" * 40,
+                account_address=addresses[0],
+                lock_address="0x" + "e" * 40,
+                value=1000,
+                modified=datetime(2023, 10, 24),
+            )
+        )
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(token_address),
+            headers={"issuer-address": issuer},
+            params={"include_former_holder": True, **params},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        indices = list(range(6))
+        if "sort_item" in params:
+            indices = sorted(
+                indices, key=lambda i: totals[i], reverse=bool(params["sort_order"])
+            )
+        else:
+            threshold = params["total_balance"]
+            operator = params["total_balance_operator"]
+            assert isinstance(threshold, int)
+            assert isinstance(operator, int)
+            indices = [
+                i
+                for i in indices
+                if (
+                    totals[i] == threshold,
+                    totals[i] >= threshold,
+                    totals[i] <= threshold,
+                )[operator]
+            ]
+        data = resp.json()
+        assert [holder["account_address"] for holder in data["holders"]] == [
+            addresses[i] for i in indices
+        ]
+        assert [holder["total_balance"] for holder in data["holders"]] == [
+            totals[i] for i in indices
+        ]
+        for holder in data["holders"]:
+            for field in null_fields:
+                assert holder[field] == 0
+        assert data["result_set"] == {
+            "count": len(indices),
+            "total": 6,
+            "offset": None,
+            "limit": None,
+        }
+
     ###########################################################################
     # Error Case
     ###########################################################################
@@ -7241,3 +7613,27 @@ class TestListAllBondTokenHolders:
             "meta": {"code": 1, "title": "InvalidParameterError"},
             "detail": "this token is temporarily unavailable",
         }
+
+    # <Error_5>
+    # Invalid total balance search parameters
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "params",
+        [
+            {"total_balance": "invalid"},
+            {"total_balance": "1.5"},
+            {"total_balance_operator": 3},
+            {"total_balance_operator": "invalid"},
+        ],
+    )
+    async def test_error_5(
+        self, async_client: AsyncClient, params: dict[str, int | str]
+    ):
+        token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        issuer = default_eth_account("user1")["address"]
+        resp = await async_client.get(
+            self.base_url.format(token_address),
+            headers={"issuer-address": issuer},
+            params=params,
+        )
+        assert resp.status_code == 422

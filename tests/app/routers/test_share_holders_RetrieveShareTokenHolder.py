@@ -129,6 +129,7 @@ class TestRetrieveShareTokenHolder:
             "exchange_commitment": 0,
             "pending_transfer": 0,
             "locked": 0,
+            "total_balance": 0,
             "modified": None,
         }
 
@@ -224,6 +225,7 @@ class TestRetrieveShareTokenHolder:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "total_balance": 38,
             "modified": "2023-10-24T00:00:00",
         }
 
@@ -340,6 +342,7 @@ class TestRetrieveShareTokenHolder:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 10,
+            "total_balance": 48,
             "modified": "2023-10-24T00:02:00",
         }
 
@@ -415,6 +418,7 @@ class TestRetrieveShareTokenHolder:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "total_balance": 38,
             "modified": "2023-10-24T00:00:00",
         }
 
@@ -505,6 +509,7 @@ class TestRetrieveShareTokenHolder:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "total_balance": 38,
             "modified": "2023-10-24T00:00:00",
         }
 
@@ -592,8 +597,111 @@ class TestRetrieveShareTokenHolder:
             "exchange_commitment": 12,
             "pending_transfer": 5,
             "locked": 0,
+            "total_balance": 38,
             "modified": "2023-10-24T00:00:00",
         }
+
+    # <Normal_4>
+    # Total balance: all components, NULL amounts and exchange-only positions
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("balance", "pending", "exchange", "commitment", "locks", "total"),
+        [
+            (2, 3, 5, 7, [6, 8], 31),
+            (None, 3, 5, 7, [6, 8], 29),
+            (2, None, 5, 7, [6, 8], 28),
+            (2, 3, None, 7, [6, 8], 26),
+            (2, 3, 5, None, [6, 8], 24),
+            (None, None, None, None, [6, 8], 14),
+            (None, None, None, None, [], 0),
+            (0, 0, 7, 0, [], 7),
+            (0, 0, 0, 11, [], 11),
+            (0, 0, 0, 0, [13], 13),
+            (0, 0, 0, 0, [], 0),
+            (13, 0, 0, 0, [], 13),
+        ],
+    )
+    async def test_normal_4(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        balance: int | None,
+        pending: int | None,
+        exchange: int | None,
+        commitment: int | None,
+        locks: list[int],
+        total: int,
+    ):
+        # prepare data
+        issuer = default_eth_account("user1")["address"]
+        token_address = "0x82b1c9374aB625380bd498a3d9dF4033B8A0E3Bb"
+        account_address = "0xb75c7545b9230FEe99b7af370D38eBd3DAD929f7"
+        async_db.add(
+            Account(
+                issuer_address=issuer,
+                keyfile=default_eth_account("user1")["keyfile_json"],
+                eoa_password=E2EEUtils.encrypt("password"),
+            )
+        )
+        async_db.add(
+            Token(
+                type=TokenType.IBET_SHARE,
+                issuer_address=issuer,
+                token_address=token_address,
+                tx_hash="",
+                abi={},
+                version=TokenVersion.V_25_09,
+            )
+        )
+        async_db.add(
+            IDXPosition(
+                token_address=token_address,
+                account_address=account_address,
+                balance=balance,
+                pending_transfer=pending,
+                exchange_balance=exchange,
+                exchange_commitment=commitment,
+                modified=datetime(2023, 10, 24),
+            )
+        )
+        for i, value in enumerate(locks):
+            async_db.add(
+                IDXLockedPosition(
+                    token_address=token_address,
+                    account_address=account_address,
+                    lock_address=f"0x{i + 100:040x}",
+                    value=value,
+                    modified=datetime(2023, 10, 24),
+                )
+            )
+        # Locks belonging to another token must not affect the total.
+        async_db.add(
+            IDXLockedPosition(
+                token_address="0x" + "f" * 40,
+                account_address=account_address,
+                lock_address="0x" + "e" * 40,
+                value=1000,
+                modified=datetime(2023, 10, 24),
+            )
+        )
+        await async_db.commit()
+
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(token_address, account_address),
+            headers={"issuer-address": issuer},
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["account_address"] == account_address
+        assert data["balance"] == (balance or 0)
+        assert data["pending_transfer"] == (pending or 0)
+        assert data["exchange_balance"] == (exchange or 0)
+        assert data["exchange_commitment"] == (commitment or 0)
+        assert data["locked"] == sum(locks)
+        assert data["total_balance"] == total
 
     ###########################################################################
     # Error Case
