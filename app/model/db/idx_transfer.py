@@ -22,7 +22,7 @@ from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel
-from sqlalchemy import JSON, BigInteger, DateTime, String
+from sqlalchemy import JSON, BigInteger, DateTime, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -82,6 +82,23 @@ class IDXTransfer(Base):
     message: Mapped[str | None] = mapped_column(String(50), index=True)
     # block timestamp
     block_timestamp: Mapped[datetime | None] = mapped_column(DateTime)
+
+    __table_args__ = (
+        Index(
+            "ix_idx_transfer_token_from_timestamp_id",
+            token_address,
+            from_address,
+            block_timestamp.desc(),
+            id.desc(),
+        ),
+        Index(
+            "ix_idx_transfer_token_to_timestamp_id",
+            token_address,
+            to_address,
+            block_timestamp.desc(),
+            id.desc(),
+        ),
+    )
 
 
 class IDXTransferBlockNumber(Base):
