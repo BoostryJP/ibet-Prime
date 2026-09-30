@@ -83,6 +83,10 @@ class HolderResponse(BaseModel):
     exchange_commitment: int
     pending_transfer: int
     locked: int
+    total_balance: int = Field(
+        ...,
+        description="Sum of balance, pending_transfer, locked, exchange_balance, and exchange_commitment",
+    )
     modified: Optional[datetime]
 
 

@@ -2389,6 +2389,13 @@ async def list_all_bond_token_holders(
 
     # Base query
     locked_value = func.sum(IDXLockedPosition.value)
+    total_balance = (
+        coalesce(IDXPosition.balance, 0)
+        + coalesce(IDXPosition.pending_transfer, 0)
+        + coalesce(locked_value, 0)
+        + coalesce(IDXPosition.exchange_balance, 0)
+        + coalesce(IDXPosition.exchange_commitment, 0)
+    )
     stmt = (
         select(
             IDXPosition,
@@ -2517,6 +2524,18 @@ async def list_all_bond_token_holders(
                     <= get_query.balance_and_pending_transfer
                 )
 
+    if (
+        get_query.total_balance is not None
+        and get_query.total_balance_operator is not None
+    ):
+        match get_query.total_balance_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.having(total_balance == get_query.total_balance)
+            case ValueOperator.GTE:
+                stmt = stmt.having(total_balance >= get_query.total_balance)
+            case ValueOperator.LTE:
+                stmt = stmt.having(total_balance <= get_query.total_balance)
+
     if get_query.account_address is not None:
         stmt = stmt.where(
             IDXPosition.account_address.like("%" + get_query.account_address + "%")
@@ -2547,6 +2566,8 @@ async def list_all_bond_token_holders(
         sort_attr = IDXPersonalInfo._personal_info["name"].as_string()  # type: ignore
     elif get_query.sort_item == ListAllHoldersSortItem.key_manager:
         sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()  # type: ignore
+    elif get_query.sort_item == ListAllHoldersSortItem.total_balance:
+        sort_attr = total_balance
     elif get_query.sort_item == ListAllHoldersSortItem.locked:
         sort_attr = locked_value
     elif get_query.sort_item == ListAllHoldersSortItem.balance_and_pending_transfer:
@@ -2623,11 +2644,18 @@ async def list_all_bond_token_holders(
                 "holder_extra_info": _holder_extra_info.extra_info()
                 if _holder_extra_info is not None
                 else TokenHolderExtraInfo.default_extra_info,
-                "balance": _position.balance,
-                "exchange_balance": _position.exchange_balance,
-                "exchange_commitment": _position.exchange_commitment,
-                "pending_transfer": _position.pending_transfer,
+                "balance": _position.balance or 0,
+                "exchange_balance": _position.exchange_balance or 0,
+                "exchange_commitment": _position.exchange_commitment or 0,
+                "pending_transfer": _position.pending_transfer or 0,
                 "locked": _locked if _locked is not None else 0,
+                "total_balance": (
+                    (_position.balance or 0)
+                    + (_position.pending_transfer or 0)
+                    + (_locked if _locked is not None else 0)
+                    + (_position.exchange_balance or 0)
+                    + (_position.exchange_commitment or 0)
+                ),
                 "modified": modified,
             }
         )
@@ -2889,11 +2917,18 @@ async def retrieve_bond_token_holder(
         "account_address": account_address,
         "personal_information": _personal_info,
         "holder_extra_info": holder_extra_info,
-        "balance": balance,
-        "exchange_balance": exchange_balance,
-        "exchange_commitment": exchange_commitment,
-        "pending_transfer": pending_transfer,
+        "balance": balance or 0,
+        "exchange_balance": exchange_balance or 0,
+        "exchange_commitment": exchange_commitment or 0,
+        "pending_transfer": pending_transfer or 0,
         "locked": locked,
+        "total_balance": (
+            (balance or 0)
+            + (pending_transfer or 0)
+            + locked
+            + (exchange_balance or 0)
+            + (exchange_commitment or 0)
+        ),
         "modified": modified,
     }
 

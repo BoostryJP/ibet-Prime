@@ -482,6 +482,7 @@ class ListAllHoldersSortItem(StrEnum):
     pending_transfer = "pending_transfer"
     locked = "locked"
     balance_and_pending_transfer = "balance_and_pending_transfer"
+    total_balance = "total_balance"
     key_manager = "key_manager"
     holder_name = "holder_name"
 
@@ -514,6 +515,14 @@ class ListAllHoldersQuery(BasePaginationQuery):
     balance_and_pending_transfer_operator: Optional[ValueOperator] = Field(
         ValueOperator.EQUAL,
         description="search condition of balance plus pending transfer(0:equal, 1:greater than or equal, 2:less than or equal）",
+    )
+    total_balance: Optional[int] = Field(
+        None,
+        description="Sum of balance, pending_transfer, locked, exchange_balance, and exchange_commitment",
+    )
+    total_balance_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Search condition of total balance(0:equal, 1:greater than or equal, 2:less than or equal)",
     )
     account_address: Optional[str] = Field(
         None, description="account address(partial match)"
