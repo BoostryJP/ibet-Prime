@@ -129,12 +129,20 @@ class RetrieveTokenHoldersCollectionSortItem(StrEnum):
     account_address = "account_address"
     hold_balance = "hold_balance"
     locked_balance = "locked_balance"
+    total_balance = "total_balance"
     key_manager = "key_manager"
     tax_category = "tax_category"
     holder_name = "holder_name"
 
 
 class RetrieveTokenHoldersCollectionQuery(BasePaginationQuery):
+    total_balance: Optional[int] = Field(
+        None, description="Sum of hold_balance and locked_balance"
+    )
+    total_balance_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Search condition of total balance(0:equal, 1:greater than or equal, 2:less than or equal)",
+    )
     hold_balance: Optional[int] = Field(None, description="Hold balance")
     hold_balance_operator: Optional[ValueOperator] = Field(
         ValueOperator.EQUAL,
@@ -217,6 +225,7 @@ class TokenHoldersCollectionHolder(BaseModel):
         "This includes balance/pending_transfer/exchange_balance/exchange_commitment."
     )
     locked_balance: int = Field(description="Amount of locked balance.")
+    total_balance: int = Field(description="Sum of hold_balance and locked_balance")
     personal_information: PersonalInfo
 
 
@@ -236,6 +245,7 @@ class RetrieveTokenHoldersListResponse(BaseModel):
                             "account_address": "0x85a8b8887a4bD76859751b10C8aC8EC5f3aA1bDB",
                             "hold_balance": 30000,
                             "locked_balance": 0,
+                            "total_balance": 30000,
                         }
                     ],
                 }

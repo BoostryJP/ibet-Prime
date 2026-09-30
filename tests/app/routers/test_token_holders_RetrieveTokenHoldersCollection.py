@@ -102,13 +102,16 @@ async def holder_name_collection(async_db: AsyncSession) -> HolderNameCollection
         info.personal_info = {"name": name, "key_manager": f"manager_{holder_id}"}
         if holder_id != 8:
             async_db.add(info)
+        personal_info = info.personal_info
         holders.append(
             {
                 **holder.json(),
+                "total_balance": (holder.hold_balance or 0)
+                + (holder.locked_balance or 0),
                 "personal_information": (
-                    info.personal_info
+                    personal_info
                     if holder_id != 8
-                    else {key: None for key in info.personal_info}
+                    else {key: None for key in personal_info}
                 ),
             }
         )
@@ -218,6 +221,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": {
                         "key_manager": None,
                         "name": None,
@@ -303,6 +308,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -384,6 +391,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -465,6 +474,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -546,6 +557,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -627,6 +640,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -708,6 +723,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -787,6 +804,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -865,6 +884,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -941,6 +962,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -1085,6 +1108,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": _personal_info.personal_info,
                 }
             )
@@ -1195,6 +1220,8 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             holders.append(
                 {
                     **_token_holder.json(),
+                    "total_balance": (_token_holder.hold_balance or 0)
+                    + (_token_holder.locked_balance or 0),
                     "personal_information": {
                         "key_manager": None,
                         "name": None,
@@ -1286,6 +1313,291 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
             params=params,
         )
 
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": count,
+                "offset": params.get("offset"),
+                "limit": params.get("limit"),
+                "total": 8,
+            },
+            "status": TokenHolderBatchStatus.DONE,
+            "holders": [holders[holder_id - 1] for holder_id in expected_ids],
+        }
+
+    # Normal_6_1
+    # Total balance: response, filtering, sorting and pagination
+    @pytest.mark.parametrize(
+        "token_type", [TokenType.IBET_STRAIGHT_BOND, TokenType.IBET_SHARE]
+    )
+    @pytest.mark.parametrize(
+        "params, expected_ids, count",
+        [
+            ({}, [1, 2, 3, 4, 5, 6, 7, 8], 8),
+            ({"total_balance": 10, "total_balance_operator": 0}, [2, 3], 2),
+            ({"total_balance": 10}, [2, 3], 2),
+            ({"total_balance": 10, "total_balance_operator": 1}, [1, 2, 3], 3),
+            (
+                {"total_balance": 10, "total_balance_operator": 2},
+                [2, 3, 4, 5, 6, 7, 8],
+                7,
+            ),
+            ({"total_balance": 0}, [4, 7], 2),
+            ({"total_balance": 31}, [], 0),
+            ({"total_balance_operator": 1}, [1, 2, 3, 4, 5, 6, 7, 8], 8),
+            ({"total_balance": 10, "hold_balance": 0}, [3], 1),
+            ({"total_balance": 10, "locked_balance": 0}, [2], 1),
+            ({"total_balance": 10, "holder_name": "name_test"}, [2, 3], 2),
+            (
+                {"sort_item": "total_balance", "sort_order": 0},
+                [4, 7, 8, 5, 6, 2, 3, 1],
+                8,
+            ),
+            (
+                {"sort_item": "total_balance", "sort_order": 1},
+                [1, 2, 3, 6, 5, 8, 4, 7],
+                8,
+            ),
+            (
+                {
+                    "total_balance": 10,
+                    "total_balance_operator": 1,
+                    "sort_item": "total_balance",
+                    "sort_order": 1,
+                    "offset": 1,
+                    "limit": 1,
+                },
+                [2],
+                3,
+            ),
+        ],
+        ids=[f"normal_6_1_{case_number}" for case_number in range(1, 15)],
+    )
+    @pytest.mark.asyncio
+    async def test_normal_6_1(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        token_type: TokenType,
+        params: dict[str, str | int],
+        expected_ids: list[int],
+        count: int,
+    ):
+        # Issue Token
+        user = default_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = token_type
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+
+        balances = [(1, 29), (10, 0), (0, 10), (0, 0), (0, 5), (6, 0), (0, 0), (1, 1)]
+        totals = [30, 10, 10, 0, 5, 6, 0, 2]
+        holders: list[dict[str, object]] = []
+        for i, (hold_balance, locked_balance) in enumerate(balances):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = f"0x{i + 1:040x}"
+            _token_holder.hold_balance = hold_balance
+            _token_holder.locked_balance = locked_balance
+            async_db.add(_token_holder)
+
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = _token_holder.account_address
+            _personal_info.personal_info = {
+                "key_manager": f"key_manager_{i + 1}",
+                "name": "name_test" if i in [1, 2] else f"name_{i + 1}",
+                "postal_code": str(i + 1),
+                "address": str(i + 1),
+                "email": str(i + 1),
+                "birth": str(i + 1),
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
+            async_db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "total_balance": totals[i],
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        await async_db.commit()
+
+        # request target api
+        resp = await async_client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params=params,
+        )
+
+        # assertion
+        assert resp.status_code == 200
+        assert resp.json() == {
+            "result_set": {
+                "count": count,
+                "offset": params.get("offset"),
+                "limit": params.get("limit"),
+                "total": 8,
+            },
+            "status": TokenHolderBatchStatus.DONE,
+            "holders": [holders[holder_id - 1] for holder_id in expected_ids],
+        }
+
+    # Normal_6_2
+    # Total balance: NULL amounts are treated as zero.
+    # Existing balance fields are non-nullable, so disable strict response validation.
+    @pytest.mark.parametrize(
+        "token_type", [TokenType.IBET_STRAIGHT_BOND, TokenType.IBET_SHARE]
+    )
+    @pytest.mark.parametrize(
+        "params, expected_ids, count",
+        [
+            ({}, [1, 2, 3, 4, 5, 6, 7, 8], 8),
+            ({"total_balance": 10, "total_balance_operator": 0}, [2, 3], 2),
+            ({"total_balance": 10}, [2, 3], 2),
+            ({"total_balance": 10, "total_balance_operator": 1}, [1, 2, 3], 3),
+            (
+                {"total_balance": 10, "total_balance_operator": 2},
+                [2, 3, 4, 5, 6, 7, 8],
+                7,
+            ),
+            ({"total_balance": 0}, [4, 7], 2),
+            ({"total_balance": 31}, [], 0),
+            ({"total_balance_operator": 1}, [1, 2, 3, 4, 5, 6, 7, 8], 8),
+            ({"total_balance": 10, "hold_balance": 0}, [3], 1),
+            ({"total_balance": 10, "locked_balance": 0}, [2], 1),
+            ({"total_balance": 10, "holder_name": "name_test"}, [2, 3], 2),
+            (
+                {"sort_item": "total_balance", "sort_order": 0},
+                [4, 7, 8, 5, 6, 2, 3, 1],
+                8,
+            ),
+            (
+                {"sort_item": "total_balance", "sort_order": 1},
+                [1, 2, 3, 6, 5, 8, 4, 7],
+                8,
+            ),
+            (
+                {
+                    "total_balance": 10,
+                    "total_balance_operator": 1,
+                    "sort_item": "total_balance",
+                    "sort_order": 1,
+                    "offset": 1,
+                    "limit": 1,
+                },
+                [2],
+                3,
+            ),
+        ],
+        ids=[f"normal_6_2_{case_number}" for case_number in range(1, 15)],
+    )
+    @mock.patch("app.main.RESPONSE_VALIDATION_MODE", False)
+    @pytest.mark.asyncio
+    async def test_normal_6_2(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+        token_type: TokenType,
+        params: dict[str, str | int],
+        expected_ids: list[int],
+        count: int,
+    ):
+        # Issue Token
+        user = default_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # prepare data
+        _token = Token()
+        _token.type = token_type
+        _token.tx_hash = ""
+        _token.issuer_address = issuer_address
+        _token.token_address = token_address
+        _token.abi = {}
+        _token.version = TokenVersion.V_25_09
+        async_db.add(_token)
+
+        list_id = str(uuid.uuid4())
+        _token_holders_list = TokenHoldersList()
+        _token_holders_list.list_id = list_id
+        _token_holders_list.token_address = token_address
+        _token_holders_list.block_number = 100
+        _token_holders_list.batch_status = TokenHolderBatchStatus.DONE
+        async_db.add(_token_holders_list)
+        await async_db.commit()
+
+        balances = [
+            (1, 29),
+            (10, 0),
+            (0, 10),
+            (0, 0),
+            (None, 5),
+            (6, None),
+            (None, None),
+            (1, 1),
+        ]
+        totals = [30, 10, 10, 0, 5, 6, 0, 2]
+        holders: list[dict[str, object]] = []
+        for i, (hold_balance, locked_balance) in enumerate(balances):
+            _token_holder = TokenHolder()
+            _token_holder.holder_list_id = _token_holders_list.id
+            _token_holder.account_address = f"0x{i + 1:040x}"
+            _token_holder.hold_balance = hold_balance
+            _token_holder.locked_balance = locked_balance
+            async_db.add(_token_holder)
+
+            _personal_info = IDXPersonalInfo()
+            _personal_info.issuer_address = issuer_address
+            _personal_info.account_address = _token_holder.account_address
+            _personal_info.personal_info = {
+                "key_manager": f"key_manager_{i + 1}",
+                "name": "name_test" if i in [1, 2] else f"name_{i + 1}",
+                "postal_code": str(i + 1),
+                "address": str(i + 1),
+                "email": str(i + 1),
+                "birth": str(i + 1),
+                "is_corporate": True,
+                "tax_category": i + 1,
+            }
+            _personal_info.data_source = PersonalInfoDataSource.ON_CHAIN
+            async_db.add(_personal_info)
+            holders.append(
+                {
+                    **_token_holder.json(),
+                    "total_balance": totals[i],
+                    "personal_information": _personal_info.personal_info,
+                }
+            )
+        await async_db.commit()
+
+        # request target api
+        resp = await async_client.get(
+            self.base_url.format(token_address=token_address, list_id=list_id),
+            headers={"issuer-address": issuer_address},
+            params=params,
+        )
+
+        # assertion
         assert resp.status_code == 200
         assert resp.json() == {
             "result_set": {
@@ -1593,3 +1905,38 @@ class TestAppRoutersHoldersTokenAddressCollectionIdGET:
                 },
             ],
         }
+
+    # Error_8
+    # 422: Request Validation Error
+    # Invalid total balance search parameters
+    @pytest.mark.parametrize(
+        "params",
+        [
+            {"total_balance": "invalid"},
+            {"total_balance": "1.5"},
+            {"total_balance_operator": 3},
+            {"total_balance_operator": "invalid"},
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_error_8(
+        self, async_client: AsyncClient, params: dict[str, str | int]
+    ):
+        # Issue Token
+        user = default_eth_account("user1")
+        issuer_address = user["address"]
+        token_address = "0xABCdeF1234567890abcdEf123456789000000000"
+
+        # request target api
+        resp = await async_client.get(
+            self.base_url.format(
+                token_address=token_address, list_id=str(uuid.uuid4())
+            ),
+            headers={"issuer-address": issuer_address},
+            params=params,
+        )
+        # assertion
+        assert resp.status_code == 422
+        data = resp.json()
+        assert data["meta"] == {"code": 1, "title": "RequestValidationError"}
+        assert data["detail"][0]["loc"] == ["query", next(iter(params))]
