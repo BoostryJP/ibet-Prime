@@ -2374,6 +2374,7 @@ async def list_all_bond_token_holders(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
