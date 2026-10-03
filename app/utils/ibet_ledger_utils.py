@@ -24,6 +24,7 @@ from typing import Any, Sequence, TypeAlias, TypedDict, cast
 import pytz
 from sqlalchemy import and_, delete, func, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import defer
 
 from app import log
 from app.model.db import (
@@ -101,6 +102,7 @@ async def request_ledger_creation(db: AsyncSession, token_address: str):
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,
@@ -216,7 +218,10 @@ async def finalize_ledger(
     # Get token information
     _token: Token | None = (
         await db.scalars(
-            select(Token).where(Token.token_address == token_address).limit(1)
+            select(Token)
+            .options(defer(Token.abi))
+            .where(Token.token_address == token_address)
+            .limit(1)
         )
     ).first()
     if _token is None or _token.type not in TokenType:

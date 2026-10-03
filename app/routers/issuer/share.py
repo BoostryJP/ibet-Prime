@@ -697,6 +697,7 @@ async def update_share_token(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -958,6 +959,7 @@ async def list_share_additional_issuance_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -1093,6 +1095,7 @@ async def issuer_additional_share(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -1248,6 +1251,7 @@ async def issue_additional_shares_in_batch(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -1394,6 +1398,7 @@ async def list_share_redeem_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -1529,6 +1534,7 @@ async def redeem_share(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -1619,7 +1625,10 @@ async def list_all_batch_share_redemption(
     if issuer_address is None:
         _token: Token | None = (
             await db.scalars(
-                select(Token).where(Token.token_address == token_address).limit(1)
+                select(Token)
+                .options(defer(Token.abi))
+                .where(Token.token_address == token_address)
+                .limit(1)
             )
         ).first()
         if _token is not None:
@@ -1747,6 +1756,7 @@ async def redeem_shares_in_batch(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -1986,6 +1996,7 @@ async def schedule_share_token_update_event(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -2072,6 +2083,7 @@ async def schedule_share_token_update_events_in_batch(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -2608,6 +2620,7 @@ async def count_share_token_holders(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -2693,6 +2706,7 @@ async def retrieve_share_token_holder(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -2872,6 +2886,7 @@ async def register_share_token_holder_extra_info(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -2950,6 +2965,7 @@ async def register_share_token_holder_personal_info(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -3039,6 +3055,7 @@ async def list_all_share_token_batch_personal_info_registration(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -3161,6 +3178,7 @@ async def initiate_share_token_batch_personal_info_registration(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -3345,7 +3363,8 @@ async def list_share_token_lock_unlock_events(
             IDXLock.value.label("value"),
             IDXLock.data.label("data"),
             IDXLock.block_timestamp.label("block_timestamp"),
-            Token,
+            Token.issuer_address.label("issuer_address"),
+            Token.type.label("token_type"),
         )
         .join(Token, IDXLock.token_address == Token.token_address)
         .where(
@@ -3376,7 +3395,8 @@ async def list_share_token_lock_unlock_events(
             IDXUnlock.value.label("value"),
             IDXUnlock.data.label("data"),
             IDXUnlock.block_timestamp.label("block_timestamp"),
-            Token,
+            Token.issuer_address.label("issuer_address"),
+            Token.type.label("token_type"),
         )
         .join(Token, IDXUnlock.token_address == Token.token_address)
         .where(
@@ -3469,28 +3489,11 @@ async def list_share_token_lock_unlock_events(
     if limit is not None:
         stmt = stmt.limit(limit)
 
-    entries = [
-        all_lock_event_alias.c.category,
-        all_lock_event_alias.c.is_forced,
-        all_lock_event_alias.c.transaction_hash,
-        all_lock_event_alias.c.msg_sender,
-        all_lock_event_alias.c.token_address,
-        all_lock_event_alias.c.lock_address,
-        all_lock_event_alias.c.account_address,
-        all_lock_event_alias.c.recipient_address,
-        all_lock_event_alias.c.value,
-        all_lock_event_alias.c.data,
-        all_lock_event_alias.c.block_timestamp,
-        Token,
-    ]
-    lock_events = (
-        (await db.execute(select(*entries).from_statement(stmt))).tuples().all()
-    )
+    lock_events = (await db.execute(stmt)).tuples().all()
 
     resp_data: list[dict[str, Any]] = []
     for lock_event in lock_events:
-        token: Token = lock_event.Token
-        share_contract = await IbetShareContract(token.token_address).get()
+        share_contract = await IbetShareContract(lock_event.token_address).get()
         if lock_event.block_timestamp is None:
             continue
         block_timestamp_utc = pytz.timezone("UTC").localize(lock_event.block_timestamp)
@@ -3500,9 +3503,9 @@ async def list_share_token_lock_unlock_events(
                 "is_forced": lock_event.is_forced,
                 "transaction_hash": lock_event.transaction_hash,
                 "msg_sender": lock_event.msg_sender,
-                "issuer_address": token.issuer_address,
-                "token_address": token.token_address,
-                "token_type": token.type,
+                "issuer_address": lock_event.issuer_address,
+                "token_address": lock_event.token_address,
+                "token_type": lock_event.token_type,
                 "token_name": share_contract.name,
                 "lock_address": lock_event.lock_address,
                 "account_address": lock_event.account_address,
@@ -3572,6 +3575,7 @@ async def transfer_share_token_ownership(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -3617,6 +3621,7 @@ async def list_share_token_transfer_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -3954,6 +3959,7 @@ async def list_specific_share_token_transfer_approval_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -4306,6 +4312,7 @@ async def update_share_token_transfer_approval_status(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -4506,6 +4513,7 @@ async def retrieve_share_token_transfer_approval_status(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
@@ -4770,6 +4778,7 @@ async def bulk_transfer_share_token_ownership(
     _issued_token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,

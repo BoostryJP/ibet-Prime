@@ -23,6 +23,7 @@ from typing import Annotated, Any, Dict, Sequence, Tuple
 from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, HTTPException, Path, Query
 from sqlalchemy import desc, func, select
+from sqlalchemy.orm import defer
 from web3.contract.contract import ContractFunction
 
 import config
@@ -252,7 +253,10 @@ async def service_get_tx_data(db: DBAsyncSession, hash: str) -> Dict[str, Any]:
     contract_parameters: dict[str, Any] | None = None
     token_contract = (
         await db.scalars(
-            select(Token).where(Token.token_address == tx_data.to_address).limit(1)
+            select(Token)
+            .options(defer(Token.abi))
+            .where(Token.token_address == tx_data.to_address)
+            .limit(1)
         )
     ).first()
     if token_contract is not None:
