@@ -610,6 +610,7 @@ async def retrieve_bond_token(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,

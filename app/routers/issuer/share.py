@@ -596,6 +596,7 @@ async def retrieve_share_token(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_SHARE,
