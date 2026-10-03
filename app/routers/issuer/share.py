@@ -45,7 +45,7 @@ from sqlalchemy import (
     or_,
     select,
 )
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, defer
 from sqlalchemy.sql.functions import coalesce
 
 import config
@@ -519,12 +519,18 @@ async def list_all_share_tokens(
     # Get issued token list
     if issuer_address is None:
         tokens: Sequence[Token] = (
-            await db.scalars(select(Token).where(Token.type == TokenType.IBET_SHARE))
+            await db.scalars(
+                select(Token)
+                .options(defer(Token.abi))
+                .where(Token.type == TokenType.IBET_SHARE)
+            )
         ).all()
     else:
         tokens: Sequence[Token] = (
             await db.scalars(
-                select(Token).where(
+                select(Token)
+                .options(defer(Token.abi))
+                .where(
                     and_(
                         Token.type == TokenType.IBET_SHARE,
                         Token.issuer_address == issuer_address,
