@@ -711,6 +711,7 @@ async def update_bond_token(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -994,6 +995,7 @@ async def list_bond_additional_issuance_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -1129,6 +1131,7 @@ async def issue_additional_bond(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -1284,6 +1287,7 @@ async def issue_additional_bonds_in_batch(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -1430,6 +1434,7 @@ async def list_bond_redemption_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -1565,6 +1570,7 @@ async def redeem_bond(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -1655,7 +1661,10 @@ async def list_all_batch_bond_redemption(
     if issuer_address is None:
         _token: Token | None = (
             await db.scalars(
-                select(Token).where(Token.token_address == token_address).limit(1)
+                select(Token)
+                .options(defer(Token.abi))
+                .where(Token.token_address == token_address)
+                .limit(1)
             )
         ).first()
         if _token is not None:
@@ -1783,6 +1792,7 @@ async def redeem_bonds_in_batch(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -2023,6 +2033,7 @@ async def schedule_bond_token_update_event(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -2128,6 +2139,7 @@ async def schedule_bond_token_update_events_in_batch(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -2707,6 +2719,7 @@ async def count_bond_token_holders(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -2792,6 +2805,7 @@ async def retrieve_bond_token_holder(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -2980,6 +2994,7 @@ async def register_bond_token_holder_extra_info(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -3058,6 +3073,7 @@ async def register_bond_token_holder_personal_info(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -3147,6 +3163,7 @@ async def list_all_bond_token_batch_personal_info_registration(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -3269,6 +3286,7 @@ async def initiate_bond_token_batch_personal_info_registration(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -3446,7 +3464,8 @@ async def list_bond_token_lock_unlock_events(
             IDXLock.value.label("value"),
             IDXLock.data.label("data"),
             IDXLock.block_timestamp.label("block_timestamp"),
-            Token,
+            Token.issuer_address.label("issuer_address"),
+            Token.type.label("token_type"),
         )
         .join(Token, IDXLock.token_address == Token.token_address)
         .where(
@@ -3477,7 +3496,8 @@ async def list_bond_token_lock_unlock_events(
             IDXUnlock.value.label("value"),
             IDXUnlock.data.label("data"),
             IDXUnlock.block_timestamp.label("block_timestamp"),
-            Token,
+            Token.issuer_address.label("issuer_address"),
+            Token.type.label("token_type"),
         )
         .join(Token, IDXUnlock.token_address == Token.token_address)
         .where(
@@ -3578,28 +3598,11 @@ async def list_bond_token_lock_unlock_events(
     if request_query.limit is not None:
         stmt = stmt.limit(request_query.limit)
 
-    entries = [
-        all_lock_event_alias.c.category,
-        all_lock_event_alias.c.is_forced,
-        all_lock_event_alias.c.transaction_hash,
-        all_lock_event_alias.c.msg_sender,
-        all_lock_event_alias.c.token_address,
-        all_lock_event_alias.c.lock_address,
-        all_lock_event_alias.c.account_address,
-        all_lock_event_alias.c.recipient_address,
-        all_lock_event_alias.c.value,
-        all_lock_event_alias.c.data,
-        all_lock_event_alias.c.block_timestamp,
-        Token,
-    ]
-    lock_events = (
-        (await db.execute(select(*entries).from_statement(stmt))).tuples().all()
-    )
+    lock_events = (await db.execute(stmt)).tuples().all()
 
     resp_data: list[dict[str, Any]] = []
     for lock_event in lock_events:
-        token: Token = lock_event.Token
-        bond_contract = await IbetStraightBondContract(token.token_address).get()
+        bond_contract = await IbetStraightBondContract(lock_event.token_address).get()
         block_timestamp_utc = pytz.timezone("UTC").localize(lock_event.block_timestamp)
         resp_data.append(
             {
@@ -3607,9 +3610,9 @@ async def list_bond_token_lock_unlock_events(
                 "is_forced": lock_event.is_forced,
                 "transaction_hash": lock_event.transaction_hash,
                 "msg_sender": lock_event.msg_sender,
-                "issuer_address": token.issuer_address,
-                "token_address": token.token_address,
-                "token_type": token.type,
+                "issuer_address": lock_event.issuer_address,
+                "token_address": lock_event.token_address,
+                "token_type": lock_event.token_type,
                 "token_name": bond_contract.name,
                 "lock_address": lock_event.lock_address,
                 "account_address": lock_event.account_address,
@@ -3678,6 +3681,7 @@ async def transfer_bond_token_ownership(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -3723,6 +3727,7 @@ async def list_bond_token_transfer_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -4060,6 +4065,7 @@ async def list_specific_bond_token_transfer_approval_history(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -4412,6 +4418,7 @@ async def update_bond_token_transfer_approval_status(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -4616,6 +4623,7 @@ async def retrieve_bond_token_transfer_approval_status(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,
@@ -4879,6 +4887,7 @@ async def bulk_transfer_bond_token_ownership(
     _issued_token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.type == TokenType.IBET_STRAIGHT_BOND,

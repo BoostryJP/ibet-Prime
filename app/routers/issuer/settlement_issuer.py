@@ -29,7 +29,7 @@ from Crypto.Util.Padding import pad
 from eth_keyfile.keyfile import decode_keyfile_json
 from fastapi import APIRouter, Header, HTTPException, Path, Query, Request
 from sqlalchemy import Nullable, and_, desc, func, select
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, defer
 
 import config
 from app.database import DBAsyncSession
@@ -292,6 +292,7 @@ async def create_dvp_delivery(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == issuer_address,

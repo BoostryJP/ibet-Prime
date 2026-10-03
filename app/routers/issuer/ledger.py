@@ -27,6 +27,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, delete, desc, func, select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import defer
 
 from app import log
 from app.database import DBAsyncSession
@@ -98,6 +99,7 @@ async def list_all_ledger_history(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -111,6 +113,7 @@ async def list_all_ledger_history(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -197,6 +200,7 @@ async def retrieve_ledger_history(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -210,6 +214,7 @@ async def retrieve_ledger_history(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -318,6 +323,7 @@ async def retrieve_ledger_template(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -331,6 +337,7 @@ async def retrieve_ledger_template(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -413,6 +420,7 @@ async def create_update_ledger_template(
     _token = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,
@@ -542,6 +550,7 @@ async def delete_ledger_template(
     _token = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,
@@ -604,6 +613,7 @@ async def list_all_ledger_details_data(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -617,6 +627,7 @@ async def list_all_ledger_details_data(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -708,6 +719,7 @@ async def create_ledger_details_data(
     _token = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,
@@ -763,6 +775,7 @@ async def retrieve_ledger_details_data(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -776,6 +789,7 @@ async def retrieve_ledger_details_data(
         _token: Token | None = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -842,6 +856,7 @@ async def update_ledger_details_data(
     _token = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,
@@ -907,6 +922,7 @@ async def delete_ledger_details_data(
     _token = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,
@@ -945,7 +961,10 @@ async def __get_personal_info(
 
     token: Token | None = (
         await db.scalars(
-            select(Token).where(Token.token_address == token_address).limit(1)
+            select(Token)
+            .options(defer(Token.abi))
+            .where(Token.token_address == token_address)
+            .limit(1)
         )
     ).first()
     if token is None:
