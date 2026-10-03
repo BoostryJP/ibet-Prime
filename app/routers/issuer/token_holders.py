@@ -25,6 +25,7 @@ import pytz
 from fastapi import APIRouter, Header, Path, Query
 from fastapi.exceptions import HTTPException
 from sqlalchemy import and_, asc, desc, func, select
+from sqlalchemy.orm import defer
 
 import config
 from app.database import DBAsyncSession
@@ -320,6 +321,7 @@ async def create_token_holders_collection(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,
@@ -414,6 +416,7 @@ async def list_all_token_holders_collections(
         _token = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -428,6 +431,7 @@ async def list_all_token_holders_collections(
         _token = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -533,6 +537,7 @@ async def retrieve_token_holders_collection(
     _token = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == token_address,

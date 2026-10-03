@@ -25,6 +25,7 @@ import pytz
 from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, HTTPException, Path, Query, Request
 from sqlalchemy import and_, asc, desc, func, select
+from sqlalchemy.orm import defer
 
 import config
 from app.database import DBAsyncSession
@@ -114,7 +115,7 @@ async def _find_wst_token_by_address(
     blockchain_platform: IbetWSTBlockchain,
 ) -> Token | None:
     target_address = to_checksum_address(ibet_wst_address)
-    tokens = (await db.scalars(select(Token))).all()
+    tokens = (await db.scalars(select(Token).options(defer(Token.abi)))).all()
     for token in tokens:
         if _get_wst_address(token, blockchain_platform) == target_address:
             return token
@@ -195,7 +196,11 @@ async def list_all_ibet_wst_tokens(
     # on deprecated single-chain IbetWST columns.
     issued_tokens: list[Token] = []
     all_tokens = (
-        await db.scalars(select(Token).where(Token.ibet_wst_name.is_not(None)))
+        await db.scalars(
+            select(Token)
+            .options(defer(Token.abi))
+            .where(Token.ibet_wst_name.is_not(None))
+        )
     ).all()
     for token in all_tokens:
         wst_address = _get_wst_address(token, blockchain_platform)

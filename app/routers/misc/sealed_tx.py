@@ -25,6 +25,7 @@ from eth_keyfile.keyfile import decode_keyfile_json
 from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import and_, select
+from sqlalchemy.orm import defer
 from starlette.requests import Request
 
 from app.database import DBAsyncSession
@@ -137,6 +138,7 @@ async def _get_ibet_wst_token(
     token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.token_address == to_checksum_address(token_address),
