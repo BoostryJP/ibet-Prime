@@ -45,7 +45,7 @@ from sqlalchemy import (
     or_,
     select,
 )
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, defer
 from sqlalchemy.sql.functions import coalesce
 
 import config
@@ -531,6 +531,7 @@ async def list_all_bond_tokens(
         tokens: Sequence[Token] = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(Token.type == TokenType.IBET_STRAIGHT_BOND)
                 .order_by(Token.id)
             )
@@ -539,6 +540,7 @@ async def list_all_bond_tokens(
         tokens: Sequence[Token] = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.type == TokenType.IBET_STRAIGHT_BOND,
