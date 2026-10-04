@@ -110,6 +110,7 @@ RUN apt-get update -q \
   curl \
   libssl-dev \
   libpq-dev \
+  libjemalloc2 \
   language-pack-ja-base \
   language-pack-ja \
   jq \
@@ -130,6 +131,7 @@ ENV LANG=ja_JP.utf8
 ENV UV_PROJECT_ENVIRONMENT="/home/apl/.venv"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/ibet-Prime:/app/ibet-Prime/cmd
+ENV LD_PRELOAD=libjemalloc.so.2
 
 COPY run.sh healthcheck.sh /app/
 
