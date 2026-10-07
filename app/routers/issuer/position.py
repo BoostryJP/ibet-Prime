@@ -17,7 +17,6 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
 from typing import Annotated, Any, Optional, Sequence, cast
 
 from eth_keyfile.keyfile import decode_keyfile_json
@@ -25,7 +24,7 @@ from fastapi import APIRouter, Header, Path, Query, Request
 from fastapi.exceptions import HTTPException
 from pytz import timezone
 from sqlalchemy import String, and_, column, desc, func, literal, null, or_, select
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, defer
 from web3 import Web3
 
 from app.database import DBAsyncSession
@@ -166,7 +165,7 @@ async def list_all_positions(
         stmt = stmt.offset(request_query.offset)
 
     _position_list: Sequence[tuple[IDXPosition, int | None, Token]] = (
-        (await db.execute(stmt)).tuples().all()
+        (await db.execute(stmt.options(defer(Token.abi)))).tuples().all()
     )
 
     positions: list[dict[str, Any]] = []
@@ -273,7 +272,7 @@ async def list_all_locked_position(
         stmt = stmt.offset(request_query.offset)
 
     _position_list: Sequence[tuple[IDXLockedPosition, Token]] = (
-        (await db.execute(stmt)).tuples().all()
+        (await db.execute(stmt.options(defer(Token.abi)))).tuples().all()
     )
 
     positions: list[dict[str, Any]] = []
@@ -343,7 +342,8 @@ async def list_account_lock_unlock_events(
             IDXLock.value.label("value"),
             IDXLock.data.label("data"),
             IDXLock.block_timestamp.label("block_timestamp"),
-            Token,
+            Token.issuer_address.label("issuer_address"),
+            Token.type.label("token_type"),
         )
         .join(Token, IDXLock.token_address == Token.token_address)
         .where(
@@ -373,7 +373,8 @@ async def list_account_lock_unlock_events(
             IDXUnlock.value.label("value"),
             IDXUnlock.data.label("data"),
             IDXUnlock.block_timestamp.label("block_timestamp"),
-            Token,
+            Token.issuer_address.label("issuer_address"),
+            Token.type.label("token_type"),
         )
         .join(Token, IDXUnlock.token_address == Token.token_address)
         .where(
@@ -415,7 +416,7 @@ async def list_account_lock_unlock_events(
             all_lock_event_alias.c.token_address == request_query.token_address
         )
     if request_query.token_type is not None:
-        stmt = stmt.where(all_lock_event_alias.c.type == request_query.token_type)
+        stmt = stmt.where(all_lock_event_alias.c.token_type == request_query.token_type)
     if request_query.msg_sender is not None:
         stmt = stmt.where(all_lock_event_alias.c.msg_sender == request_query.msg_sender)
     if request_query.lock_address is not None:
@@ -463,81 +464,34 @@ async def list_account_lock_unlock_events(
     if request_query.limit is not None:
         stmt = stmt.limit(request_query.limit)
 
-    entries = [
-        all_lock_event_alias.c.category,
-        all_lock_event_alias.c.is_forced,
-        all_lock_event_alias.c.transaction_hash,
-        all_lock_event_alias.c.msg_sender,
-        all_lock_event_alias.c.token_address,
-        all_lock_event_alias.c.lock_address,
-        all_lock_event_alias.c.account_address,
-        all_lock_event_alias.c.recipient_address,
-        all_lock_event_alias.c.value,
-        all_lock_event_alias.c.data,
-        all_lock_event_alias.c.block_timestamp,
-        Token,
-    ]
-    lock_events = cast(
-        Sequence[
-            tuple[
-                str,
-                bool,
-                str,
-                str | None,
-                str,
-                str,
-                str,
-                str | None,
-                int,
-                dict[str, Any],
-                datetime,
-                Token,
-            ]
-        ],
-        (await db.execute(select(*entries).from_statement(stmt))).tuples().all(),
-    )
+    lock_events = (await db.execute(stmt)).tuples().all()
 
     resp_data: list[dict[str, Any]] = []
     for lock_event in lock_events:
-        (
-            category,
-            is_forced,
-            transaction_hash,
-            msg_sender,
-            token_address,
-            lock_address,
-            event_account_address,
-            recipient_address,
-            value,
-            event_data,
-            block_timestamp,
-            token,
-        ) = lock_event
-
         token_name: str | None = None
-        if token.type == TokenType.IBET_STRAIGHT_BOND:
-            _contract = await IbetStraightBondContract(token.token_address).get()
+        if lock_event.token_type == TokenType.IBET_STRAIGHT_BOND:
+            _contract = await IbetStraightBondContract(lock_event.token_address).get()
             token_name = _contract.name
-        elif token.type == TokenType.IBET_SHARE:
-            _contract = await IbetShareContract(token.token_address).get()
+        elif lock_event.token_type == TokenType.IBET_SHARE:
+            _contract = await IbetShareContract(lock_event.token_address).get()
             token_name = _contract.name
 
-        block_timestamp_utc = timezone("UTC").localize(block_timestamp)
+        block_timestamp_utc = timezone("UTC").localize(lock_event.block_timestamp)
         resp_data.append(
             {
-                "category": category,
-                "is_forced": is_forced,
-                "transaction_hash": transaction_hash,
-                "msg_sender": msg_sender,
-                "issuer_address": token.issuer_address,
-                "token_address": token_address,
-                "token_type": token.type,
+                "category": lock_event.category,
+                "is_forced": lock_event.is_forced,
+                "transaction_hash": lock_event.transaction_hash,
+                "msg_sender": lock_event.msg_sender,
+                "issuer_address": lock_event.issuer_address,
+                "token_address": lock_event.token_address,
+                "token_type": lock_event.token_type,
                 "token_name": token_name,
-                "lock_address": lock_address,
-                "account_address": event_account_address,
-                "recipient_address": recipient_address,
-                "value": value,
-                "data": event_data,
+                "lock_address": lock_event.lock_address,
+                "account_address": lock_event.account_address,
+                "recipient_address": lock_event.recipient_address,
+                "value": lock_event.value,
+                "data": lock_event.data,
                 "block_timestamp": block_timestamp_utc.astimezone(local_tz).isoformat(),
             }
         )
@@ -608,6 +562,7 @@ async def force_lock(
     _token = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == issuer_address,
@@ -700,6 +655,7 @@ async def force_unlock(
     _token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == issuer_address,
@@ -792,6 +748,7 @@ async def retrieve_position(
         _token = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,
@@ -806,6 +763,7 @@ async def retrieve_position(
         _token = (
             await db.scalars(
                 select(Token)
+                .options(defer(Token.abi))
                 .where(
                     and_(
                         Token.token_address == token_address,

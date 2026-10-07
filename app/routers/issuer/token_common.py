@@ -26,6 +26,7 @@ from eth_keyfile.keyfile import decode_keyfile_json
 from eth_utils.address import to_checksum_address
 from fastapi import APIRouter, Header, HTTPException, Path, Query
 from sqlalchemy import and_, asc, desc, func, select
+from sqlalchemy.orm import defer
 from starlette.requests import Request
 
 from app.database import DBAsyncSession
@@ -205,7 +206,7 @@ async def list_all_issued_tokens(
         stmt = stmt.offset(request_query.offset)
 
     # Execute Query
-    issued_tokens = (await db.scalars(stmt)).all()
+    issued_tokens = (await db.scalars(stmt.options(defer(Token.abi)))).all()
 
     # Get Token Attributes
     tokens: list[dict[str, Any]] = []
@@ -401,6 +402,7 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
     token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == to_checksum_address(issuer_address),
@@ -504,6 +506,7 @@ async def get_ibet_wst_whitelist_with_personal_info(
     token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == to_checksum_address(issuer_address),
@@ -614,6 +617,7 @@ async def add_ibet_wst_whitelist(
     token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == to_checksum_address(issuer_address),
@@ -739,6 +743,7 @@ async def delete_ibet_wst_whitelist(
     token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == to_checksum_address(issuer_address),
@@ -864,6 +869,7 @@ async def force_burn_ibet_wst_position(
     token: Token | None = (
         await db.scalars(
             select(Token)
+            .options(defer(Token.abi))
             .where(
                 and_(
                     Token.issuer_address == to_checksum_address(issuer_address),
