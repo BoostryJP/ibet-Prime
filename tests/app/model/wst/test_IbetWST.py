@@ -36,6 +36,7 @@ async def deploy_wst_token(
     name: str,
     deployer: UnitTestAccount,
     owner: UnitTestAccount,
+    log_gas: bool = False,
 ) -> str:
     """
     Deploy an AuthIbetWST token contract.
@@ -43,6 +44,7 @@ async def deploy_wst_token(
     :param name: Name of the contract to deploy.
     :param deployer: Address of the deployer.
     :param owner: Address of the owner of the contract.
+    :param log_gas: Whether to print the deployment gas usage.
     :return: Transaction hash of the deployment.
     """
     tx_hash, _ = await EthAsyncContractUtils.deploy_contract(
@@ -55,6 +57,8 @@ async def deploy_wst_token(
         private_key=bytes.fromhex(deployer["private_key"]),
     )
     tx_receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+    if log_gas:
+        print(f"\ndeploy gasUsed = {tx_receipt['gasUsed']}")
     contract_address = tx_receipt.get("contractAddress")
     if contract_address is None:
         raise AssertionError("contractAddress is missing in transaction receipt")
@@ -294,7 +298,9 @@ class TestDeploy:
     async def test_normal_1(self):
         # Deploy contract
         # - Maximum length of the name is 200 characters
-        contract_address = await deploy_wst_token("T" * 200, self.deployer, self.owner)
+        contract_address = await deploy_wst_token(
+            "T" * 200, self.deployer, self.owner, log_gas=True
+        )
 
         # Assert that the contract address is not None
         assert contract_address is not None
