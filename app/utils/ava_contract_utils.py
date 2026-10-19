@@ -362,7 +362,7 @@ class AvaAsyncContractUtils:
                 transaction={
                     "chainId": AVA_CHAIN_ID,
                     "from": deployer,
-                    "gas": 4010000,
+                    "gas": 8_000_000,
                 }
             )
             # Send transaction
