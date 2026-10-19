@@ -105,6 +105,18 @@ Swagger UI 形式のドキュメントを参照することができるはずで
 テスト用コンテナの起動に関しては、`docker-compose.yml` を参照してください。
 個別にテストケースを実行する場合は、ローカルに Python 実行環境を構築し、環境変数を設定した上で、テストケースを実行してください。
 
+#### WST のガス使用量の実測
+
+開発用依存関係をインストールし、Amsterdam 対応の `anvil` を PATH に追加した上で、次を実行します。
+
+```bash
+make measure_wst_gas
+# ポート変更、特定のテストのみ実行
+make measure_wst_gas ARG='--port 18547 -- -k TestAddAccountWhiteListWithAuthorization'
+```
+
+外部の RPC や DB は不要です。値はローカルのテスト条件での実測であり、稼働環境の値を保証するものではありません。
+
 ## ブランチ作成方針
 
 このリポジトリは以下の図で示されるフローでバージョン管理が行われています。

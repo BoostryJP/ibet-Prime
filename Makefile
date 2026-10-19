@@ -1,4 +1,4 @@
-.PHONY: format lint typecheck doc test test_migrations run
+.PHONY: format lint typecheck doc test test_migrations measure_wst_gas run
 
 install:
 	UV_MALWARE_CHECK=1 uv sync --frozen --no-install-project --all-extras
@@ -24,6 +24,9 @@ test:
 
 test_migrations:
 	uv run pytest -vv --test-alembic -m "alembic"
+
+measure_wst_gas:
+	uv run python tests/measure_wst_gas.py ${ARG}
 
 run:
 	uv run gunicorn --worker-class server.AppUvicornWorker app.main:app
