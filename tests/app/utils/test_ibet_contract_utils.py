@@ -401,7 +401,7 @@ class TestSendTransaction:
         await async_db.rollback()
 
     # <Normal_2>
-    # Engine is disposed after successful send
+    # Pending nonce is used for signing and engine is disposed after sending
     @pytest.mark.asyncio
     async def test_normal_2(self):
         fake_engine = MagicMock()
@@ -424,12 +424,12 @@ class TestSendTransaction:
             patch("app.utils.ibet_contract_utils.Session", return_value=fake_session),
             patch(
                 "app.utils.ibet_contract_utils.web3.eth.get_transaction_count",
-                return_value=0,
-            ),
+                return_value=7,
+            ) as get_transaction_count,
             patch(
                 "app.utils.ibet_contract_utils.web3.eth.account.sign_transaction",
                 return_value=fake_signed_tx,
-            ),
+            ) as sign_transaction,
             patch(
                 "app.utils.ibet_contract_utils.web3.eth.send_raw_transaction",
                 return_value=fake_tx_hash,
@@ -444,6 +444,13 @@ class TestSendTransaction:
                 private_key=self.private_key,
             )
 
+        get_transaction_count.assert_called_once_with(
+            self.test_account["address"], block_identifier="pending"
+        )
+        sign_transaction.assert_called_once_with(
+            transaction_dict={"from": self.test_account["address"], "nonce": 7},
+            private_key=self.private_key,
+        )
         assert rtn_tx_hash == "0xhash"
         assert rtn_receipt == fake_receipt
         fake_session.rollback.assert_called_once()

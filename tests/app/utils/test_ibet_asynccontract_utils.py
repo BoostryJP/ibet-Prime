@@ -20,7 +20,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import json
 from typing import Any, cast
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from aiohttp import ClientTimeout
@@ -387,7 +387,7 @@ class TestSendTransaction:
         assert web3.is_address(rtn_receipt["contractAddress"])
 
     # <Normal_2>
-    # Engine is disposed after successful send
+    # Pending nonce is used for signing and engine is disposed after sending
     @pytest.mark.asyncio
     async def test_normal_2(self):
         fake_engine = MagicMock()
@@ -414,12 +414,12 @@ class TestSendTransaction:
             ),
             patch(
                 "app.utils.ibet_contract_utils.async_web3.eth.get_transaction_count",
-                AsyncMock(return_value=0),
-            ),
+                AsyncMock(return_value=7),
+            ) as get_transaction_count,
             patch(
                 "app.utils.ibet_contract_utils.async_web3.eth.account.sign_transaction",
                 return_value=fake_signed_tx,
-            ),
+            ) as sign_transaction,
             patch(
                 "app.utils.ibet_contract_utils.async_web3.eth.send_raw_transaction",
                 AsyncMock(return_value=fake_tx_hash),
@@ -434,6 +434,13 @@ class TestSendTransaction:
                 private_key=self.private_key,
             )
 
+        get_transaction_count.assert_awaited_once_with(
+            self.test_account["address"], block_identifier="pending"
+        )
+        sign_transaction.assert_called_once_with(
+            transaction_dict={"from": self.test_account["address"], "nonce": 7},
+            private_key=self.private_key,
+        )
         assert rtn_tx_hash == "0xhash"
         assert rtn_receipt == fake_receipt
         fake_session.scalars.assert_awaited_once()
@@ -625,7 +632,7 @@ class TestSendTransactionNoWait:
         assert web3.is_address(rtn_receipt["contractAddress"])
 
     # <Normal_2>
-    # Engine is disposed after successful send
+    # Consecutive sends use fresh pending nonces and dispose their engines
     @pytest.mark.asyncio
     async def test_normal_2(self):
         fake_engine = MagicMock()
@@ -651,27 +658,40 @@ class TestSendTransactionNoWait:
             ),
             patch(
                 "app.utils.ibet_contract_utils.async_web3.eth.get_transaction_count",
-                AsyncMock(return_value=0),
-            ),
+                AsyncMock(side_effect=[7, 8]),
+            ) as get_transaction_count,
             patch(
                 "app.utils.ibet_contract_utils.async_web3.eth.account.sign_transaction",
                 return_value=fake_signed_tx,
-            ),
+            ) as sign_transaction,
             patch(
                 "app.utils.ibet_contract_utils.async_web3.eth.send_raw_transaction",
                 AsyncMock(return_value=fake_tx_hash),
             ),
         ):
-            rtn_tx_hash = await AsyncContractUtils.send_transaction_no_wait(
-                transaction={"from": self.test_account["address"]},
-                private_key=self.private_key,
-            )
+            for nonce in (7, 8):
+                rtn_tx_hash = await AsyncContractUtils.send_transaction_no_wait(
+                    transaction={"from": self.test_account["address"]},
+                    private_key=self.private_key,
+                )
+                assert rtn_tx_hash == "0xhash"
+                sign_transaction.assert_called_with(
+                    transaction_dict={
+                        "from": self.test_account["address"],
+                        "nonce": nonce,
+                    },
+                    private_key=self.private_key,
+                )
 
-        assert rtn_tx_hash == "0xhash"
-        fake_session.scalars.assert_awaited_once()
-        fake_session.rollback.assert_awaited_once()
-        fake_session.close.assert_awaited_once()
-        fake_engine.dispose.assert_awaited_once()
+        assert get_transaction_count.await_args_list == [
+            call(self.test_account["address"], block_identifier="pending"),
+            call(self.test_account["address"], block_identifier="pending"),
+        ]
+        assert sign_transaction.call_count == 2
+        assert fake_session.scalars.await_count == 2
+        assert fake_session.rollback.await_count == 2
+        assert fake_session.close.await_count == 2
+        assert fake_engine.dispose.await_count == 2
 
     ###########################################################################
     # Error Case
