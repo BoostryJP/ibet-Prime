@@ -838,6 +838,60 @@ class TestTransferWithAuthorization:
 
 
 @pytest.mark.asyncio
+class TestReceiveWithAuthorization:
+    async def test_normal_1(self):
+        deployer = default_eth_account("user1")
+        owner = default_eth_account("user2")
+        sender = default_eth_account("user3")
+        receiver = default_eth_account("user4")
+        address = await deploy_wst_token("Test Token", deployer, owner)
+        contract = EthereumIbetWST(address)
+        await mint_wst_token(address, sender["address"], 1000, owner)
+        for account in (sender, receiver):
+            await wst_add_account_to_whitelist(
+                address,
+                account["address"],
+                account["address"],
+                account["address"],
+                owner,
+            )
+
+        nonce = secrets.token_bytes(32)
+        digest = IbetWSTDigestHelper.generate_receive_digest(
+            domain_separator=await contract.domain_separator(),
+            from_address=sender["address"],
+            to_address=receiver["address"],
+            value=500,
+            valid_after=0,
+            valid_before=2**256 - 1,
+            nonce=nonce,
+        )
+        signature = EthWeb3.eth.account.unsafe_sign_hash(
+            digest, bytes.fromhex(sender["private_key"])
+        )
+        tx_hash, _ = await contract.receive_with_authorization(
+            from_address=sender["address"],
+            to_address=receiver["address"],
+            value=500,
+            valid_after=0,
+            valid_before=2**256 - 1,
+            authorization=IbetWSTAuthorization(
+                nonce=nonce,
+                v=signature.v,
+                r=signature.r.to_bytes(32),
+                s=signature.s.to_bytes(32),
+            ),
+            tx_sender=receiver["address"],
+            tx_sender_key=bytes.fromhex(receiver["private_key"]),
+        )
+        receipt = await EthAsyncContractUtils.wait_for_transaction_receipt(tx_hash)
+        print(f"\ngasUsed = {receipt['gasUsed']}")
+        assert receipt["status"] == 1
+        assert await contract.balance_of(sender["address"]) == 500
+        assert await contract.balance_of(receiver["address"]) == 500
+
+
+@pytest.mark.asyncio
 class TestMintWithAuthorization:
     """
     Test cases for the mint_with_authorization function of the AuthIbetWST contract.

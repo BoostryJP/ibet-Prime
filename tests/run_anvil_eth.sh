@@ -3,6 +3,6 @@
 set -euo pipefail
 
 export CHAIN_ID=11111
-export BLOCK_GAS_LIMIT=16777216
+export BLOCK_GAS_LIMIT=200000000
 export ANVIL_HARDFORK=amsterdam
 exec bash /app/ibet-Prime/tests/run_anvil.sh
