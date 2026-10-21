@@ -38,7 +38,7 @@ from web3.types import RPCEndpoint
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 # Leave room for state-heavy deployments when measuring Amsterdam gas costs.
-BLOCK_GAS_LIMIT = 200_000_000
+BLOCK_GAS_LIMIT = 60_000_000
 
 
 @contextmanager
