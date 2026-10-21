@@ -218,8 +218,10 @@ class ContractUtils:
             except (OperationalError, DBAPIError) as err:
                 raise SendTransactionError(err)
 
-            # Get nonce
-            nonce = web3.eth.get_transaction_count(cast(Any, tx_from_value))
+            # Include pending transactions to avoid reusing an in-flight nonce.
+            nonce = web3.eth.get_transaction_count(
+                cast(Any, tx_from_value), block_identifier="pending"
+            )
             transaction["nonce"] = nonce
             signed_tx = web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
@@ -526,8 +528,10 @@ class AsyncContractUtils:
             except (OperationalError, DBAPIError) as err:
                 raise SendTransactionError(err)
 
-            # Get nonce
-            nonce = await async_web3.eth.get_transaction_count(cast(Any, tx_from_value))
+            # Include pending transactions to avoid reusing an in-flight nonce.
+            nonce = await async_web3.eth.get_transaction_count(
+                cast(Any, tx_from_value), block_identifier="pending"
+            )
             transaction["nonce"] = nonce
             signed_tx = async_web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
@@ -594,8 +598,10 @@ class AsyncContractUtils:
             raise SendTransactionError(err)
 
         try:
-            # Get nonce
-            nonce = await async_web3.eth.get_transaction_count(cast(Any, tx_from_value))
+            # Include pending transactions to avoid reusing an in-flight nonce.
+            nonce = await async_web3.eth.get_transaction_count(
+                cast(Any, tx_from_value), block_identifier="pending"
+            )
             transaction["nonce"] = nonce
             signed_tx = async_web3.eth.account.sign_transaction(
                 transaction_dict=transaction, private_key=private_key
