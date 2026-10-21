@@ -870,7 +870,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 300_000,
+                    "gas": 650_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -909,7 +909,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 160_000,
+                    "gas": 250_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -951,7 +951,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 250_000,
+                    "gas": 500_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -993,7 +993,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 170_000,
+                    "gas": 230_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -1035,7 +1035,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 170_000,
+                    "gas": 230_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -1086,7 +1086,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 220_000,
+                    "gas": 350_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -1137,7 +1137,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 1_000_000,
+                    "gas": 350_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -1229,7 +1229,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 650_000,
+                    "gas": 1_500_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -1268,7 +1268,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 230_000,
+                    "gas": 350_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -1307,7 +1307,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 370_000,
+                    "gas": 700_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
@@ -1346,7 +1346,7 @@ class _BaseIbetWST(_BaseERC20):
                 {
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
-                    "gas": 230_000,
+                    "gas": 350_000,
                     "maxFeePerGas": fees["maxFeePerGas"],
                     "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
                 }
