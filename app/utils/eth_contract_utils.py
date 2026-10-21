@@ -357,7 +357,7 @@ class EthAsyncContractUtils:
                 transaction={
                     "chainId": ETH_CHAIN_ID,
                     "from": deployer,
-                    "gas": 4010000,
+                    "gas": 30_000_000,
                 }
             )
             # Send transaction

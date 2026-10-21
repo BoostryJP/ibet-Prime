@@ -84,6 +84,17 @@ You can create a `.env` file to define local environment variables.
 For test container startup, see [docker-compose.yml](docker-compose.yml).
 When running individual test cases, set up a local Python runtime environment and configure the required environment variables first.
 
+#### Measuring WST gas usage
+
+Install the development dependencies and add an Amsterdam-compatible `anvil` to PATH, then run:
+
+```bash
+make measure_wst_gas
+# Change the port and select specific tests
+make measure_wst_gas ARG='--port 18547 -- -k TestAddAccountWhiteListWithAuthorization'
+```
+
+Measurements reflect local test conditions and do not guarantee gas usage in a deployed environment.
 
 ## Starting the Server
 
