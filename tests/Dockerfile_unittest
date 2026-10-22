@@ -1,7 +1,7 @@
-FROM ubuntu:26.04@sha256:b7f48194d4d8b763a478a621cdc81c27be222ba2206ca3ca6bc42b49685f3d9e AS builder
+FROM ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944 AS builder
 
 ENV PYTHON_VERSION=3.14.6
-ENV UV_VERSION=0.11.26
+ENV UV_VERSION=0.13.5
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 ENV UV_INSTALL_DIR="/usr/local/bin"
@@ -88,7 +88,7 @@ RUN cd /app/ibet-Prime \
  && rm -f /app/ibet-Prime/pyproject.toml \
  && rm -f /app/ibet-Prime/uv.lock
 
-FROM ubuntu:26.04@sha256:b7f48194d4d8b763a478a621cdc81c27be222ba2206ca3ca6bc42b49685f3d9e AS runner
+FROM ubuntu:26.04@sha256:c098726dd9b9733f3e885f8de0ef375206a311b0a317eadc40d347b1115fb944 AS runner
 
 # make application directory
 RUN mkdir -p /app/ibet-Prime/
