@@ -173,8 +173,35 @@ class ListTransferApprovalHistoryQuery(BasePaginationQuery):
 
 
 class ListSpecificTokenTransferApprovalHistoryQuery(BasePaginationQuery):
+    application_datetime_from: Optional[datetime] = Field(
+        None, description="Application datetime (From, inclusive)"
+    )
+    application_datetime_to: Optional[datetime] = Field(
+        None, description="Application datetime (To, inclusive)"
+    )
+    approval_datetime_from: Optional[datetime] = Field(
+        None, description="Approval datetime (From, inclusive)"
+    )
+    approval_datetime_to: Optional[datetime] = Field(
+        None, description="Approval datetime (To, inclusive)"
+    )
     from_address: Optional[str] = Field(None, description="Transfer from")
     to_address: Optional[str] = Field(None, description="Transfer to")
+    from_address_name: Optional[str] = Field(
+        None, description="Partial match on the transfer source name in the response"
+    )
+    to_address_name: Optional[str] = Field(
+        None,
+        description="Partial match on the transfer destination name in the response",
+    )
+    amount: Optional[int] = Field(None, description="Transfer amount")
+    amount_operator: Optional[ValueOperator] = Field(
+        ValueOperator.EQUAL,
+        description="Value filter condition (0: equal, 1: greater than or equal, 2: less than or equal)",
+    )
+    ids: Optional[List[int]] = Field(
+        None, description="List of idx_transfer_approval.id values"
+    )
     status: Optional[List[TransferApprovalStatus]] = Field(
         None, description="0:unapproved, 1:escrow_finished, 2:transferred, 3:canceled"
     )

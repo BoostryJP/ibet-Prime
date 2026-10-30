@@ -4182,6 +4182,53 @@ async def list_specific_bond_token_transfer_approval_history(
     )
 
     # Search Filter
+    # - Datetimes are stored as naive UTC. Interpret inputs in config.TZ.
+    for field, value, is_lower_bound in (
+        (subquery.application_datetime, get_query.application_datetime_from, True),
+        (subquery.application_datetime, get_query.application_datetime_to, False),
+        (subquery.approval_datetime, get_query.approval_datetime_from, True),
+        (subquery.approval_datetime, get_query.approval_datetime_to, False),
+    ):
+        if value is not None:
+            utc_value = local_tz.localize(value).astimezone(UTC).replace(tzinfo=None)
+            stmt = stmt.where(
+                field >= utc_value if is_lower_bound else field <= utc_value
+            )
+
+    for name, snapshot, latest in (
+        (
+            get_query.from_address_name,
+            TransferApprovalHistory.from_address_personal_info,
+            from_address_personal_info._personal_info,  # type: ignore[reportPrivateUsage]
+        ),
+        (
+            get_query.to_address_name,
+            TransferApprovalHistory.to_address_personal_info,
+            to_address_personal_info._personal_info,  # type: ignore[reportPrivateUsage]
+        ),
+    ):
+        if name:
+            # JSON null and SQL NULL both deserialize to None. Only fall back
+            # when the entire snapshot is absent, not when its name is missing.
+            response_name = case(
+                (
+                    or_(snapshot.is_(None), cast(snapshot, String) == "null"),
+                    latest["name"].as_string(),
+                ),
+                else_=snapshot["name"].as_string(),
+            )
+            stmt = stmt.where(response_name.like("%" + name + "%"))
+
+    if get_query.amount is not None and get_query.amount_operator is not None:
+        match get_query.amount_operator:
+            case ValueOperator.EQUAL:
+                stmt = stmt.where(subquery.amount == get_query.amount)
+            case ValueOperator.GTE:
+                stmt = stmt.where(subquery.amount >= get_query.amount)
+            case ValueOperator.LTE:
+                stmt = stmt.where(subquery.amount <= get_query.amount)
+    if get_query.ids is not None:
+        stmt = stmt.where(subquery.id.in_(get_query.ids))
     if get_query.from_address is not None:
         stmt = stmt.where(subquery.from_address == get_query.from_address)
     if get_query.to_address is not None:

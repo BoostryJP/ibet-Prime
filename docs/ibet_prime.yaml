@@ -3324,6 +3324,50 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: application_datetime_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Application datetime (From, inclusive)
+            title: Application Datetime From
+          description: Application datetime (From, inclusive)
+        - name: application_datetime_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Application datetime (To, inclusive)
+            title: Application Datetime To
+          description: Application datetime (To, inclusive)
+        - name: approval_datetime_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Approval datetime (From, inclusive)
+            title: Approval Datetime From
+          description: Approval datetime (From, inclusive)
+        - name: approval_datetime_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Approval datetime (To, inclusive)
+            title: Approval Datetime To
+          description: Approval datetime (To, inclusive)
         - name: from_address
           in: query
           required: false
@@ -3344,6 +3388,64 @@ paths:
             description: Transfer to
             title: To Address
           description: Transfer to
+        - name: from_address_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Partial match on the transfer source name in the
+              response
+            title: From Address Name
+          description: Partial match on the transfer source name in the response
+        - name: to_address_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Partial match on the transfer destination name in the
+              response
+            title: To Address Name
+          description: Partial match on the transfer destination name in the
+            response
+        - name: amount
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Transfer amount
+            title: Amount
+          description: Transfer amount
+        - name: amount_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: 'Value filter condition (0: equal, 1: greater than or equal,
+              2: less than or equal)'
+            default: 0
+            title: Amount Operator
+          description: 'Value filter condition (0: equal, 1: greater than or equal,
+            2: less than or equal)'
+        - name: ids
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: array
+                items:
+                  type: integer
+              - type: 'null'
+            description: List of idx_transfer_approval.id values
+            title: Ids
+          description: List of idx_transfer_approval.id values
         - name: status
           in: query
           required: false
@@ -7972,6 +8074,50 @@ paths:
             description: Limit for pagination
             title: Limit
           description: Limit for pagination
+        - name: application_datetime_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Application datetime (From, inclusive)
+            title: Application Datetime From
+          description: Application datetime (From, inclusive)
+        - name: application_datetime_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Application datetime (To, inclusive)
+            title: Application Datetime To
+          description: Application datetime (To, inclusive)
+        - name: approval_datetime_from
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Approval datetime (From, inclusive)
+            title: Approval Datetime From
+          description: Approval datetime (From, inclusive)
+        - name: approval_datetime_to
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            description: Approval datetime (To, inclusive)
+            title: Approval Datetime To
+          description: Approval datetime (To, inclusive)
         - name: from_address
           in: query
           required: false
@@ -7992,6 +8138,64 @@ paths:
             description: Transfer to
             title: To Address
           description: Transfer to
+        - name: from_address_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Partial match on the transfer source name in the
+              response
+            title: From Address Name
+          description: Partial match on the transfer source name in the response
+        - name: to_address_name
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+              - type: 'null'
+            description: Partial match on the transfer destination name in the
+              response
+            title: To Address Name
+          description: Partial match on the transfer destination name in the
+            response
+        - name: amount
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: integer
+              - type: 'null'
+            description: Transfer amount
+            title: Amount
+          description: Transfer amount
+        - name: amount_operator
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/ValueOperator'
+              - type: 'null'
+            description: 'Value filter condition (0: equal, 1: greater than or equal,
+              2: less than or equal)'
+            default: 0
+            title: Amount Operator
+          description: 'Value filter condition (0: equal, 1: greater than or equal,
+            2: less than or equal)'
+        - name: ids
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: array
+                items:
+                  type: integer
+              - type: 'null'
+            description: List of idx_transfer_approval.id values
+            title: Ids
+          description: List of idx_transfer_approval.id values
         - name: status
           in: query
           required: false
