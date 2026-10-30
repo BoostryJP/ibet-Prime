@@ -17,11 +17,13 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from httpx import AsyncClient
 from pytz import timezone
+from sqlalchemy import null, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import config
@@ -100,6 +102,133 @@ class TestListSpecificShareTokenTransferApprovalHistory:
         .astimezone(local_tz)
         .isoformat()
     )
+
+    # Prepare data and check responses for additional filter cases
+    async def _prepare_filter_data(self, async_db: AsyncSession) -> str:
+        for token_address in ("filter_token", "other_token"):
+            async_db.add(
+                Token(
+                    type=TokenType.IBET_SHARE,
+                    tx_hash="tx",
+                    issuer_address="issuer",
+                    token_address=token_address,
+                    abi={},
+                    version=TokenVersion.V_25_09,
+                )
+            )
+        for address, name in (
+            ("source", "最新譲渡元 太郎"),
+            ("destination", "最新譲渡先 花子"),
+        ):
+            info = IDXPersonalInfo(
+                account_address=address,
+                issuer_address="issuer",
+                data_source=PersonalInfoDataSource.ON_CHAIN,
+            )
+            info.personal_info = {"name": name}
+            async_db.add(info)
+            other_info = IDXPersonalInfo(
+                account_address=address,
+                issuer_address="other_issuer",
+                data_source=PersonalInfoDataSource.ON_CHAIN,
+            )
+            other_info.personal_info = {"name": "別発行体の氏名"}
+            async_db.add(other_info)
+
+        for i in range(1, 7):
+            async_db.add(
+                IDXTransferApproval(
+                    id=100 + i,
+                    token_address="filter_token",
+                    application_id=500 + i,
+                    exchange_address=config.ZERO_ADDRESS,
+                    from_address="missing_source" if i == 5 else "source",
+                    to_address="missing_destination" if i == 5 else "destination",
+                    amount=(i - 1) * 10,
+                    application_datetime=datetime(2026, 1, i),
+                    application_blocktimestamp=datetime(2026, 1, i),
+                    approval_datetime=None if i == 1 else datetime(2026, 1, 10 + i),
+                    transfer_approved=i != 1,
+                )
+            )
+            if i in (2, 3, 4, 6):
+                source_snapshot: Any = None
+                destination_snapshot: Any = None
+                if i in (2, 4):
+                    source_snapshot = dict.fromkeys(
+                        (
+                            "name",
+                            "key_manager",
+                            "postal_code",
+                            "address",
+                            "email",
+                            "birth",
+                            "is_corporate",
+                            "tax_category",
+                        )
+                    )
+                    destination_snapshot = source_snapshot.copy()
+                    if i == 2:
+                        source_snapshot["name"] = "保存譲渡元 次郎"
+                        destination_snapshot["name"] = "保存譲渡先 三郎"
+                    # i == 4 has a null name: do not use the latest name.
+                elif i == 6:
+                    source_snapshot = null()
+                    destination_snapshot = null()
+                # i == 3 stores JSON null; i == 6 stores SQL NULL.
+                async_db.add(
+                    TransferApprovalHistory(
+                        token_address="filter_token",
+                        exchange_address=config.ZERO_ADDRESS,
+                        application_id=500 + i,
+                        operation_type=TransferApprovalOperationType.APPROVE,
+                        from_address_personal_info=source_snapshot,
+                        to_address_personal_info=destination_snapshot,
+                    )
+                )
+        async_db.add(
+            IDXTransferApproval(
+                id=201,
+                token_address="other_token",
+                application_id=501,
+                exchange_address=config.ZERO_ADDRESS,
+                from_address="source",
+                to_address="destination",
+                amount=10,
+                application_datetime=datetime(2026, 1, 2),
+                application_blocktimestamp=datetime(2026, 1, 2),
+            )
+        )
+        await async_db.commit()
+        return self.base_url.format("filter_token")
+
+    def _filter_datetime(self, day: int) -> str:
+        # Query parameters use naive config.TZ; indexed datetimes use naive UTC.
+        return (
+            datetime(2026, 1, day, tzinfo=UTC)
+            .astimezone(local_tz)
+            .replace(tzinfo=None)
+            .isoformat()
+        )
+
+    async def _assert_filtered(
+        self,
+        client: AsyncClient,
+        url: str,
+        params: dict[str, Any],
+        expected: list[int],
+        *,
+        count: int | None = None,
+    ) -> dict[str, Any]:
+        response = await client.get(url, params=params)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert [row["id"] for row in body["transfer_approval_history"]] == expected
+        assert body["result_set"]["total"] == 6
+        assert body["result_set"]["count"] == (
+            len(expected) if count is None else count
+        )
+        return body
 
     ###########################################################################
     # Normal Case
@@ -1911,6 +2040,250 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             ],
         }
         assert resp.json() == assumed_response
+
+    # <Normal_4_4>
+    # filter
+    # application_datetime / approval_datetime
+    # inclusive boundaries, timezone conversion, and reversed ranges
+    @pytest.mark.asyncio
+    async def test_normal_4_4(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        # prepare data
+        approval_filter_url = await self._prepare_filter_data(async_db)
+
+        value = self._filter_datetime(3)
+        await self._assert_filtered(
+            async_client,
+            approval_filter_url,
+            {"application_datetime_from": value},
+            [106, 105, 104, 103],
+        )
+        await self._assert_filtered(
+            async_client,
+            approval_filter_url,
+            {"application_datetime_to": value},
+            [103, 102, 101],
+        )
+        await self._assert_filtered(
+            async_client,
+            approval_filter_url,
+            {"application_datetime_from": value, "application_datetime_to": value},
+            [103],
+        )
+        await self._assert_filtered(
+            async_client,
+            approval_filter_url,
+            {
+                "application_datetime_from": self._filter_datetime(4),
+                "application_datetime_to": self._filter_datetime(2),
+            },
+            [],
+        )
+        for field, expected in (("from", [106, 105, 104, 103]), ("to", [103, 102])):
+            await self._assert_filtered(
+                async_client,
+                approval_filter_url,
+                {f"approval_datetime_{field}": self._filter_datetime(13)},
+                expected,
+            )
+        await self._assert_filtered(
+            async_client,
+            approval_filter_url,
+            {
+                "approval_datetime_from": self._filter_datetime(13),
+                "approval_datetime_to": self._filter_datetime(13),
+            },
+            [103],
+        )
+        await self._assert_filtered(
+            async_client,
+            approval_filter_url,
+            {
+                "approval_datetime_from": self._filter_datetime(14),
+                "approval_datetime_to": self._filter_datetime(12),
+            },
+            [],
+        )
+
+    # <Normal_4_5>
+    # filter
+    # from_address_name / to_address_name
+    # partial match, snapshot priority, and missing personal information
+    @pytest.mark.asyncio
+    async def test_normal_4_5(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        # prepare data
+        approval_filter_url = await self._prepare_filter_data(async_db)
+
+        for side, latest, snapshot in (
+            ("from", "譲渡元 太", "譲渡元 次"),
+            ("to", "譲渡先 花", "譲渡先 三"),
+        ):
+            field = f"{side}_address_name"
+            body = await self._assert_filtered(
+                async_client, approval_filter_url, {field: latest}, [106, 103, 101]
+            )
+            assert all(
+                latest in row[f"{side}_address_personal_information"]["name"]
+                for row in body["transfer_approval_history"]
+            )
+            body = await self._assert_filtered(
+                async_client, approval_filter_url, {field: snapshot}, [102]
+            )
+            assert (
+                snapshot
+                in body["transfer_approval_history"][0][
+                    f"{side}_address_personal_information"
+                ]["name"]
+            )
+            await self._assert_filtered(
+                async_client, approval_filter_url, {field: "一致しない"}, []
+            )
+            await self._assert_filtered(
+                async_client, approval_filter_url, {field: "別発行体"}, []
+            )
+            await self._assert_filtered(
+                async_client,
+                approval_filter_url,
+                {field: ""},
+                [106, 105, 104, 103, 102, 101],
+            )
+        await self._assert_filtered(
+            async_client,
+            approval_filter_url,
+            {"from_address_name": "保存", "to_address_name": "最新"},
+            [],
+        )
+
+    # <Normal_4_6>
+    # filter
+    # from_address_name / to_address_name
+    # snapshot with null or missing name does not fall back to latest name
+    @pytest.mark.asyncio
+    async def test_normal_4_6(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        # prepare data
+        approval_filter_url = await self._prepare_filter_data(async_db)
+
+        history = (
+            await async_db.scalars(
+                select(TransferApprovalHistory).where(
+                    TransferApprovalHistory.application_id == 504
+                )
+            )
+        ).one()
+        for snapshot in ({"address": "保存住所"}, {}):
+            history.from_address_personal_info = snapshot
+            history.to_address_personal_info = snapshot
+            await async_db.commit()
+            for side in ("from", "to"):
+                await self._assert_filtered(
+                    async_client,
+                    approval_filter_url,
+                    {f"{side}_address_name": "最新"},
+                    [106, 103, 101],
+                )
+
+    # <Normal_4_7>
+    # filter
+    # amount / amount_operator
+    # equal, greater than or equal, less than or equal, and zero
+    @pytest.mark.asyncio
+    async def test_normal_4_7(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        # prepare data
+        approval_filter_url = await self._prepare_filter_data(async_db)
+
+        for params, expected in (
+            ({"amount": 20}, [103]),
+            ({"amount": 20, "amount_operator": 0}, [103]),
+            ({"amount": 20, "amount_operator": 1}, [106, 105, 104, 103]),
+            ({"amount": 20, "amount_operator": 2}, [103, 102, 101]),
+            ({"amount": 0}, [101]),
+            ({"amount": 0, "amount_operator": 1}, [106, 105, 104, 103, 102, 101]),
+            ({"amount": 0, "amount_operator": 2}, [101]),
+            ({"amount_operator": 1}, [106, 105, 104, 103, 102, 101]),
+            ({"amount": 99}, []),
+        ):
+            await self._assert_filtered(
+                async_client, approval_filter_url, params, expected
+            )
+
+    # <Normal_4_8>
+    # filter
+    # ids
+    # single, multiple, duplicate, nonexistent, and other token ids
+    @pytest.mark.asyncio
+    async def test_normal_4_8(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        # prepare data
+        approval_filter_url = await self._prepare_filter_data(async_db)
+
+        for ids, expected in (
+            ([102], [102]),
+            ([101, 103], [103, 101]),
+            ([103, 103, 999, 201], [103]),
+            ([999], []),
+            ([201], []),
+            ([501], []),  # application_id is not the index row id.
+        ):
+            await self._assert_filtered(
+                async_client, approval_filter_url, {"ids": ids}, expected
+            )
+
+    # <Normal_4_9>
+    # filter
+    # combined filters
+    # pagination, sort, total, and count
+    @pytest.mark.asyncio
+    async def test_normal_4_9(
+        self,
+        async_client: AsyncClient,
+        async_db: AsyncSession,
+    ):
+        # prepare data
+        approval_filter_url = await self._prepare_filter_data(async_db)
+
+        await self._assert_filtered(
+            async_client, approval_filter_url, {}, [106, 105, 104, 103, 102, 101]
+        )
+        params: dict[str, Any] = {
+            "application_datetime_from": self._filter_datetime(2),
+            "application_datetime_to": self._filter_datetime(6),
+            "approval_datetime_from": self._filter_datetime(12),
+            "approval_datetime_to": self._filter_datetime(16),
+            "from_address": "source",
+            "to_address": "destination",
+            "from_address_name": "最新",
+            "to_address_name": "最新",
+            "amount": 20,
+            "amount_operator": 1,
+            "ids": [102, 103, 104, 105, 106, 201],
+            "status": [2],
+            "sort_order": 0,
+            "limit": 1,
+            "offset": 1,
+        }
+        body = await self._assert_filtered(
+            async_client, approval_filter_url, params, [106], count=2
+        )
+        assert body["result_set"]["limit"] == 1
+        assert body["result_set"]["offset"] == 1
 
     # <Normal_5_1>
     # sort
@@ -4283,6 +4656,118 @@ class TestListSpecificShareTokenTransferApprovalHistory:
             ],
         }
         assert resp.json() == assumed_response
+
+    # <Error_1_4>
+    # validation error
+    # amount_operator: unsupported operator
+    @pytest.mark.asyncio
+    async def test_error_1_4(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"amount_operator": 3},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+
+    # <Error_1_5>
+    # validation error
+    # amount_operator: invalid type
+    @pytest.mark.asyncio
+    async def test_error_1_5(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"amount_operator": "invalid"},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+
+    # <Error_1_6>
+    # validation error
+    # amount: invalid type
+    @pytest.mark.asyncio
+    async def test_error_1_6(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"amount": "invalid"},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+
+    # <Error_1_7>
+    # validation error
+    # ids: invalid element type
+    @pytest.mark.asyncio
+    async def test_error_1_7(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"ids": [101, "invalid"]},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+
+    # <Error_1_8>
+    # validation error
+    # application_datetime_from: invalid datetime
+    @pytest.mark.asyncio
+    async def test_error_1_8(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"application_datetime_from": "invalid"},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+
+    # <Error_1_9>
+    # validation error
+    # application_datetime_to: invalid datetime
+    @pytest.mark.asyncio
+    async def test_error_1_9(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"application_datetime_to": "invalid"},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+
+    # <Error_1_10>
+    # validation error
+    # approval_datetime_from: invalid datetime
+    @pytest.mark.asyncio
+    async def test_error_1_10(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"approval_datetime_from": "invalid"},
+        )
+
+        # assertion
+        assert resp.status_code == 422
+
+    # <Error_1_11>
+    # validation error
+    # approval_datetime_to: invalid datetime
+    @pytest.mark.asyncio
+    async def test_error_1_11(self, async_client: AsyncClient, async_db: AsyncSession):
+        # request target API
+        resp = await async_client.get(
+            self.base_url.format(self.test_token_address),
+            params={"approval_datetime_to": "invalid"},
+        )
+
+        # assertion
+        assert resp.status_code == 422
 
     # <Error_2>
     # token not found
