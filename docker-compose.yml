@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:18
     command: ["postgres", "-c", "checkpoint_timeout=30s"]
     ports:
       - "5432:5432"
@@ -9,7 +9,7 @@ services:
       - POSTGRES_PASSWORD=apluserpass
       - POSTGRES_DB=apldb
     tmpfs:
-      - /var/lib/postgresql/data
+      - /var/lib/postgresql
   ibet-anvil-network:
     build:
       context: ./
