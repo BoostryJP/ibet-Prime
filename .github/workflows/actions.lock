@@ -24,7 +24,7 @@ workflows:
         - 'docker/build-push-action@v6.19.2'
         - 'docker/metadata-action@v5.0.0'
         - 'docker/setup-buildx-action@v3.12.0'
-        - 'mishakav/pytest-coverage-comment@v1.13.0'
+        - 'mishakav/pytest-coverage-comment@v1.13.1'
 dependencies:
     'actions/cache@v6.1.0':
         ref: 'v6.1.0'
@@ -101,8 +101,8 @@ dependencies:
         commit: 'sha1-0a2c53d3721e4c5cfcce6afd4014aecc337979f6'
         owner_id: 7448569
         repo_id: 212123834
-    'mishakav/pytest-coverage-comment@v1.13.0':
-        ref: 'v1.13.0'
-        commit: 'sha1-9516bf7f32a9229cf18d5e1717ae387c7154f279'
+    'mishakav/pytest-coverage-comment@v1.13.1':
+        ref: 'v1.13.1'
+        commit: 'sha1-4cfb48edc8f875ac019afdcfd97c48d78ad2b723'
         owner_id: 289035
         repo_id: 365032492
