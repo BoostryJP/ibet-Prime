@@ -30,7 +30,11 @@ router = APIRouter(tags=["common"])
 # GET: /e2ee
 @router.get("/e2ee", operation_id="GetE2EEncryptionKey", response_model=E2EEResponse)
 async def e2e_encryption_key():
-    """Get E2EE public key"""
+    """Return the public key used to encrypt sensitive request fields.
+
+    The endpoint returns `null` when `E2EE_REQUEST_ENABLED` is disabled.
+    When enabled, clients must use the returned key to encrypt sensitive request fields.
+    """
 
     if not E2EE_REQUEST_ENABLED:
         return json_response({"public_key": None})

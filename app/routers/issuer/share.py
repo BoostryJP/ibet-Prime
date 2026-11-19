@@ -296,7 +296,7 @@ def _decode_private_key(
     "/tokens",
     operation_id="IssueShareToken",
     response_model=IssueTokenResponse,
-    responses=get_routers_responses(422, 401, AuthorizationError, SendTransactionError),
+    responses=get_routers_responses(AuthorizationError, 422, SendTransactionError),
 )
 async def issue_share_token(
     db: DBAsyncSession,
@@ -306,7 +306,20 @@ async def issue_share_token(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Issue ibetShare token"""
+    """Deploy a new ibetShare token and register it with the issuer.
+
+    Token deployment completes before a successful response.
+    Supplying update attributes returns a pending token status until initial setup completes.
+    Poll the token endpoint before using operations that require a ready token.
+    IbetWST activation is accepted for the requested blockchains and can be monitored through the token endpoints.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+
+    Errors:
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    - 503 `SendTransactionError` (code 2): token deployment or token-list registration could not be sent.
+    """
 
     # Validate Headers
     validate_headers(
@@ -511,7 +524,14 @@ async def list_all_share_tokens(
     db: DBAsyncSession,
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all issued share tokens"""
+    """List issued ibetShare tokens and their current contract attributes.
+
+    The optional `issuer-address` header filters results to one issuer.
+    IbetWST activation, deployment, and address metadata are included for all supported blockchains, with legacy Ethereum fields retained for compatibility.
+
+    Errors:
+    - 422: the optional issuer address header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -586,12 +606,22 @@ async def list_all_share_tokens(
     "/tokens/{token_address}",
     operation_id="RetrieveShareToken",
     response_model=IbetShareResponse,
-    responses=get_routers_responses(404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404),
 )
 async def retrieve_share_token(
     db: DBAsyncSession, token_address: Annotated[str, Path()]
 ):
-    """Retrieve the share token"""
+    """Retrieve one issued ibetShare token.
+
+    The response includes issuance metadata, current contract attributes, and IbetWST status for each supported blockchain.
+    Failed tokens are treated as missing.
+    Pending tokens are temporarily unavailable until initial setup completes.
+    Retry the request after the token becomes ready.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token exists but its initial update processing is still pending.
+    - 404: no non-failed ibetShare token exists at `token_address`.
+    """
     # Get Token
     _token: Token | None = (
         await db.scalars(
@@ -653,14 +683,13 @@ async def retrieve_share_token(
     operation_id="UpdateShareToken",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
-        SendTransactionError,
         OperationNotSupportedVersionError,
         OperationNotAllowedStateError,
+        AuthorizationError,
+        404,
+        422,
+        SendTransactionError,
     ),
 )
 async def update_share_token(
@@ -672,7 +701,25 @@ async def update_share_token(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Update the share token"""
+    """Update an issued ibetShare token.
+
+    A successful response means the requested contract attributes have been updated.
+    Requested IbetWST activation continues after the response.
+    Monitor activation and deployment status through the token endpoints.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The token must be owned by the authenticated issuer and must not be failed or pending.
+    Contract versions before 24.6 cannot change personal-information requirements, and versions before 25.9 cannot activate IbetWST.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 400 `OperationNotSupportedVersionError` (code 6): a requested field is unsupported by the token's contract version.
+    - 400 `OperationNotAllowedStateError` (code 102): an earlier IbetWST deployment is still in progress.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    - 503 `SendTransactionError` (code 2): the token update transaction could not be sent or reverted.
+    """
 
     # Validate Headers
     validate_headers(
@@ -842,14 +889,21 @@ async def update_share_token(
     "/tokens/{token_address}/history",
     operation_id="ListShareOperationLogHistory",
     response_model=ListTokenOperationLogHistoryResponse,
-    responses=get_routers_responses(404, InvalidParameterError),
+    responses=get_routers_responses(422),
 )
 async def list_share_operation_log_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     request_query: Annotated[ListTokenOperationLogHistoryQuery, Query()],
 ):
-    """List all share token operation log history"""
+    """List ibetShare token operation history.
+
+    Results can be filtered by operation category, modified content, and creation time range.
+    The response reports unfiltered and filtered counts and applies stable sorting and pagination.
+
+    Errors:
+    - 422: a query parameter is invalid.
+    """
     stmt = select(TokenUpdateOperationLog).where(
         and_(
             TokenUpdateOperationLog.type == TokenType.IBET_SHARE,
@@ -947,14 +1001,23 @@ async def list_share_operation_log_history(
     "/tokens/{token_address}/additional_issue",
     operation_id="ListShareAdditionalIssuanceHistory",
     response_model=IssueRedeemHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_share_additional_issuance_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     request_query: Annotated[ListAdditionalIssuanceHistoryQuery, Query()],
 ):
-    """List share additional issuance history"""
+    """List additional-issuance events for an ibetShare token.
+
+    Results support sorting and pagination.
+    The token must exist, must not be failed, and must not be pending initial update processing.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 404: no non-failed ibetShare token exists at `token_address`.
+    - 422: a query parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1053,11 +1116,10 @@ async def list_share_additional_issuance_history(
     operation_id="IssueAdditionalShare",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
         SendTransactionError,
     ),
 )
@@ -1070,7 +1132,21 @@ async def issuer_additional_share(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Issuer additional shares"""
+    """Issue additional shares to an account.
+
+    A successful response means the additional issuance is complete.
+    The issuance may not appear immediately in history or position queries.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The token must belong to the issuer and must not be failed or pending.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    - 503 `SendTransactionError` (code 2): the additional-issuance transaction could not be sent or reverted.
+    """
 
     # Validate Headers
     validate_headers(
@@ -1138,7 +1214,14 @@ async def list_all_batch_additional_share_issue(
     get_query: Annotated[ListAllAdditionalIssueUploadQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all share batch additional issues"""
+    """List accepted batch additional-issuance uploads for a share token.
+
+    Results can be filtered by issuer and processing state, sorted by creation time, and paginated.
+    Each returned record reports batch-level processing state, which does not indicate that every item has completed.
+
+    Errors:
+    - 422: a query parameter is invalid.
+    """
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1214,7 +1297,10 @@ async def list_all_batch_additional_share_issue(
     operation_id="IssueAdditionalSharesInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def issue_additional_shares_in_batch(
@@ -1226,7 +1312,20 @@ async def issue_additional_shares_in_batch(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Issue additional shares in batch"""
+    """Accept additional-share issuances for queued processing.
+
+    A successful response accepts the batch and returns its `batch_id`.
+    Poll the batch-status endpoint with that ID to confirm batch and item completion.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The list must contain at least one item, and the token must belong to the issuer and must not be failed or pending.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the list is empty or the token is temporarily unavailable.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    """
 
     # Validate headers
     validate_headers(
@@ -1299,7 +1398,7 @@ async def issue_additional_shares_in_batch(
     "/tokens/{token_address}/additional_issue/batch/{batch_id}",
     operation_id="RetrieveBatchAdditionalShareIssueStatus",
     response_model=GetBatchIssueRedeemResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_batch_additional_share_issue_status(
     db: DBAsyncSession,
@@ -1307,7 +1406,15 @@ async def retrieve_batch_additional_share_issue_status(
     batch_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve detailed status of additional share batch issuance"""
+    """Retrieve the status of an accepted additional-share issuance batch.
+
+    The response includes batch-level state and the processing status of each item.
+    Personal information is included when it is available for the supplied issuer.
+
+    Errors:
+    - 404: no matching issuance batch exists for the token, issuer, and batch ID.
+    - 422: a path or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1386,14 +1493,23 @@ async def retrieve_batch_additional_share_issue_status(
     "/tokens/{token_address}/redeem",
     operation_id="ListShareRedemptionHistory",
     response_model=IssueRedeemHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_share_redeem_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     get_query: Annotated[ListRedeemHistoryQuery, Query()],
 ):
-    """List share redemption history"""
+    """List redemption events for an ibetShare token.
+
+    Results support sorting and pagination.
+    The token must exist, must not be failed, and must not be pending initial update processing.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 404: no non-failed ibetShare token exists at `token_address`.
+    - 422: a query parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1492,11 +1608,10 @@ async def list_share_redeem_history(
     operation_id="RedeemShare",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
         SendTransactionError,
     ),
 )
@@ -1509,7 +1624,21 @@ async def redeem_share(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Redeem share token"""
+    """Redeem shares from an account.
+
+    A successful response means the redemption is complete.
+    The redemption may not appear immediately in history or position queries.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The token must belong to the issuer and must not be failed or pending.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    - 503 `SendTransactionError` (code 2): the redemption transaction could not be sent or reverted.
+    """
 
     # Validate Headers
     validate_headers(
@@ -1577,7 +1706,15 @@ async def list_all_batch_share_redemption(
     get_query: Annotated[ListAllRedeemUploadQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all batch share redemptions"""
+    """List accepted batch redemption uploads for a share token.
+
+    Results can be filtered by issuer and processing state, sorted, and paginated.
+    Each returned upload includes its item results.
+    Personal information uses the issuer supplied in the header or, when omitted, the token's issuer.
+
+    Errors:
+    - 422: a query parameter is invalid.
+    """
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1719,7 +1856,10 @@ async def list_all_batch_share_redemption(
     operation_id="RedeemSharesInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def redeem_shares_in_batch(
@@ -1731,7 +1871,20 @@ async def redeem_shares_in_batch(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Redeem shares in batch"""
+    """Accept share redemptions for queued processing.
+
+    A successful response accepts the batch and returns its `batch_id`.
+    Poll the batch-status endpoint with that ID to confirm batch and item completion.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The list must contain at least one item, and the token must belong to the issuer and must not be failed or pending.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the list is empty or the token is temporarily unavailable.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    """
 
     # Validate Headers
     validate_headers(
@@ -1804,7 +1957,7 @@ async def redeem_shares_in_batch(
     "/tokens/{token_address}/redeem/batch/{batch_id}",
     operation_id="RetrieveBatchShareRedemptionStatus",
     response_model=GetBatchIssueRedeemResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_batch_redeem(
     db: DBAsyncSession,
@@ -1812,7 +1965,15 @@ async def retrieve_batch_redeem(
     batch_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve detailed status of batch share redemption"""
+    """Retrieve the status of an accepted share-redemption batch.
+
+    The response includes batch-level state and the processing status of each item.
+    Personal information is included when it is available for the supplied issuer.
+
+    Errors:
+    - 404: no matching redemption batch exists for the token, issuer, and batch ID.
+    - 422: a path or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1891,13 +2052,22 @@ async def retrieve_batch_redeem(
     "/tokens/{token_address}/scheduled_events",
     operation_id="ListAllScheduledShareTokenUpdateEvents",
     response_model=List[ScheduledEventResponse],
+    responses=get_routers_responses(422),
 )
 async def list_all_scheduled_share_token_update_events(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all scheduled share token update events"""
+    """List scheduled update events for an ibetShare token.
+
+    Events are returned in ID order with scheduling, status, and creation details.
+    The optional `issuer-address` header restricts results to one issuer.
+    The endpoint may return an empty list when the token does not exist.
+
+    Errors:
+    - 422: a path parameter is invalid.
+    """
 
     if issuer_address is None:
         _token_events: Sequence[ScheduledEvents] = (
@@ -1958,12 +2128,11 @@ async def list_all_scheduled_share_token_update_events(
     operation_id="ScheduleShareTokenUpdateEvent",
     response_model=ScheduledEventIdResponse,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
         OperationNotSupportedVersionError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def schedule_share_token_update_event(
@@ -1975,7 +2144,22 @@ async def schedule_share_token_update_event(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Schedule a new share token update event"""
+    """Schedule one ibetShare token update for later execution.
+
+    A successful response accepts the update and returns its `scheduled_event_id`.
+    Poll the scheduled-event endpoint with that ID to confirm execution.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The token must belong to the authenticated issuer and must be ready for operation.
+    Tokens older than version 24.6 cannot schedule changes to personal-information requirements.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 400 `OperationNotSupportedVersionError` (code 6): the requested update is unsupported by the token's contract version.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    """
 
     # Validate Headers
     validate_headers(
@@ -2045,12 +2229,11 @@ async def schedule_share_token_update_event(
     operation_id="ScheduleShareTokenUpdateEventsInBatch",
     response_model=ScheduledEventIdListResponse,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
         OperationNotSupportedVersionError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def schedule_share_token_update_events_in_batch(
@@ -2062,7 +2245,22 @@ async def schedule_share_token_update_events_in_batch(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Schedule share token update events in batch"""
+    """Schedule multiple ibetShare token updates for later execution.
+
+    A successful response accepts every update and returns its corresponding `scheduled_event_id`.
+    Poll the scheduled-event endpoint with each ID to confirm execution.
+
+    Every event must target a ready token owned by the authenticated issuer.
+    Tokens older than version 24.6 cannot schedule changes to personal-information requirements.
+    Authentication accepts a valid EOA password or issuer auth token.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 400 `OperationNotSupportedVersionError` (code 6): an update is unsupported by the token's contract version.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    """
 
     # Validate Headers
     validate_headers(
@@ -2144,7 +2342,14 @@ async def retrieve_scheduled_share_token_update_event(
     scheduled_event_id: Annotated[str, Path()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """Retrieve a scheduled share token update event"""
+    """Retrieve a scheduled ibetShare token update event.
+
+    The response includes the update payload, processing status, deletion state, and ISO 8601 timestamps.
+    The optional `issuer-address` header narrows the lookup to that issuer.
+
+    Errors:
+    - 404: no matching scheduled event exists for the token, event ID, and optional issuer.
+    """
 
     if issuer_address is None:
         _token_event: ScheduledEvents | None = (
@@ -2205,7 +2410,7 @@ async def retrieve_scheduled_share_token_update_event(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
     operation_id="DeleteScheduledShareTokenUpdateEvent",
     response_model=ScheduledEventResponse,
-    responses=get_routers_responses(422, 401, 404, AuthorizationError),
+    responses=get_routers_responses(AuthorizationError, 404, 422),
 )
 async def delete_scheduled_share_token_update_event(
     db: DBAsyncSession,
@@ -2217,7 +2422,18 @@ async def delete_scheduled_share_token_update_event(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Delete a scheduled share token update event"""
+    """Delete a scheduled ibetShare token update event.
+
+    The event must belong to the authenticated issuer and token.
+    Hard deletion removes the event, while soft deletion retains it with a deleted state.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+
+    Errors:
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching scheduled event exists.
+    - 422: a request header or query parameter is invalid, or an encrypted EOA password cannot be decoded.
+    """
 
     # Validate Headers
     validate_headers(
@@ -2285,7 +2501,7 @@ async def delete_scheduled_share_token_update_event(
     "/tokens/{token_address}/holders",
     operation_id="ListAllShareTokenHolders",
     response_model=HoldersResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 404),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_all_share_token_holders(
     db: DBAsyncSession,
@@ -2293,7 +2509,18 @@ async def list_all_share_token_holders(
     get_query: Annotated[ListAllHoldersQuery, Query()],
     issuer_address: Annotated[str, Header()],
 ):
-    """List all share token holders"""
+    """List paginated ibetShare holder positions and associated information.
+
+    Each result includes transferable, pending, exchange, committed, locked, and total balances.
+    It supports personal-information, balance, former-holder, sorting, and pagination filters.
+
+    The issuer and token must exist and the token must be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the issuer does not exist or the token is temporarily unavailable.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a header or query parameter is invalid.
+    """
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -2623,14 +2850,25 @@ async def list_all_share_token_holders(
     "/tokens/{token_address}/holders/count",
     operation_id="CountShareTokenHolders",
     response_model=HolderCountResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 404),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def count_share_token_holders(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Count the number of share token holders"""
+    """Count current ibetShare token holders.
+
+    The count includes accounts with a nonzero balance, exchange balance, pending transfer, exchange commitment, or locked amount.
+    Former holders with only zero values are excluded.
+
+    The issuer and token must exist and the token must be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the issuer does not exist or the token is temporarily unavailable.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: the issuer address header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2708,7 +2946,7 @@ async def count_share_token_holders(
     "/tokens/{token_address}/holders/{account_address}",
     operation_id="RetrieveShareTokenHolder",
     response_model=HolderResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 404),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_share_token_holder(
     db: DBAsyncSession,
@@ -2716,7 +2954,18 @@ async def retrieve_share_token_holder(
     account_address: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve share token holder"""
+    """Retrieve one account's ibetShare position and holder metadata.
+
+    The response includes balances, locked value, issuer personal information, and token-holder extra information.
+    An account without a position is returned with zero balances and default holder metadata.
+
+    The issuer and token must exist and the token must be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the issuer does not exist or the token is temporarily unavailable.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a path or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2886,10 +3135,10 @@ async def retrieve_share_token_holder(
     operation_id="RegisterShareTokenHolderExtraInfo",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        404,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def register_share_token_holder_extra_info(
@@ -2902,6 +3151,20 @@ async def register_share_token_holder_extra_info(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
+    """Register token-holder extra identifiers.
+
+    A successful response replaces any existing extra identifiers for the same token and account.
+    Personal information is unaffected.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The token must belong to the authenticated issuer and must be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable while its initial update is pending.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a path, header, or body parameter is invalid, or an encrypted EOA password cannot be decoded.
+    """
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
@@ -2961,13 +3224,12 @@ async def register_share_token_holder_extra_info(
     operation_id="RegisterShareTokenHolderPersonalInfo",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
-        SendTransactionError,
         PersonalInfoExceedsSizeLimit,
+        AuthorizationError,
+        404,
+        422,
+        SendTransactionError,
     ),
 )
 async def register_share_token_holder_personal_info(
@@ -2979,7 +3241,22 @@ async def register_share_token_holder_personal_info(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Register personal information of share token holders"""
+    """Register personal information for one ibetShare holder.
+
+    A successful response means the registration request has completed.
+    The new information may not appear immediately in holder, history, or transfer-approval queries.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The token must belong to the authenticated issuer and must be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable.
+    - 400 `PersonalInfoExceedsSizeLimit` (code 11): personal information exceeds the configured message-size limit.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a path, header, or body parameter is invalid, or an encrypted EOA password cannot be decoded.
+    - 503 `SendTransactionError` (code 2): the registration could not be sent or reverted.
+    """
 
     # Validate Headers
     validate_headers(
@@ -3077,7 +3354,7 @@ async def register_share_token_holder_personal_info(
     "/tokens/{token_address}/personal_info/batch",
     operation_id="ListAllShareTokenBatchPersonalInfoRegistration",
     response_model=ListBatchRegisterPersonalInfoUploadResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_all_share_token_batch_personal_info_registration(
     db: DBAsyncSession,
@@ -3085,7 +3362,17 @@ async def list_all_share_token_batch_personal_info_registration(
     issuer_address: Annotated[str, Header()],
     get_query: Annotated[ListAllPersonalInfoBatchRegistrationUploadQuery, Query()],
 ):
-    """List all personal information batch registration"""
+    """List personal-information registration batches for an issuer.
+
+    Results can be filtered by status, sorted by creation time, and paginated.
+    A ready share token owned by the supplied issuer is required.
+    Results are scoped to the issuer rather than the token address.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a path, header, or query parameter is invalid.
+    """
     # Verify that the token is issued by the issuer_address
     _token: Token | None = (
         await db.scalars(
@@ -3175,12 +3462,11 @@ async def list_all_share_token_batch_personal_info_registration(
     operation_id="InitiateShareTokenBatchPersonalInfoRegistration",
     response_model=BatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
         BatchPersonalInfoRegistrationValidationError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def initiate_share_token_batch_personal_info_registration(
@@ -3192,7 +3478,22 @@ async def initiate_share_token_batch_personal_info_registration(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Initiate share token batch personal information registration"""
+    """Accept personal-information records for queued batch registration.
+
+    A successful response accepts the batch and returns its `batch_id`.
+    Poll the batch-status endpoint with that ID to confirm batch and per-account completion.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The list must be nonempty, and the token must belong to the authenticated issuer and be ready for operation.
+    A rejected batch is not accepted for processing.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the list is empty or the token is temporarily unavailable.
+    - 400 `BatchPersonalInfoRegistrationValidationError` (code 12): one or more records exceed the configured size limit, with each offending row identified in the error detail.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a path, header, or body parameter is invalid, or an encrypted EOA password cannot be decoded.
+    """
 
     # Validate Headers
     validate_headers(
@@ -3293,7 +3594,7 @@ async def initiate_share_token_batch_personal_info_registration(
     "/tokens/{token_address}/personal_info/batch/{batch_id}",
     operation_id="RetrieveShareTokenPersonalInfoBatchRegistrationStatus",
     response_model=GetBatchRegisterPersonalInfoResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_share_token_personal_info_batch_registration_status(
     db: DBAsyncSession,
@@ -3301,7 +3602,15 @@ async def retrieve_share_token_personal_info_batch_registration_status(
     batch_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve the status of share token personal information batch registration"""
+    """Retrieve a personal-information batch registration result.
+
+    The response includes batch-level status and per-account registration statuses.
+    The result is limited to the batch issuer and requested token address.
+
+    Errors:
+    - 404: no batch exists for the batch ID and issuer.
+    - 422: a path or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -3371,7 +3680,15 @@ async def list_share_token_lock_unlock_events(
     request_query: Annotated[ListAllTokenLockEventsQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all lock/unlock share token events"""
+    """List lock and unlock events for an ibetShare token.
+
+    Results can be filtered, sorted, and paginated.
+    The optional `issuer-address` header narrows results to one issuer.
+    Failed tokens are excluded.
+
+    Errors:
+    - 422: a path, header, or query parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -3569,11 +3886,10 @@ async def list_share_token_lock_unlock_events(
     operation_id="TransferShareTokenOwnership",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
         SendTransactionError,
     ),
 )
@@ -3585,7 +3901,21 @@ async def transfer_share_token_ownership(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Transfer share token ownership"""
+    """Force-transfer ibetShare ownership.
+
+    A successful response means the forced transfer is complete.
+    The transfer may not appear immediately in position or transfer-history queries.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The token must belong to the issuer and must be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: no matching non-failed token exists for the issuer and address.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
+    - 503 `SendTransactionError` (code 2): the transfer transaction could not be sent or reverted.
+    """
 
     # Validate Headers
     validate_headers(
@@ -3644,14 +3974,25 @@ async def transfer_share_token_ownership(
     "/transfers/{token_address}",
     operation_id="ListShareTokenTransferHistory",
     response_model=TransferHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_share_token_transfer_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     query: Annotated[ListTransferHistoryQuery, Query()],
 ):
-    """List share token transfer history"""
+    """List share-token transfer history.
+
+    Results include the issuer's current personal information for source and destination accounts.
+    Transfers can be filtered, stably sorted, and paginated.
+
+    The token must exist, must not be failed, and must not be pending initial update processing.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable.
+    - 404: no non-failed ibetShare token exists at `token_address`.
+    - 422: a path or query parameter is invalid.
+    """
     # Check if the token has been issued
     _token: Token | None = (
         await db.scalars(
@@ -3841,7 +4182,15 @@ async def list_all_share_token_transfer_approval_history(
     get_query: Annotated[ListTransferApprovalHistoryQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all share token transfer approval history"""
+    """List transfer-approval summary counts by issuer and share token.
+
+    The summaries include unapproved, escrow-finished, transferred, and canceled counts.
+    Failed tokens are excluded.
+    Results can be filtered by issuer and paginated.
+
+    Errors:
+    - 422: a header or query parameter is invalid.
+    """
     # Create a subquery for 'status' added IDXTransferApproval
     subquery = aliased(
         IDXTransferApproval,
@@ -3982,14 +4331,25 @@ async def list_all_share_token_transfer_approval_history(
     "/transfer_approvals/{token_address}",
     operation_id="ListSpecificShareTokenTransferApprovalHistory",
     response_model=TransferApprovalHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_specific_share_token_transfer_approval_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     get_query: Annotated[ListSpecificTokenTransferApprovalHistoryQuery, Query()],
 ):
-    """List specific share token transfer approval history"""
+    """List transfer-approval applications for one ibetShare token.
+
+    Applications include their current status and available personal information.
+    Results support time, address, name, amount, ID, and status filters with sorting and pagination.
+
+    The token must exist and be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable.
+    - 404: no non-failed ibetShare token exists at `token_address`.
+    - 422: a path or query parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -4349,14 +4709,13 @@ async def list_specific_share_token_transfer_approval_history(
     "/transfer_approvals/{token_address}/{id}",
     operation_id="UpdateShareTokenTransferApprovalStatus",
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
-        InvalidParameterError,
-        SendTransactionError,
         ContractRevertError,
+        InvalidParameterError,
         OperationNotAllowedStateError,
+        AuthorizationError,
+        404,
+        422,
+        SendTransactionError,
     ),
 )
 async def update_share_token_transfer_approval_status(
@@ -4369,7 +4728,24 @@ async def update_share_token_transfer_approval_status(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Update share token transfer approval status"""
+    """Approve or cancel a share-token transfer application.
+
+    A successful response means the approval or cancellation operation is complete.
+    Approval targets the transfer mechanism selected by the application's exchange address.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    The application must exist, be unprocessed, and satisfy escrow and cancellation rules.
+    Personal information must already be registered for both accounts.
+
+    Errors:
+    - 400 `ContractRevertError` (contract-defined code, or code 0): a contract operation reverted.
+    - 400 `InvalidParameterError` (code 1): the token is pending, or the application is terminal, duplicate, not ready after escrow, or not cancelable.
+    - 400 `OperationNotAllowedStateError` (code 101): personal information is missing for the source or destination.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 404: the token or transfer-approval application does not exist.
+    - 422: a path, header, or body parameter is invalid, or an encrypted EOA password cannot be decoded.
+    - 503 `SendTransactionError` (code 2): a transaction could not be sent or a non-contract failure occurred.
+    """
 
     # Validate Headers
     validate_headers(
@@ -4583,14 +4959,25 @@ async def update_share_token_transfer_approval_status(
     "/transfer_approvals/{token_address}/{id}",
     operation_id="RetrieveShareTokenTransferApprovalStatus",
     response_model=TransferApprovalTokenDetailResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_share_token_transfer_approval_status(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     id: Annotated[int, Path()],
 ):
-    """Retrieve share token transfer approval status"""
+    """Retrieve one share-token transfer-approval application.
+
+    The response includes the application's current state.
+    Personal information reflects the operation-time snapshot when available and otherwise the latest available record.
+
+    The token must exist and be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is temporarily unavailable.
+    - 404: the token or transfer-approval application does not exist.
+    - 422: a path parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -4809,13 +5196,12 @@ async def retrieve_share_token_transfer_approval_status(
     operation_id="BulkTransferShareTokenOwnership",
     response_model=BulkTransferUploadIdResponse,
     responses=get_routers_responses(
-        401,
-        422,
-        AuthorizationError,
         InvalidParameterError,
-        MultipleTokenTransferNotAllowedError,
         TokenNotExistError,
         NonTransferableTokenError,
+        MultipleTokenTransferNotAllowedError,
+        AuthorizationError,
+        422,
     ),
 )
 async def bulk_transfer_share_token_ownership(
@@ -4826,9 +5212,21 @@ async def bulk_transfer_share_token_ownership(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Bulk transfer share token ownership
+    """Accept multiple forced share transfers for queued processing.
 
-    - All `token_address` must be the same.
+    A successful response accepts the batch and returns its `upload_id`.
+    Poll the upload and record endpoints with that ID to confirm batch and item completion.
+
+    Authentication accepts a valid EOA password or issuer auth token.
+    Every item must reference the same token, and that token must belong to the issuer and be ready for operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): request validation fails.
+    - 400 `TokenNotExistError` (code 7): the common token address was not issued by the issuer.
+    - 400 `NonTransferableTokenError` (code 8): the token is temporarily unavailable.
+    - 400 `MultipleTokenTransferNotAllowedError` (code 9): the list contains multiple token addresses.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or neither supplied credential is valid.
+    - 422: a request header or body is invalid, or an encrypted EOA password cannot be decoded.
     """
     # Validate Headers
     validate_headers(
@@ -4921,7 +5319,14 @@ async def list_share_token_bulk_transfers(
     get_query: Annotated[ListBulkTransferUploadQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List share token bulk transfers"""
+    """List accepted share-token bulk-transfer uploads.
+
+    Results can be filtered by issuer or token and paginated.
+    Each returned status is the upload-level processing state.
+
+    Errors:
+    - 422: a header or query parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -5001,7 +5406,7 @@ async def list_share_token_bulk_transfers(
     "/bulk_transfer/{upload_id}",
     operation_id="RetrieveShareTokenBulkTransfer",
     response_model=BulkTransferUploadRecordResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_share_token_bulk_transfer(
     db: DBAsyncSession,
@@ -5009,7 +5414,15 @@ async def retrieve_share_token_bulk_transfer(
     get_query: Annotated[ListBulkTransferQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """Retrieve share token bulk transfer upload records"""
+    """Retrieve records for one share-token bulk-transfer upload.
+
+    Records can be filtered by issuer and paginated.
+    Each record includes source and destination personal information, processing status, and transaction error details.
+
+    Errors:
+    - 404: no matching share bulk-transfer records exist for the upload.
+    - 422: a path, header, or query parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

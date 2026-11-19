@@ -296,15 +296,21 @@ async def service_get_tx_data(db: DBAsyncSession, hash: str) -> Dict[str, Any]:
     summary="[ibet Blockchain Explorer] List block data",
     operation_id="ListBlockData",
     response_model=BlockDataListResponse,
-    responses=get_routers_responses(404, ResponseLimitExceededError),
+    responses=get_routers_responses(ResponseLimitExceededError, 404, 422),
 )
 async def list_block_data(
     db: DBAsyncSession,
     get_query: Annotated[ListBlockDataQuery, Query()],
 ):
-    """
-    Returns a list of block data within the specified block number range.
-    The maximum number of search results is 1000.
+    """List ibet blocks with range filtering, sorting, and pagination.
+
+    At most 1000 blocks can be returned.
+    `BC_EXPLORER_ENABLED` must be enabled.
+
+    Errors:
+    - 400 `ResponseLimitExceededError` (code 4): the selected range or limit would exceed 1000 results.
+    - 404: the explorer feature is disabled in the current configuration.
+    - 422: a query parameter is invalid.
     """
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
@@ -323,14 +329,19 @@ async def list_block_data(
     summary="[ibet Blockchain Explorer] Retrieve block data",
     operation_id="GetBlockData",
     response_model=BlockDataResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422),
 )
 async def get_block_data(
     db: DBAsyncSession,
     block_number: Annotated[int, Path(description="Block number", ge=0)],
 ):
-    """
-    Returns block data in the specified block number.
+    """Retrieve one ibet block by block number.
+
+    `BC_EXPLORER_ENABLED` must be enabled.
+
+    Errors:
+    - 404: the explorer feature is disabled, or no block exists for `block_number`.
+    - 422: `block_number` is negative or otherwise invalid.
     """
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
@@ -349,15 +360,22 @@ async def get_block_data(
     summary="[ibet Blockchain Explorer] List tx data",
     operation_id="ListTxData",
     response_model=TxDataListResponse,
-    responses=get_routers_responses(404, ResponseLimitExceededError),
+    responses=get_routers_responses(ResponseLimitExceededError, 404, 422),
 )
 async def list_tx_data(
     db: DBAsyncSession,
     get_query: Annotated[ListTxDataQuery, Query()],
 ):
-    """
-    Returns a list of transactions by various search parameters.
-    The maximum number of search results is 10000.
+    """List ibet transactions for a block with filtering and pagination.
+
+    The block number is required, and optional sender and recipient filters are supported.
+    Results are ordered newest first, and at most 10000 transactions can be returned.
+    `BC_EXPLORER_ENABLED` must be enabled.
+
+    Errors:
+    - 400 `ResponseLimitExceededError` (code 4): the selected block or limit would exceed 10000 results.
+    - 404: the explorer feature is disabled in the current configuration.
+    - 422: a query parameter or address is invalid.
     """
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(
@@ -376,13 +394,19 @@ async def list_tx_data(
     summary="[ibet Blockchain Explorer] Retrieve transaction data",
     operation_id="GetTxData",
     response_model=TxDataResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422),
 )
 async def get_tx_data(
     db: DBAsyncSession, hash: Annotated[str, Path(description="Transaction hash")]
 ):
-    """
-    Searching for the transaction by transaction hash
+    """Retrieve one ibet transaction by hash.
+
+    The response includes decoded contract name, function, and parameters when available.
+    `BC_EXPLORER_ENABLED` must be enabled.
+
+    Errors:
+    - 404: the explorer feature is disabled, or no transaction exists for `hash`.
+    - 422: the path parameter is invalid.
     """
     if BC_EXPLORER_ENABLED is False:
         raise HTTPException(

@@ -101,7 +101,16 @@ async def list_all_positions(
     request_query: Annotated[ListAllPositionsQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all positions"""
+    """List current and optionally former token positions for an account.
+
+    Results include available and locked balances and can be restricted by issuer and token type.
+    Supported token types include token names and optional token attributes.
+
+    By default, zero-balance positions are omitted; `include_former_position` includes them.
+
+    Errors:
+    - 422: a query parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -227,7 +236,16 @@ async def list_all_locked_position(
     request_query: Annotated[ListAllLockedPositionsQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all locked position"""
+    """List positive locked positions for an account.
+
+    Results include lock addresses and balances, and can be filtered by issuer and token type.
+    Token names are included for supported bond and share tokens.
+
+    Failed tokens are excluded.
+
+    Errors:
+    - 422: a query parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -321,7 +339,16 @@ async def list_account_lock_unlock_events(
     request_query: Annotated[ListAllLockEventsQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all lock/unlock events in the account"""
+    """List lock and unlock events for an account.
+
+    Lock and unlock events are combined, filtered, sorted, and paginated as one event stream.
+    The endpoint can filter by category, token, participant addresses, and token type.
+
+    Token names are included for supported bond and share tokens.
+
+    Errors:
+    - 422: a query parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -513,12 +540,11 @@ async def list_account_lock_unlock_events(
     operation_id="ForceLock",
     response_model=None,
     responses=get_routers_responses(
-        401,
-        422,
-        AuthorizationError,
         InvalidParameterError,
-        SendTransactionError,
         OperationNotSupportedVersionError,
+        AuthorizationError,
+        422,
+        SendTransactionError,
     ),
 )
 async def force_lock(
@@ -530,9 +556,18 @@ async def force_lock(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Force unlock the locked position
+    """Force-lock a holder's token position.
 
-    - This feature is not available for tokens issued prior to v25.6.
+    The issuer credentials are authenticated, and the token must be an active token owned by that issuer.
+    A successful call completes the force-lock operation and changes the token position.
+    Tokens issued before v25.6 do not support this operation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the account address is invalid, the token is not available to the issuer, or it is pending.
+    - 400 `OperationNotSupportedVersionError` (code 6): the token version does not support force lock.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied credential is invalid.
+    - 422: the request body or an issuer credential header is invalid.
+    - 503 `SendTransactionError` (code 2): the force-lock transaction fails.
     """
 
     # Validate Headers
@@ -610,10 +645,9 @@ async def force_lock(
     operation_id="ForceUnlock",
     response_model=None,
     responses=get_routers_responses(
-        401,
-        422,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        422,
         SendTransactionError,
     ),
 )
@@ -626,7 +660,18 @@ async def force_unlock(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Force unlock the locked position"""
+    """Force-unlock a holder's token position.
+
+    The issuer credentials are authenticated, and the token must be an active token owned by that issuer.
+    Before submission, the endpoint rejects unlocks that conflict with pending ibetWST burn or force-burn processing for the account.
+    A successful call completes the force-unlock operation and changes the token position.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the account is invalid, the token is unavailable or pending, or a conflicting ibetWST burn is pending.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied credential is invalid.
+    - 422: the request body or an issuer credential header is invalid.
+    - 503 `SendTransactionError` (code 2): the force-unlock transaction fails.
+    """
 
     # Validate Headers
     validate_headers(
@@ -730,7 +775,7 @@ async def force_unlock(
     "/{account_address}/{token_address}",
     operation_id="RetrieveTokenPositionForAccount",
     response_model=PositionResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 404),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_position(
     db: DBAsyncSession,
@@ -738,7 +783,18 @@ async def retrieve_position(
     token_address: Annotated[str, Path()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """Retrieve token position for account"""
+    """Retrieve one account's position for a token.
+
+    The endpoint returns available balances, the locked balance, and current token attributes.
+    When no position exists, all balance fields are returned as zero.
+
+    If `issuer-address` is supplied, the token must belong to that issuer.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token does not exist, is failed, or is not owned by the supplied issuer.
+    - 422: a path parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

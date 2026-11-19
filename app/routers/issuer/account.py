@@ -120,10 +120,20 @@ utc_tz = pytz.timezone("UTC")
     "/accounts",
     operation_id="CreateIssuerKey",
     response_model=AccountResponse,
-    responses=get_routers_responses(422, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 422),
 )
 async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
-    """Create Issuer Key"""
+    """Create an issuer account and its EOA key.
+
+    A new Ethereum address is generated for the issuer.
+    The private key is not returned.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, `eoa_password` must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the decrypted EOA password does not satisfy the configured password policy.
+    - 422: the request is invalid, or the encrypted password cannot be decoded.
+    """
     # Check Password Policy
     eoa_password = (
         E2EEUtils.decrypt(data.eoa_password)
@@ -184,7 +194,11 @@ async def create_issuer_key(db: DBAsyncSession, data: AccountCreateKeyRequest):
     "/accounts", operation_id="ListAllIssuers", response_model=List[AccountResponse]
 )
 async def list_all_issuers(db: DBAsyncSession):
-    """List all issuer accounts"""
+    """List all issuer accounts ordered by issuer address.
+
+    Logically deleted issuers are also returned and identified by `is_deleted=true`.
+    The response does not contain private keys or encrypted passwords.
+    """
 
     # Register key data to the DB
     _accounts: Sequence[Account] = (
@@ -213,7 +227,13 @@ async def list_all_issuers(db: DBAsyncSession):
     responses=get_routers_responses(404),
 )
 async def retrieve_issuer(db: DBAsyncSession, issuer_address: Annotated[str, Path()]):
-    """Retrieve an issuer account"""
+    """Retrieve an issuer account, including its logical-deletion state.
+
+    The response does not contain the EOA key file, private key, or encrypted password.
+
+    Errors:
+    - 404: no account exists for `issuer_address`.
+    """
 
     _account = (
         await db.scalars(
@@ -241,7 +261,14 @@ async def retrieve_issuer(db: DBAsyncSession, issuer_address: Annotated[str, Pat
     responses=get_routers_responses(404),
 )
 async def delete_issuer(db: DBAsyncSession, issuer_address: Annotated[str, Path()]):
-    """Logically delete an issuer account"""
+    """Logically delete an issuer account.
+
+    This operation sets `is_deleted=true` and keeps the account retrievable.
+    Repeating the request after deletion is successful and leaves the account marked as deleted.
+
+    Errors:
+    - 404: no account exists for `issuer_address`.
+    """
 
     _account = (
         await db.scalars(
@@ -270,14 +297,25 @@ async def delete_issuer(db: DBAsyncSession, issuer_address: Annotated[str, Path(
     "/accounts/{issuer_address}/eoa_password",
     operation_id="ChangeIssuerEOAPassword",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def change_issuer_eoa_password(
     db: DBAsyncSession,
     issuer_address: Annotated[str, Path()],
     data: AccountChangeEOAPasswordRequest,
 ):
-    """Change Issuer's EOA-Password"""
+    """Change an issuer's EOA password and re-encrypt its key file.
+
+    `old_eoa_password` must match the current password.
+    The Ethereum private key and issuer address remain unchanged, while subsequent authentication uses the new password.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, both password values must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the old password does not match, or the new password does not satisfy the configured password policy.
+    - 404: no account exists for `issuer_address`.
+    - 422: the request is invalid, or an encrypted password cannot be decoded.
+    """
 
     # Get Account
     _account = (
@@ -333,14 +371,26 @@ async def change_issuer_eoa_password(
     "/accounts/{issuer_address}/rsakey",
     operation_id="CreateIssuerRSAKey",
     response_model=AccountResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def create_issuer_rsa_key(
     db: DBAsyncSession,
     issuer_address: Annotated[str, Path()],
     data: AccountGenerateRsaKeyRequest,
 ):
-    """Create issuer's RSA key"""
+    """Start generating or rotating an issuer's RSA key.
+
+    On acceptance, `rsa_status` is set to `CREATING` for an issuer without a key, or `CHANGING` for key rotation.
+    Clients should retrieve the issuer account and wait for `rsa_status` to become `SET` before using the new public key.
+
+    If `rsa_passphrase` is omitted, the configured default passphrase is used.
+    For key rotation, the previous key is retained temporarily while personal information is migrated to the replacement key.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): generation is already in progress, or the passphrase does not satisfy the configured policy.
+    - 404: no account exists for `issuer_address`.
+    - 422: the request is invalid, or the encrypted passphrase cannot be decoded.
+    """
 
     # Get Account
     _account = (
@@ -407,14 +457,25 @@ async def create_issuer_rsa_key(
     "/accounts/{issuer_address}/rsa_passphrase",
     operation_id="ChangeIssuerRSAPassphrase",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def change_issuer_rsa_passphrase(
     db: DBAsyncSession,
     issuer_address: Annotated[str, Path()],
     data: AccountChangeRSAPassphraseRequest,
 ):
-    """Change issuer's RSA-Passphrase"""
+    """Change the passphrase protecting an issuer's RSA private key.
+
+    The RSA private and public key material is unchanged.
+    The current RSA key must already exist, and `old_rsa_passphrase` must match it.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, both passphrase values must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the old passphrase does not match, or the new passphrase does not satisfy the configured policy.
+    - 404: the issuer does not exist, or its RSA key/passphrase has not been generated yet.
+    - 422: the request is invalid, or an encrypted passphrase cannot be decoded.
+    """
 
     # Get Account
     _account = (
@@ -471,7 +532,7 @@ async def change_issuer_rsa_passphrase(
     operation_id="GenerateIssuerAuthToken",
     response_model=AccountAuthTokenResponse,
     responses=get_routers_responses(
-        422, 404, InvalidParameterError, AuthTokenAlreadyExistsError
+        AuthTokenAlreadyExistsError, AuthorizationError, 422
     ),
 )
 async def generate_issuer_auth_token(
@@ -481,7 +542,20 @@ async def generate_issuer_auth_token(
     issuer_address: Annotated[str, Path()],
     eoa_password: Annotated[Optional[str], Header()] = None,
 ):
-    """Generate issuer's auth token"""
+    """Generate an issuer authentication token.
+
+    When EOA password checking is enabled, the request is authenticated with `eoa-password`; another auth token cannot be used to create a replacement.
+    `valid_duration` is measured in seconds, and `0` means that the token does not expire.
+    The plaintext token is returned only once.
+
+    A still-valid token cannot be replaced.
+    After a finite-duration token has expired, the next request replaces it with a newly generated token.
+
+    Errors:
+    - 400 `AuthTokenAlreadyExistsError` (code 3): an existing token is still valid, including a token whose `valid_duration` is `0`.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist, the EOA password is incorrect, or neither required credential is valid.
+    - 422: the request/header is invalid, the password is missing, or the encrypted password cannot be decoded.
+    """
 
     # Validate Headers
     validate_headers(
@@ -563,7 +637,7 @@ async def generate_issuer_auth_token(
     "/accounts/{issuer_address}/auth_token",
     operation_id="DeleteIssuerAuthToken",
     response_model=None,
-    responses=get_routers_responses(422, 404, AuthorizationError),
+    responses=get_routers_responses(AuthorizationError, 404, 422),
 )
 async def delete_issuer_auth_token(
     db: DBAsyncSession,
@@ -572,7 +646,16 @@ async def delete_issuer_auth_token(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Delete issuer's auth token"""
+    """Delete an issuer authentication token.
+
+    Authentication can use either `eoa-password` or the token itself.
+    A successful request permanently invalidates the token; an already deleted token produces 404 and is not treated as an idempotent deletion.
+
+    Errors:
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied EOA password/auth token is invalid or expired.
+    - 404: no auth token currently exists for the issuer.
+    - 422: the supplied header or encrypted password is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -609,10 +692,11 @@ async def delete_issuer_auth_token(
     operation_id="CreateChildAccount",
     response_model=CreateChildAccountResponse,
     responses=get_routers_responses(
-        404,
         OperationNotPermittedForOlderIssuers,
-        ServiceUnavailableError,
         PersonalInfoExceedsSizeLimit,
+        404,
+        422,
+        ServiceUnavailableError,
     ),
 )
 async def create_child_account(
@@ -620,7 +704,21 @@ async def create_child_account(
     issuer_address: Annotated[str, Path()],
     account_req: CreateUpdateChildAccountRequest,
 ):
-    """Create the child account"""
+    """Create one child account for an issuer.
+
+    A new child address and the next available child-account index are assigned.
+    The supplied personal information is registered for the new child account.
+
+    Personal information is registered with `key_manager=SELF`.
+    Only issuers with a public key, including issuers created in version 24.12 or later, support this operation.
+
+    Errors:
+    - 400 `OperationNotPermittedForOlderIssuers` (code 10): the issuer has no public key because it was created by an older version.
+    - 400 `PersonalInfoExceedsSizeLimit` (code 11): the serialized personal information exceeds the configured message-size limit.
+    - 404: no account exists for `issuer_address`.
+    - 422: the request is invalid.
+    - 503 `ServiceUnavailableError` (code 1): child-account creation is temporarily unavailable; retry after concurrent creation completes.
+    """
 
     # Check if the issuer exists.
     _account = (
@@ -709,10 +807,11 @@ async def create_child_account(
     operation_id="CreateChildAccountInBatch",
     response_model=BatchCreateChildAccountResponse,
     responses=get_routers_responses(
-        404,
         OperationNotPermittedForOlderIssuers,
-        ServiceUnavailableError,
         BatchPersonalInfoRegistrationValidationError,
+        404,
+        422,
+        ServiceUnavailableError,
     ),
 )
 async def create_child_account_in_batch(
@@ -720,6 +819,22 @@ async def create_child_account_in_batch(
     issuer_address: Annotated[str, Path()],
     account_list_req: BatchCreateChildAccountRequest,
 ):
+    """Accept a batch of child accounts for asynchronous creation.
+
+    Every submitted personal-information entry is validated before the batch is accepted.
+    A successful response means that the entries were accepted; it does not mean child-account creation has completed.
+    Clients can poll `GET /accounts/{issuer_address}/child_accounts` and use the returned indexes to confirm completion.
+
+    Only issuers with a public key support this operation.
+    Indexes for a batch are contiguous and remain reserved even if subsequent creation fails.
+
+    Errors:
+    - 400 `OperationNotPermittedForOlderIssuers` (code 10): the issuer has no public key because it was created by an older version.
+    - 400 `BatchPersonalInfoRegistrationValidationError` (code 12): one or more entries exceed the personal-information size limit, and `detail` contains each zero-based `row_num` and its `error_reason`.
+    - 404: no account exists for `issuer_address`.
+    - 422: the request body is invalid.
+    - 503 `ServiceUnavailableError` (code 1): child-account creation is temporarily unavailable; retry after concurrent creation completes.
+    """
     # Check if the issuer exists.
     _account = (
         await db.scalars(
@@ -798,14 +913,25 @@ async def create_child_account_in_batch(
     "/accounts/{issuer_address}/child_accounts",
     operation_id="ListAllChildAccount",
     response_model=ListAllChildAccountResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422),
 )
 async def list_all_child_account(
     db: DBAsyncSession,
     issuer_address: Annotated[str, Path()],
     get_query: Annotated[ListAllChildAccountQuery, Query()],
 ):
-    """List all child accounts"""
+    """List child accounts for an issuer with filtering and pagination.
+
+    The response includes each child account's off-chain personal information when available.
+    `result_set.total` is the number of child accounts before filters, while `result_set.count` is the number after filters and before pagination.
+
+    Address and name filters are partial matches.
+    Results default to ascending `child_account_index` order; `sort_item` and `sort_order` can change this.
+
+    Errors:
+    - 404: no account exists for `issuer_address`.
+    - 422: a query parameter is invalid.
+    """
 
     # Check if the issuer exists.
     _account = (
@@ -960,14 +1086,21 @@ async def list_all_child_account(
     "/accounts/{issuer_address}/child_accounts/{child_account_index}",
     operation_id="RetrieveChildAccount",
     response_model=ChildAccountResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_child_account(
     db: DBAsyncSession,
     issuer_address: Annotated[str, Path()],
     child_account_index: Annotated[int, Path()],
 ):
-    """Retrieve the child account"""
+    """Retrieve one child account by issuer and child-account index.
+
+    Off-chain personal information and its creation/modification timestamps are included when available; otherwise those fields are `null`.
+
+    Errors:
+    - 404: the issuer or child account does not exist.
+    - 422: `child_account_index` is not an integer.
+    """
 
     # Check if the issuer exists.
     _account = (
@@ -1036,7 +1169,7 @@ async def retrieve_child_account(
     "/accounts/{issuer_address}/child_accounts/{child_account_index}",
     operation_id="UpdateChildAccount",
     response_model=None,
-    responses=get_routers_responses(404, PersonalInfoExceedsSizeLimit),
+    responses=get_routers_responses(PersonalInfoExceedsSizeLimit, 404, 422),
 )
 async def update_child_account(
     db: DBAsyncSession,
@@ -1044,7 +1177,20 @@ async def update_child_account(
     child_account_index: Annotated[int, Path()],
     account_req: CreateUpdateChildAccountRequest,
 ):
-    """Update the personal information of the child account"""
+    """Replace the off-chain personal information of a child account.
+
+    The submitted information is saved with `key_manager=SELF`.
+    The change is reflected in the child's personal-information history.
+    The child-account address and index do not change.
+
+    If the child account exists but has no off-chain personal information, the request completes successfully without changing data.
+    Use the retrieve endpoint to verify the resulting representation.
+
+    Errors:
+    - 400 `PersonalInfoExceedsSizeLimit` (code 11): the serialized personal information exceeds the configured message-size limit.
+    - 404: the issuer or child account does not exist.
+    - 422: the request body or `child_account_index` is invalid.
+    """
 
     # Check if the issuer exists.
     _account = (
@@ -1117,14 +1263,22 @@ async def update_child_account(
     "/accounts/{issuer_address}/child_accounts/{child_account_index}",
     operation_id="DeleteChildAccount",
     response_model=None,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422),
 )
 async def delete_child_account(
     db: DBAsyncSession,
     issuer_address: Annotated[str, Path()],
     child_account_index: Annotated[int, Path()],
 ):
-    """Delete the child account and its off-chain personal information"""
+    """Delete a child account and its off-chain personal information.
+
+    The child account and its current off-chain personal information are no longer retrievable through this API.
+    Existing personal-information history is not deleted, and the child-account index is not reused.
+
+    Errors:
+    - 404: the issuer or child account does not exist.
+    - 422: `child_account_index` is not an integer.
+    """
 
     # Check if the issuer exists.
     _account = (

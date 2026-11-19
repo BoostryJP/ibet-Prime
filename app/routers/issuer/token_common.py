@@ -30,7 +30,7 @@ from sqlalchemy.orm import defer
 from starlette.requests import Request
 
 from app.database import DBAsyncSession
-from app.exceptions import InvalidParameterError
+from app.exceptions import AuthorizationError, InvalidParameterError
 from app.model import EthereumAddress
 from app.model.db import (
     AvaIbetWSTTx,
@@ -156,7 +156,14 @@ async def list_all_issued_tokens(
     request_query: Annotated[ListAllIssuedTokensQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all tokens issued from ibet-Prime"""
+    """List tokens issued through ibet-Prime.
+
+    The endpoint can filter by issuer, token type, and an explicit list of token addresses, then sort and paginate the results.
+    Supported bond and share tokens include contract attributes; failed and pending tokens remain eligible for listing.
+
+    Errors:
+    - 422: a query parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -258,13 +265,21 @@ async def list_all_issued_tokens(
     "/tokens/scheduled_events",
     operation_id="ListAllScheduledEvents",
     response_model=ListAllScheduledEventsResponse,
+    responses=get_routers_responses(422),
 )
 async def list_all_scheduled_events(
     db: DBAsyncSession,
     request_query: Annotated[ListAllScheduledEventsQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all scheduled token update events"""
+    """List scheduled token-update events.
+
+    Events can be filtered by issuer, token type, token address, and processing status, then sorted and paginated.
+    Supported token types include token attributes.
+
+    Errors:
+    - 422: a query parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -381,10 +396,14 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
     issuer_address: Annotated[str, Header(description="Issuer address")],
     request_query: Annotated[IbetWSTWhitelistQuery, Query()],
 ):
-    """
-    Retrieve the whitelist accounts of an IbetWST contract with personal information
+    """Retrieve ibetWST whitelist accounts with personal information.
 
-    - This endpoint retrieves the whitelist accounts of an IbetWST contract along with their personal information.
+    The selected blockchain feature must be enabled, and the token must be owned by the issuer and linked to an ibetWST contract.
+    The endpoint returns whitelist accounts with available issuer-scoped personal information in newest-first creation order.
+
+    Errors:
+    - 404: the selected ibetWST feature is disabled, the token is missing or failed, or no ibetWST address is configured.
+    - 422: a path, query, or required `issuer-address` header is invalid.
     """
 
     blockchain_platform = IbetWSTBlockchain(request_query.blockchain_platform)
@@ -476,7 +495,7 @@ async def retrieve_ibet_wst_whitelist_accounts_with_personal_info(
     "/tokens/{token_address}/ibet_wst/whitelists/{account_address}",
     operation_id="GetIbetWSTWhitelistWithPersonalInfo",
     response_model=GetIbetWSTWhitelistWithPersonalInfoResponse,
-    responses=get_routers_responses(),
+    responses=get_routers_responses(404, 422),
 )
 async def get_ibet_wst_whitelist_with_personal_info(
     db: DBAsyncSession,
@@ -485,10 +504,14 @@ async def get_ibet_wst_whitelist_with_personal_info(
     issuer_address: Annotated[str, Header(description="Issuer address")],
     request_query: Annotated[IbetWSTWhitelistQuery, Query()],
 ):
-    """
-    Get IbetWST whitelist status for a specific account with personal information
+    """Retrieve one ibetWST account's whitelist status and personal information.
 
-    - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
+    The selected blockchain feature must be enabled, and the token must be owned by the issuer and linked to an ibetWST contract.
+    The response includes the whitelist status and available personal information.
+
+    Errors:
+    - 404: the selected ibetWST feature is disabled, the token is missing or failed, or no ibetWST address is configured.
+    - 422: a path, query, or required `issuer-address` header is invalid.
     """
 
     blockchain_platform = IbetWSTBlockchain(request_query.blockchain_platform)
@@ -565,7 +588,7 @@ async def get_ibet_wst_whitelist_with_personal_info(
     "/tokens/{token_address}/ibet_wst/whitelists/add",
     operation_id="AddIbetWSTWhitelist",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(AuthorizationError, 404, 422, 503),
 )
 async def add_ibet_wst_whitelist(
     db: DBAsyncSession,
@@ -578,10 +601,17 @@ async def add_ibet_wst_whitelist(
         Optional[str], Header(description="JWT authentication token")
     ] = None,
 ):
-    """
-    Add an account to the IbetWST whitelist
+    """Request addition of an account to an ibetWST whitelist.
 
-    - This endpoint allows an issuer to add an account to the whitelist of an IbetWST contract.
+    The issuer is authenticated, and the token must be owned by the issuer and linked to an ibetWST contract on the enabled blockchain.
+    A successful response returns the transaction ID and does not mean the whitelist change has completed.
+    Use the transaction ID to confirm the request's completion.
+
+    Errors:
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied credential is invalid.
+    - 404: the ibetWST feature is disabled, the token is missing or failed, or no ibetWST address is configured.
+    - 422: the request body or an issuer credential header is invalid.
+    - 503: the service cannot process this request on the selected blockchain.
     """
 
     blockchain_platform = IbetWSTBlockchain(data.blockchain_platform)
@@ -692,7 +722,9 @@ async def add_ibet_wst_whitelist(
     "/tokens/{token_address}/ibet_wst/whitelists/delete",
     operation_id="DeleteIbetWSTWhitelist",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(
+        InvalidParameterError, AuthorizationError, 404, 422, 503
+    ),
 )
 async def delete_ibet_wst_whitelist(
     db: DBAsyncSession,
@@ -705,10 +737,18 @@ async def delete_ibet_wst_whitelist(
         Optional[str], Header(description="JWT authentication token")
     ] = None,
 ):
-    """
-    Delete an account from the IbetWST whitelist
+    """Request removal of an account from an ibetWST whitelist.
 
-    - This endpoint allows an issuer to delete an account from the whitelist of an IbetWST contract.
+    The issuer is authenticated, and the token must be available, owned by the issuer, and linked to an ibetWST contract on the enabled blockchain.
+    A successful response returns the transaction ID and does not mean the whitelist change has completed.
+    Use the transaction ID to confirm the request's completion.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied credential is invalid.
+    - 404: the ibetWST feature is disabled, the token is missing or failed, or no ibetWST address is configured.
+    - 422: the request body or an issuer credential header is invalid.
+    - 503: the service cannot process this request on the selected blockchain.
     """
     blockchain_platform = IbetWSTBlockchain(data.blockchain_platform)
 
@@ -816,7 +856,9 @@ async def delete_ibet_wst_whitelist(
     "/tokens/{token_address}/ibet_wst/positions/force_burn",
     operation_id="ForceBurnIbetWSTPosition",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(
+        InvalidParameterError, AuthorizationError, 404, 422, 503
+    ),
 )
 async def force_burn_ibet_wst_position(
     db: DBAsyncSession,
@@ -829,10 +871,18 @@ async def force_burn_ibet_wst_position(
         Optional[str], Header(description="JWT authentication token")
     ] = None,
 ):
-    """
-    Force burn an IbetWST position for a specific account
+    """Request a force burn of an ibetWST position.
 
-    - This endpoint allows an issuer to force burn an IbetWST position for a specific account.
+    The issuer is authenticated, and the token must be available, owned by the issuer, and linked to an ibetWST contract on the enabled blockchain.
+    A successful response returns the transaction ID and does not mean the position has already been burned.
+    Use the transaction ID to confirm the request's completion.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied credential is invalid.
+    - 404: the ibetWST feature is disabled, the token is missing or failed, or no ibetWST address is configured.
+    - 422: the request body or an issuer credential header is invalid.
+    - 503: the service cannot process this request on the selected blockchain.
     """
 
     blockchain_platform = IbetWSTBlockchain(data.blockchain_platform)

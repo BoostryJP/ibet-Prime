@@ -34,6 +34,7 @@ from sqlalchemy.orm import aliased, defer
 import config
 from app.database import DBAsyncSession
 from app.exceptions import (
+    AuthorizationError,
     ContractRevertError,
     InvalidParameterError,
     SendTransactionError,
@@ -80,7 +81,7 @@ local_tz = pytz.timezone(config.TZ)
     "/dvp/{exchange_address}/deliveries",
     operation_id="ListAllDVPDeliveries",
     response_model=ListAllDVPDeliveriesResponse,
-    responses=get_routers_responses(404, 422, InvalidParameterError),
+    responses=get_routers_responses(422),
 )
 async def list_all_dvp_deliveries(
     db: DBAsyncSession,
@@ -88,7 +89,14 @@ async def list_all_dvp_deliveries(
     issuer_address: Annotated[str, Header()],
     request_query: Annotated[ListAllDVPDeliveriesQuery, Query()],
 ):
-    """List all DVP deliveries"""
+    """List DVP deliveries for an issuer and exchange.
+
+    Available holder personal information is included.
+    Results can be filtered by token, seller, agent, validity, status, and creation-time range, then sorted and paginated.
+
+    Errors:
+    - 422: a path, query, or required `issuer-address` header parameter is invalid.
+    """
     buyer_personal_info = aliased(IDXPersonalInfo)
     seller_personal_info = aliased(IDXPersonalInfo)
 
@@ -261,7 +269,7 @@ async def list_all_dvp_deliveries(
     operation_id="CreateDVPDelivery",
     response_model=None,
     responses=get_routers_responses(
-        404, 422, InvalidParameterError, SendTransactionError
+        InvalidParameterError, AuthorizationError, 422, SendTransactionError
     ),
 )
 async def create_dvp_delivery(
@@ -273,6 +281,18 @@ async def create_dvp_delivery(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
+    """Create a DVP delivery.
+
+    The issuer is authenticated and must own an available token at the requested token address.
+    A successful response confirms that processing was queued, not that the DVP delivery is complete.
+    Clients can retrieve the delivery later to confirm its status.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is not owned by the issuer or is pending.
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied credential is invalid.
+    - 422: the request body or an issuer credential header is invalid.
+    - 503 `SendTransactionError` (code 2): the forced-transfer transaction fails.
+    """
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
@@ -385,7 +405,7 @@ async def create_dvp_delivery(
     "/dvp/{exchange_address}/delivery/{delivery_id}",
     operation_id="RetrieveDVPDelivery",
     response_model=RetrieveDVPDeliveryResponse,
-    responses=get_routers_responses(404, 422, InvalidParameterError),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_dvp_delivery(
     db: DBAsyncSession,
@@ -393,7 +413,15 @@ async def retrieve_dvp_delivery(
     delivery_id: Annotated[int, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve a dvp delivery"""
+    """Retrieve one DVP delivery.
+
+    The delivery must belong to the specified exchange and to a token owned by the issuer.
+    Available buyer and seller personal information is included.
+
+    Errors:
+    - 404: no matching delivery exists for the exchange, ID, and issuer.
+    - 422: a path or required `issuer-address` header parameter is invalid.
+    """
     buyer_personal_info = aliased(IDXPersonalInfo)
     seller_personal_info = aliased(IDXPersonalInfo)
 
@@ -517,9 +545,7 @@ async def retrieve_dvp_delivery(
     "/dvp/{exchange_address}/delivery/{delivery_id}",
     operation_id="UpdateDVPDelivery",
     response_model=None,
-    responses=get_routers_responses(
-        404, 422, InvalidParameterError, SendTransactionError
-    ),
+    responses=get_routers_responses(AuthorizationError, 404, 422, SendTransactionError),
 )
 async def update_dvp_delivery(
     db: DBAsyncSession,
@@ -531,6 +557,18 @@ async def update_dvp_delivery(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
+    """Cancel a DVP delivery.
+
+    The issuer is authenticated and the delivery must belong to its exchange and token.
+    A successful `Cancel` response means the cancellation transaction completed.
+    Retrieve the delivery later to confirm that the visible delivery status has updated.
+
+    Errors:
+    - 401 `AuthorizationError` (code 1): the issuer does not exist or the supplied credential is invalid.
+    - 404: no matching delivery exists for the exchange, ID, and issuer.
+    - 422: the request body or an issuer credential header is invalid.
+    - 503 `SendTransactionError` (code 2): the cancellation transaction fails.
+    """
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),

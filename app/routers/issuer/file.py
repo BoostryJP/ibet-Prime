@@ -58,7 +58,14 @@ async def list_all_upload_files(
     get_query: Annotated[ListAllUploadFilesQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all upload files"""
+    """List uploaded files with filtering and pagination.
+
+    The endpoint filters by issuer address, relation, file name, and label, then returns matching metadata in newest-first modification order.
+    `total` counts all uploaded files, while `count` counts files after filtering and before pagination.
+
+    Errors:
+    - 422: a query parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -157,7 +164,15 @@ async def upload_file(
     data: UploadFileRequest,
     issuer_address: Annotated[str, Header()],
 ):
-    """Upload file"""
+    """Upload a file for an issuer.
+
+    The request content must be Base64-encoded.
+    The response contains the generated `file_id` and file metadata.
+    A successful response means the file is available through the download and list endpoints.
+
+    Errors:
+    - 422: the request body or required `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -201,14 +216,22 @@ async def upload_file(
     "/{file_id}",
     operation_id="DownloadFile",
     response_model=DownloadFileResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422),
 )
 async def download_file(
     db: DBAsyncSession,
     file_id: Annotated[str, Path()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """Download file"""
+    """Download an uploaded file by ID.
+
+    When `issuer-address` is supplied, the file must belong to that issuer.
+    The file content is returned as Base64 text.
+
+    Errors:
+    - 404: no file matches the file ID and optional issuer address.
+    - 422: `issuer-address` is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -258,14 +281,22 @@ async def download_file(
     "/{file_id}",
     operation_id="DeleteFile",
     response_model=None,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def delete_file(
     db: DBAsyncSession,
     file_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Delete file"""
+    """Delete an uploaded file owned by an issuer.
+
+    The issuer and file ID must identify an existing file.
+    A successful response means the file is no longer available through the file endpoints.
+
+    Errors:
+    - 404: the issuer has no file with the specified ID.
+    - 422: the path or required `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

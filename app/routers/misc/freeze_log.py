@@ -70,13 +70,22 @@ router = APIRouter(prefix="/freeze_log", tags=["[misc] freeze_log"])
     "/accounts",
     operation_id="CreateFreezeLogAccount",
     response_model=FreezeLogAccountResponse,
-    responses=get_routers_responses(422, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 422),
 )
 async def create_account(
     db: DBAsyncSession,
     create_req: CreateFreezeLogAccountRequest,
 ):
-    """Create Freeze-Logging Account"""
+    """Create an EOA account used to record freeze logs.
+
+    Private key material is not returned.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, `eoa_password` must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the EOA password does not satisfy the configured policy.
+    - 422: the request is invalid, or the encrypted password cannot be decoded.
+    """
 
     # Check Password Policy(EOA password)
     eoa_password = (
@@ -131,7 +140,11 @@ async def create_account(
     response_model=ListAllFreezeLogAccountResponse,
 )
 async def list_all_accounts(db: DBAsyncSession):
-    """List all freeze-logging accounts"""
+    """List all freeze-log EOA accounts.
+
+    Logically deleted accounts are included.
+    Encrypted passwords and key files are omitted.
+    """
 
     _accounts: Sequence[FreezeLogAccount] = (
         await db.scalars(select(FreezeLogAccount))
@@ -155,7 +168,13 @@ async def list_all_accounts(db: DBAsyncSession):
     responses=get_routers_responses(404),
 )
 async def delete_account(db: DBAsyncSession, account_address: Annotated[str, Path()]):
-    """Logically delete an freeze-logging account"""
+    """Logically delete a freeze-log EOA account.
+
+    Repeating the request succeeds for an existing account and leaves it deleted.
+
+    Errors:
+    - 404: no account exists for `account_address`.
+    """
 
     # Search for an account
     _account: FreezeLogAccount | None = (
@@ -186,14 +205,25 @@ async def delete_account(db: DBAsyncSession, account_address: Annotated[str, Pat
     "/accounts/{account_address}/eoa_password",
     operation_id="ChangeFreezeLogAccountPassword",
     response_model=None,
-    responses=get_routers_responses(404, 422, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def change_eoa_password(
     db: DBAsyncSession,
     account_address: Annotated[str, Path()],
     change_req: FreezeLogAccountChangeEOAPasswordRequest,
 ):
-    """Change Account's EOA Password"""
+    """Change a freeze-log account's EOA password.
+
+    The old password must match the stored password.
+    The account address remains unchanged.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, both password values must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the old password does not match, or the new password does not satisfy the configured policy.
+    - 404: no account exists for `account_address`.
+    - 422: the request is invalid, or an encrypted password cannot be decoded.
+    """
 
     # Search for an account
     _account: FreezeLogAccount | None = (
@@ -251,13 +281,28 @@ async def change_eoa_password(
     operation_id="RecordNewFreezeLog",
     response_model=RecordNewFreezeLogResponse,
     responses=get_routers_responses(
-        404, 422, InvalidParameterError, SendTransactionError
+        InvalidParameterError, 404, 422, 500, SendTransactionError
     ),
 )
 async def record_new_log(
     db: DBAsyncSession,
     req: RecordNewFreezeLogRequest,
 ):
+    """Submit a new message to the configured freeze-log contract.
+
+    The account password is checked, and the assigned log index is returned after submission succeeds.
+    Log immutability begins after the requested grace-block count.
+
+    `FREEZE_LOG_CONTRACT_ADDRESS` must be configured.
+    When `E2EE_REQUEST_ENABLED` is enabled, `eoa_password` must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the EOA password does not match.
+    - 404: no freeze-log account exists for the request address.
+    - 422: the request is invalid.
+    - 500: `FREEZE_LOG_CONTRACT_ADDRESS` is not configured.
+    - 503 `SendTransactionError` (code 2): transaction submission fails, including a contract revert.
+    """
     # Search for an account
     log_account: FreezeLogAccount | None = (
         await db.scalars(
@@ -304,7 +349,7 @@ async def record_new_log(
     operation_id="UpdateFreezeLog",
     response_model=None,
     responses=get_routers_responses(
-        404, 422, InvalidParameterError, SendTransactionError
+        InvalidParameterError, 404, 422, 500, SendTransactionError
     ),
 )
 async def update_log(
@@ -312,6 +357,20 @@ async def update_log(
     req: UpdateFreezeLogRequest,
     log_index: Annotated[int, Path(description="Log index")],
 ):
+    """Update a freeze-log message before its grace period expires.
+
+    The account password is checked, and the update succeeds only while the log remains mutable.
+
+    `FREEZE_LOG_CONTRACT_ADDRESS` must be configured.
+    When `E2EE_REQUEST_ENABLED` is enabled, `eoa_password` must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the EOA password does not match.
+    - 404: no freeze-log account exists for the request address.
+    - 422: the request is invalid.
+    - 500: `FREEZE_LOG_CONTRACT_ADDRESS` is not configured.
+    - 503 `SendTransactionError` (code 2): transaction submission fails, including a contract revert or an immutable log.
+    """
     # Search for an account
     log_account: FreezeLogAccount | None = (
         await db.scalars(
@@ -357,13 +416,23 @@ async def update_log(
     "/logs/{log_index}",
     operation_id="RetrieveFreezeLog",
     response_model=RetrieveFreezeLogResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422, 500),
 )
 async def retrieve_log(
     db: DBAsyncSession,
     log_index: Annotated[int, Path(description="Log index")],
     req_query: Annotated[RetrieveFreezeLogQuery, Query()],
 ):
+    """Retrieve a freeze-log entry from the configured contract.
+
+    The block number, grace-block count, and message are returned.
+    The query's account identifies the account used for the request, and `FREEZE_LOG_CONTRACT_ADDRESS` must be configured.
+
+    Errors:
+    - 404: no freeze-log account exists for the query address.
+    - 422: the path or query is invalid.
+    - 500: `FREEZE_LOG_CONTRACT_ADDRESS` is not configured.
+    """
     # Search for an account
     log_account: FreezeLogAccount | None = (
         await db.scalars(
