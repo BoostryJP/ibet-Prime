@@ -79,7 +79,14 @@ async def list_all_token_holders_personal_info(
     issuer_address: Annotated[str, Header()],
     get_query: Annotated[ListTokenHoldersPersonalInfoQuery, Query()],
 ):
-    """Lists the personal information of all registered holders linked to the token issuer"""
+    """List registered holder personal information for an issuer.
+
+    Results can be filtered by account, key-management type, and creation or modification time.
+    They can be sorted and paginated; `total` is calculated before the account and time filters.
+
+    Errors:
+    - 422: a query parameter or required `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -188,7 +195,14 @@ async def list_all_token_holders_personal_info_history(
     issuer_address: Annotated[str, Header()],
     get_query: Annotated[ListTokenHoldersPersonalInfoHistoryQuery, Query()],
 ):
-    """List personal information historical data"""
+    """List personal-information history for an issuer.
+
+    Results can be filtered by account, event type, key-management type, block timestamp, and creation time.
+    They are ordered by block timestamp, then paginated.
+
+    Errors:
+    - 422: a query parameter or required `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -301,7 +315,7 @@ async def list_all_token_holders_personal_info_history(
     "/holders/{token_address}/collection",
     operation_id="CreateTokenHoldersCollection",
     response_model=CreateTokenHoldersListResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def create_token_holders_collection(
     db: DBAsyncSession,
@@ -312,7 +326,19 @@ async def create_token_holders_collection(
     ),
     issuer_address: str = Header(...),
 ):
-    """Create token holders collection"""
+    """Request creation of a token-holder snapshot.
+
+    The block number must not be in the future, and the list ID must be globally unique.
+    If a non-failed snapshot already exists for the same token and block, its status and list ID are returned without creating another request.
+
+    A successful response means the request was accepted, not that collection is complete.
+    Poll the snapshot endpoints to confirm completion.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending, the block is in the future, or `list_id` is already used.
+    - 404: the issuer does not own an existing, non-failed token at `token_address`.
+    - 422: the request body or a path/header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -396,7 +422,7 @@ async def create_token_holders_collection(
     "/holders/{token_address}/collection",
     operation_id="ListAllTokenHoldersCollections",
     response_model=ListAllTokenHolderCollectionsResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_all_token_holders_collections(
     db: DBAsyncSession,
@@ -407,7 +433,16 @@ async def list_all_token_holders_collections(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all token holders collections"""
+    """List token-holder snapshot requests for a token.
+
+    Collections can be filtered by batch status, ordered by creation time, and paginated.
+    An optional issuer header restricts the token to one owned by that issuer.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token does not exist, is failed, or is not owned by the supplied issuer.
+    - 422: a path, query, or header parameter is invalid.
+    """
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -513,7 +548,7 @@ async def list_all_token_holders_collections(
     "/holders/{token_address}/collection/{list_id}",
     operation_id="RetrieveTokenHoldersCollection",
     response_model=RetrieveTokenHoldersListResponse,
-    responses=get_routers_responses(404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_token_holders_collection(
     db: DBAsyncSession,
@@ -528,7 +563,18 @@ async def retrieve_token_holders_collection(
     issuer_address: Annotated[str, Header()],
     get_query: Annotated[RetrieveTokenHoldersCollectionQuery, Query()],
 ):
-    """Retrieve token holders collection"""
+    """Retrieve holders from one token-holder snapshot.
+
+    The token, issuer, and UUID list ID are validated before the response includes available personal information.
+    Results can be filtered by balances, account, holder attributes, and key manager, then sorted and paginated.
+
+    The response includes the snapshot status and can contain partial holder data while collection is still in progress.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending, `list_id` is not UUIDv4, or the list belongs to another token.
+    - 404: the token or holder list does not exist for the issuer.
+    - 422: a path, query, or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

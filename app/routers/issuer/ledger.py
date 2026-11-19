@@ -80,7 +80,7 @@ utc_tz = pytz.timezone("UTC")
     "/{token_address}/history",
     operation_id="ListAllLedgerHistory",
     response_model=ListAllLedgerHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_all_ledger_history(
     db: DBAsyncSession,
@@ -89,7 +89,16 @@ async def list_all_ledger_history(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all ledger history"""
+    """List generated ledger snapshots for a token.
+
+    The endpoint verifies that the token exists and is not failed, then returns snapshots newest first with pagination.
+    An optional issuer header restricts access to tokens owned by that issuer.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token does not exist, is failed, or is not owned by the supplied issuer.
+    - 422: a path, query, or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -181,7 +190,7 @@ async def list_all_ledger_history(
     "/{token_address}/history/{ledger_id}",
     operation_id="RetrieveLedgerHistory",
     response_model=RetrieveLedgerHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_ledger_history(
     db: DBAsyncSession,
@@ -190,7 +199,16 @@ async def retrieve_ledger_history(
     issuer_address: Optional[str] = Header(None),
     latest_flg: int = Query(..., ge=0, le=1),
 ):
-    """Retrieve ledger history"""
+    """Retrieve a ledger snapshot.
+
+    The endpoint returns the snapshot for the token and ledger ID.
+    With `latest_flg=1`, configured personal-information fields are refreshed and `currency` defaults to an empty string for older snapshots.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token or ledger snapshot does not exist, or the token is not owned by the supplied issuer.
+    - 422: a path, query, or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -306,14 +324,22 @@ async def retrieve_ledger_history(
     "/{token_address}/template",
     operation_id="RetrieveLedgerTemplate",
     response_model=LedgerTemplateResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_ledger_template(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve ledger template"""
+    """Retrieve a token's ledger template and detail templates.
+
+    Detail templates are returned in creation order.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token or ledger template does not exist, or the token is not owned by the supplied issuer.
+    - 422: a path or `issuer-address` header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -402,7 +428,7 @@ async def retrieve_ledger_template(
     operation_id="CreateUpdateLedgerTemplate",
     response_model=None,
     responses=get_routers_responses(
-        422, 404, InvalidParameterError, Integer64bitLimitExceededError
+        InvalidParameterError, Integer64bitLimitExceededError, 404, 422
     ),
 )
 async def create_update_ledger_template(
@@ -411,7 +437,17 @@ async def create_update_ledger_template(
     data: CreateUpdateLedgerTemplateRequest,
     issuer_address: str = Header(...),
 ):
-    """Create or Update Ledger Template"""
+    """Create or replace a token's ledger template.
+
+    Existing header and footer values are updated, detail templates are added or updated by `token_detail_type`, and omitted detail types are deleted.
+    A successful response means a snapshot generation request was accepted; use the ledger history endpoint to monitor the resulting snapshot.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 400 `Integer64bitLimitExceededError` (code 5): an integer value exceeds the supported 64-bit range.
+    - 404: the issuer does not own an existing, non-failed token at `token_address`.
+    - 422: the request body or a path/header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -534,14 +570,24 @@ async def create_update_ledger_template(
     "/{token_address}/template",
     operation_id="DeleteLedgerTemplate",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def delete_ledger_template(
     db: DBAsyncSession,
     token_address: str,
     issuer_address: str = Header(...),
 ):
-    """Delete ledger template"""
+    """Delete a token's ledger template and all detail templates.
+
+    The issuer must own an available token, and the ledger template must exist.
+    The template and all detail templates are deleted together.
+    Existing generated ledger snapshots are not deleted.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token or ledger template does not exist for the issuer.
+    - 422: a path or `issuer-address` header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -594,7 +640,7 @@ async def delete_ledger_template(
     "/{token_address}/details_data",
     operation_id="ListAllLedgerDetailsData",
     response_model=ListAllLedgerDetailsDataResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_all_ledger_details_data(
     db: DBAsyncSession,
@@ -603,7 +649,16 @@ async def list_all_ledger_details_data(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all ledger details data"""
+    """List ledger detail-data sets for a token.
+
+    Entries are grouped by data ID and return their item count and latest creation time.
+    Results are ordered by data ID and paginated after grouping.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token does not exist, is failed, or is not owned by the supplied issuer.
+    - 422: a path, query, or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -702,7 +757,7 @@ async def list_all_ledger_details_data(
     "/{token_address}/details_data",
     operation_id="CreateLedgerDetailsData",
     response_model=LedgerDetailsDataResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def create_ledger_details_data(
     db: DBAsyncSession,
@@ -710,7 +765,16 @@ async def create_ledger_details_data(
     data_list: List[CreateUpdateLedgerDetailsDataRequest],
     issuer_address: str = Header(...),
 ):
-    """Create ledger details data"""
+    """Create a new ledger detail-data set.
+
+    A new UUID is assigned to the submitted entries under one data ID.
+    The operation does not itself request ledger generation.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the issuer does not own an existing, non-failed token at `token_address`.
+    - 422: the request body or a path/header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -757,7 +821,7 @@ async def create_ledger_details_data(
     "/{token_address}/details_data/{data_id}",
     operation_id="RetrieveLedgerDetailsData",
     response_model=List[RetrieveLedgerDetailsDataResponse],
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_ledger_details_data(
     db: DBAsyncSession,
@@ -765,7 +829,16 @@ async def retrieve_ledger_details_data(
     data_id: str,
     issuer_address: Optional[str] = Header(None),
 ):
-    """Retrieve ledger details data"""
+    """Retrieve all entries in a ledger detail-data set.
+
+    The endpoint returns the entries matching the token and data ID, or an empty list when that data ID has no entries.
+    An optional issuer header restricts access to tokens owned by that issuer.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the token does not exist, is failed, or is not owned by the supplied issuer.
+    - 422: a path or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -838,7 +911,7 @@ async def retrieve_ledger_details_data(
     "/{token_address}/details_data/{data_id}",
     operation_id="UpdateLedgerDetailsData",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def update_ledger_details_data(
     db: DBAsyncSession,
@@ -847,7 +920,16 @@ async def update_ledger_details_data(
     data_list: List[CreateUpdateLedgerDetailsDataRequest],
     issuer_address: str = Header(...),
 ):
-    """Update ledger details data"""
+    """Replace a ledger detail-data set.
+
+    All entries for the token and data ID are replaced with the submitted entries.
+    If the token has a usable template, a snapshot generation request is accepted; use the ledger history endpoint to monitor the resulting snapshot.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the issuer does not own an existing, non-failed token at `token_address`.
+    - 422: the request body or a path/header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -905,7 +987,7 @@ async def update_ledger_details_data(
     "/{token_address}/details_data/{data_id}",
     operation_id="DeleteLedgerDetailsData",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def delete_ledger_details_data(
     db: DBAsyncSession,
@@ -913,7 +995,16 @@ async def delete_ledger_details_data(
     data_id: str,
     issuer_address: str = Header(...),
 ):
-    """Delete ledger details data"""
+    """Delete a ledger detail-data set.
+
+    All entries matching the token and data ID are deleted.
+    Deleting an unknown data ID succeeds without changing data.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending and temporarily unavailable.
+    - 404: the issuer does not own an existing, non-failed token at `token_address`.
+    - 422: a path or `issuer-address` header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

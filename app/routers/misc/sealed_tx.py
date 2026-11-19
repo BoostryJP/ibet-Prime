@@ -171,6 +171,16 @@ async def sealed_tx_register_personal_info(
     sealed_tx_sig: SealedTxSignatureHeader,
     register_data: SealedTxRegisterPersonalInfoRequest,
 ):
+    """Register off-chain personal information using a sealed transaction signature.
+
+    The signature authenticates the account submitting the information.
+    Personal information is registered for the requested issuer/link and authenticated account.
+
+    The signature header and exact raw request body are required for verification.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): sealed-transaction signature verification fails.
+    """
     # Verify sealed tx signature
     account_address = VerifySealedTxSignature(
         req=request, body=json.loads(raw_request_body.decode()), signature=sealed_tx_sig
@@ -213,6 +223,16 @@ async def sealed_tx_register_holder_extra_info(
     sealed_tx_sig: SealedTxSignatureHeader,
     extra_info: SealedTxRegisterHolderExtraInfoRequest,
 ):
+    """Register token-holder extra information using a sealed transaction signature.
+
+    The signature authenticates the account submitting the information.
+    A successful request registers the supplied information for the token and authenticated account.
+
+    The signature header and exact raw request body are required for verification.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): sealed-transaction signature verification fails.
+    """
     # Verify sealed tx signature
     account_address = VerifySealedTxSignature(
         req=request, body=json.loads(raw_request_body.decode()), signature=sealed_tx_sig
@@ -240,7 +260,7 @@ async def sealed_tx_register_holder_extra_info(
     "/ibet_wst/whitelists/add",
     operation_id="SealedTxAddIbetWSTWhitelist",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 503),
 )
 async def sealed_tx_add_ibet_wst_whitelist(
     db: DBAsyncSession,
@@ -249,10 +269,18 @@ async def sealed_tx_add_ibet_wst_whitelist(
     sealed_tx_sig: SealedTxSignatureHeader,
     data: SealedTxAddIbetWSTWhitelistRequest,
 ):
-    """
-    Add an account to the IbetWST whitelist by sealed tx
+    """Queue an issuer-authorized IbetWST whitelist addition from a sealed request.
 
-    - This endpoint allows an issuer's delegated EOA to instruct whitelist registration by sealed tx.
+    The signed EOA must be a delegated KYC operator.
+    Track the queued transaction with the returned `tx_id` through the IbetWST transaction endpoints.
+
+    The endpoint is available only when IbetWST is enabled for the selected blockchain platform.
+    The token, WST deployment, active issuer account, delegated EOA, and platform master account must be configured.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): signature verification fails, the token is temporarily unavailable where applicable, or the signed EOA is not an authorized delegate.
+    - 404: the feature is disabled, the token/WST deployment is missing, or the active issuer account is missing.
+    - 503: the selected platform's master account is not configured.
     """
 
     # Verify sealed tx signature
@@ -357,7 +385,7 @@ async def sealed_tx_add_ibet_wst_whitelist(
     "/ibet_wst/whitelists/delete",
     operation_id="SealedTxDeleteIbetWSTWhitelist",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 503),
 )
 async def sealed_tx_delete_ibet_wst_whitelist(
     db: DBAsyncSession,
@@ -366,10 +394,18 @@ async def sealed_tx_delete_ibet_wst_whitelist(
     sealed_tx_sig: SealedTxSignatureHeader,
     data: SealedTxDeleteIbetWSTWhitelistRequest,
 ):
-    """
-    Delete an account from the IbetWST whitelist by sealed tx
+    """Queue an issuer-authorized IbetWST whitelist deletion from a sealed request.
 
-    - This endpoint allows an issuer's delegated EOA to instruct whitelist deletion by sealed tx.
+    The signed EOA must be a delegated KYC operator.
+    Track the queued transaction with the returned `tx_id` through the IbetWST transaction endpoints.
+
+    The endpoint is available only when IbetWST is enabled for the selected blockchain platform.
+    The token must not be pending, and the WST deployment, active issuer account, delegated EOA, and platform master account must be configured.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): signature verification fails, the token is pending, or the signed EOA is not an authorized delegate.
+    - 404: the feature is disabled, the token/WST deployment is missing, or the active issuer account is missing.
+    - 503: the selected platform's master account is not configured.
     """
 
     # Verify sealed tx signature

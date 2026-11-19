@@ -52,7 +52,14 @@ async def list_all_notifications(
     offset: Optional[int] = Query(None),
     limit: Optional[int] = Query(None),
 ):
-    """List all notifications"""
+    """List notifications with filtering and pagination.
+
+    The endpoint can restrict notifications by issuer address and notice type.
+    `total` counts all notifications, while `count` counts filtered notifications before pagination.
+
+    Errors:
+    - 422: a query parameter or `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -118,14 +125,22 @@ async def list_all_notifications(
     "/notifications/{notice_id}",
     operation_id="DeleteNotification",
     response_model=None,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def delete_notification(
     db: DBAsyncSession,
     notice_id: str,
     issuer_address: str = Header(...),
 ):
-    """Delete notification"""
+    """Delete a notification owned by an issuer.
+
+    The notice ID and issuer address must identify an existing notification.
+    A successful response means the notification is no longer available through this API.
+
+    Errors:
+    - 404: the issuer has no notification with the specified ID.
+    - 422: the required `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

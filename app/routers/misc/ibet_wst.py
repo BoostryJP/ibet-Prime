@@ -181,13 +181,16 @@ async def list_all_ibet_wst_tokens(
     db: DBAsyncSession,
     get_query: Annotated[ListAllIbetWSTTokensQuery, Query()],
 ):
-    """
-    List all IbetWST tokens
+    """List deployed IbetWST tokens with filtering and pagination.
 
-    - This endpoint retrieves all IbetWST tokens based on the provided query parameters.
-    - Only tokens whose deployment has already been finalized will be returned.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST tokens to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    Only tokens whose deployment is finalized for the selected blockchain platform are returned.
+    Results can be filtered by issuer, WST address, underlying ibet token, and token type, then sorted deterministically.
+
+    These routes are included only when `IBET_WST_FEATURE_ENABLED` is enabled.
+    `blockchain_platform` selects the platform-specific deployment and defaults to Ethereum.
+
+    Errors:
+    - 422: a query parameter or platform value is invalid.
     """
 
     blockchain_platform = IbetWSTBlockchain(get_query.blockchain_platform)
@@ -323,12 +326,14 @@ async def get_ibet_wst_balance(
     ],
     query: Annotated[GetIbetWSTBalanceQuery, Query()],
 ):
-    """
-    Get IbetWST balance for a specific account address
+    """Get an account's IbetWST balance from the selected contract.
 
-    - This endpoint retrieves the IbetWST balance for the specified account address.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST balance to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    The WST address must be registered for the selected platform.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, query parameter, or platform value is invalid.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
@@ -352,7 +357,7 @@ async def get_ibet_wst_balance(
     "/balances/{account_address}/{ibet_wst_address}/burn",
     operation_id="BurnIbetWSTBalance",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422, IbetWSTInsufficientBalanceError),
+    responses=get_routers_responses(IbetWSTInsufficientBalanceError, 404, 422, 503),
 )
 async def burn_ibet_wst_balance(
     request: Request,
@@ -363,11 +368,19 @@ async def burn_ibet_wst_balance(
     ],
     req_params: BurnIbetWSTRequest,
 ):
-    """
-    Burn IbetWST balance
-    - This endpoint allows a user to send burnWithAuthorization transaction to the IbetWST contract.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST balance to burn.
-        - Defaults to ETHEREUM if not specified.
+    """Queue an authorized IbetWST burn transaction.
+
+    The account must have enough IbetWST balance for the requested burn.
+    Track the queued transaction with the returned `tx_id` through the transaction endpoints.
+
+    The WST address, selected-platform master account, authorizer, and authorization signature fields must be configured or supplied.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 400 `IbetWSTInsufficientBalanceError` (code 13): the account balance is below the requested burn value.
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, request field, or platform value is invalid.
+    - 503: the selected platform's master account is not configured.
     """
     blockchain_platform = IbetWSTBlockchain(req_params.blockchain_platform)
 
@@ -415,18 +428,20 @@ async def burn_ibet_wst_balance(
     "/transactions",
     operation_id="ListIbetWSTTransactions",
     response_model=ListIbetWSTTransactionsResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(422),
 )
 async def list_ibet_wst_transactions(
     db: DBAsyncSession,
     get_query: Annotated[ListIbetWSTTransactionsQuery, Query()],
 ):
-    """
-    List IbetWST transactions
+    """List queued and processed IbetWST transactions with filtering and pagination.
 
-    - This endpoint retrieves all IbetWST transactions based on the provided query parameters.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST transactions to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    Results are filtered by WST address and optional transaction fields, and ordered by creation time descending.
+    Creation timestamps are returned as ISO 8601 values with timezone offsets.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 422: a query parameter, date, or platform value is invalid.
     """
 
     blockchain_platform = IbetWSTBlockchain(get_query.blockchain_platform)
@@ -538,19 +553,21 @@ async def list_ibet_wst_transactions(
     "/transactions/{tx_id}",
     operation_id="GetIbetWSTTransaction",
     response_model=GetIbetWSTTransactionResponse,
-    responses=get_routers_responses(404),
+    responses=get_routers_responses(404, 422),
 )
 async def get_ibet_wst_transaction(
     db: DBAsyncSession,
     tx_id: Annotated[str, Path(description="IbetWST transaction ID")],
     query: Annotated[GetIbetWSTTransactionQuery, Query()],
 ):
-    """
-    Get IbetWST transaction details
+    """Retrieve one IbetWST transaction from the selected platform.
 
-    - This endpoint retrieves the details of a specific IbetWST transaction by its ID.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST transaction to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    The response includes its processing status, blockchain identifiers, authorization event log, and timestamps.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 404: no transaction exists for `tx_id` on the selected platform.
+    - 422: a path, query parameter, or platform value is invalid.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
@@ -606,13 +623,13 @@ async def retrieve_ibet_wst_whitelist_accounts(
     ],
     query: Annotated[RetrieveIbetWSTWhitelistAccountsQuery, Query()],
 ):
-    """
-    Retrieve all whitelisted accounts for a specific IbetWST contract address
+    """List whitelist entries for an IbetWST contract.
 
-    - This endpoint retrieves all accounts that are whitelisted for the specified IbetWST contract address.
-    - The data returned by this API is generated based on finalized blocks.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist accounts to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    Results are ordered by creation time descending.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 422: an address, query parameter, or platform value is invalid.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
@@ -658,13 +675,14 @@ async def get_ibet_wst_whitelist(
     account_address: Annotated[EthereumAddress, Path(description="Account address")],
     query: Annotated[GetIbetWSTWhitelistQuery, Query()],
 ):
-    """
-    Get IbetWST whitelist status for a specific account address
+    """Get an account's current whitelist entry from an IbetWST contract.
 
-    - This endpoint retrieves the whitelist status of an account address for the specified IbetWST contract.
-    - The data returned by this API also reflects the state of non-finalized blocks.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST whitelist status to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    The WST address must be registered for the selected platform.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, query parameter, or platform value is invalid.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
@@ -695,7 +713,11 @@ async def get_ibet_wst_whitelist(
     operation_id="TransferIbetWST",
     response_model=IbetWSTTransactionResponse,
     responses=get_routers_responses(
-        404, 422, IbetWSTInsufficientBalanceError, IbetWSTAccountNotWhitelistedError
+        IbetWSTInsufficientBalanceError,
+        IbetWSTAccountNotWhitelistedError,
+        404,
+        422,
+        503,
     ),
 )
 async def transfer_ibet_wst(
@@ -706,12 +728,18 @@ async def transfer_ibet_wst(
     ],
     req_params: TransferIbetWSTRequest,
 ):
-    """
-    Transfer IbetWST tokens
+    """Queue an authorized transfer of IbetWST tokens.
 
-    - This endpoint allows a user to send transferWithAuthorization transaction to the IbetWST contract.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST tokens to transfer.
-        - Defaults to ETHEREUM if not specified.
+    The sender must have sufficient balance, and both sender and recipient must be whitelisted.
+    Track the queued transaction with the returned `tx_id` through the transaction endpoints.
+    The selected platform's master account must be configured, and `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 400 `IbetWSTInsufficientBalanceError` (code 13): the sender balance is below the transfer value.
+    - 400 `IbetWSTAccountNotWhitelistedError` (code 15): the sender or recipient is not whitelisted.
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, request field, or platform value is invalid.
+    - 503: the selected platform's master account is not configured.
     """
     blockchain_platform = IbetWSTBlockchain(req_params.blockchain_platform)
 
@@ -773,7 +801,7 @@ async def transfer_ibet_wst(
     "/trades/{ibet_wst_address}/request",
     operation_id="RequestIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422, IbetWSTAccountNotWhitelistedError),
+    responses=get_routers_responses(IbetWSTAccountNotWhitelistedError, 404, 422, 503),
 )
 async def request_ibet_wst_trade(
     request: Request,
@@ -783,12 +811,17 @@ async def request_ibet_wst_trade(
     ],
     req_params: RequestIbetWSTTradeRequest,
 ):
-    """
-    Request an IbetWST trade
+    """Queue an authorized IbetWST trade request.
 
-    - This endpoint allows a user to send requestTradeWithAuthorization transaction to the IbetWST contract.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST trade to request.
-        - Defaults to ETHEREUM if not specified.
+    Both seller and buyer must be whitelisted.
+    Track the queued transaction with the returned `tx_id` through the transaction endpoints.
+    The selected platform's master account must be configured, and `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 400 `IbetWSTAccountNotWhitelistedError` (code 15): the seller or buyer is not whitelisted.
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, request field, or platform value is invalid.
+    - 503: the selected platform's master account is not configured.
     """
     blockchain_platform = IbetWSTBlockchain(req_params.blockchain_platform)
 
@@ -846,7 +879,7 @@ async def request_ibet_wst_trade(
     "/trades/{ibet_wst_address}/cancel",
     operation_id="CancelIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(404, 422, 503),
 )
 async def cancel_ibet_wst_trade(
     request: Request,
@@ -856,10 +889,15 @@ async def cancel_ibet_wst_trade(
     ],
     req_params: CancelIbetWSTTradeRequest,
 ):
-    """
-    Cancel an IbetWST trade
+    """Queue an authorized IbetWST trade cancellation.
 
-    - This endpoint allows a user to send cancelTradeWithAuthorization transaction to the IbetWST contract.
+    Track the queued transaction with the returned `tx_id` through the transaction endpoints.
+    The selected platform's master account must be configured, and `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, request field, or platform value is invalid.
+    - 503: the selected platform's master account is not configured.
     """
 
     blockchain_platform = IbetWSTBlockchain(req_params.blockchain_platform)
@@ -901,7 +939,11 @@ async def cancel_ibet_wst_trade(
     operation_id="AcceptIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
     responses=get_routers_responses(
-        404, 422, IbetWSTInsufficientBalanceError, ERC20InsufficientAllowanceError
+        IbetWSTInsufficientBalanceError,
+        ERC20InsufficientAllowanceError,
+        404,
+        422,
+        503,
     ),
 )
 async def accept_ibet_wst_trade(
@@ -912,14 +954,18 @@ async def accept_ibet_wst_trade(
     ],
     req_params: AcceptIbetWSTTradeRequest,
 ):
-    """
-    Accept an IbetWST trade
+    """Queue an authorized acceptance of an IbetWST trade.
 
-    - This endpoint allows a user to send acceptTradeWithAuthorization transaction to the IbetWST contract.
-    - If seller's ST token balance is insufficient, an IbetWSTInsufficientBalanceError will be raised.
-    - If buyer's SC token allowance is insufficient, an ERC20InsufficientAllowanceError will be raised.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST trade to accept.
-        - Defaults to ETHEREUM if not specified.
+    The seller must have sufficient WST balance, and the buyer must have sufficient settlement-token allowance.
+    Track the queued transaction with the returned `tx_id` through the transaction endpoints.
+    The selected platform's master account must be configured, and `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 400 `IbetWSTInsufficientBalanceError` (code 13): the seller's WST balance is below the trade value.
+    - 400 `ERC20InsufficientAllowanceError` (code 14): the buyer's settlement-token allowance is below the required value.
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, request field, or platform value is invalid.
+    - 503: the selected platform's master account is not configured.
     """
     blockchain_platform = IbetWSTBlockchain(req_params.blockchain_platform)
 
@@ -979,7 +1025,7 @@ async def accept_ibet_wst_trade(
     "/trades/{ibet_wst_address}/reject",
     operation_id="RejectIbetWSTTrade",
     response_model=IbetWSTTransactionResponse,
-    responses=get_routers_responses(404, 422),
+    responses=get_routers_responses(404, 422, 503),
 )
 async def reject_ibet_wst_trade(
     request: Request,
@@ -989,12 +1035,15 @@ async def reject_ibet_wst_trade(
     ],
     req_params: RejectIbetWSTTradeRequest,
 ):
-    """
-    Reject an IbetWST trade
+    """Queue an authorized rejection of an IbetWST trade.
 
-    - This endpoint allows a user to send rejectTradeWithAuthorization transaction to the IbetWST contract.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST trade to reject.
-        - Defaults to ETHEREUM if not specified.
+    Track the queued transaction with the returned `tx_id` through the transaction endpoints.
+    The selected platform's master account must be configured, and `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 404: no registered token uses `ibet_wst_address` on the selected platform.
+    - 422: an address, request field, or platform value is invalid.
+    - 503: the selected platform's master account is not configured.
     """
     blockchain_platform = IbetWSTBlockchain(req_params.blockchain_platform)
 
@@ -1045,13 +1094,14 @@ async def list_ibet_wst_trades(
         ListIbetWSTTradesQuery, Query(description="Query parameters for listing trades")
     ],
 ):
-    """
-    List IbetWST trades
+    """List IbetWST trades with filtering and pagination.
 
-    - This endpoint retrieves a list of trades from the IbetWST contract based on the provided query parameters.
-    - The data returned by this API is generated based on finalized blocks.
-    - `blockchain_platform` is required to specify which blockchain's IbetWST trades to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    Results are ordered by trade index ascending.
+    Filters include participants, settlement token, and trade state.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 422: an address, query parameter, or platform value is invalid.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
@@ -1145,11 +1195,13 @@ async def get_ibet_wst_trade(
     index: Annotated[int, Path(description="Trade index")],
     query: Annotated[GetIbetWSTTradeQuery, Query()],
 ):
-    """
-    Get details of a specific IbetWST trade
+    """Retrieve one IbetWST trade by contract address and index.
 
-    - This endpoint retrieves the details of a specific trade by its index from the IbetWST contract.
-    - The data returned by this API is generated based on finalized blocks.
+    `blockchain_platform` defaults to Ethereum.
+
+    Errors:
+    - 404: no trade exists for the contract address and index.
+    - 422: an address, path parameter, query parameter, or platform value is invalid.
     """
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
 
@@ -1197,14 +1249,13 @@ async def get_erc20_balance(
         GetERC20BalanceQuery, Query(description="Query parameters for ERC20 balance")
     ],
 ):
-    """
-    Get ERC20 token balance
+    """Get an ERC-20 balance from the selected blockchain.
 
-    - This endpoint retrieves the balance of a specific ERC20 token for a given account address.
-    - The data returned by this API also reflects the state of non-finalized blocks.
-    - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
-    - `blockchain_platform` is required to specify which blockchain's ERC20 token balance to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    If the supplied token address does not expose a compatible ERC-20 `balanceOf`, the result is normally zero.
+    `blockchain_platform` selects Ethereum or Avalanche and defaults to Ethereum.
+
+    Errors:
+    - 422: an address, query parameter, or platform value is invalid.
     """
 
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)
@@ -1231,14 +1282,13 @@ async def get_erc20_allowance(
         Query(description="Query parameters for ERC20 allowance"),
     ],
 ):
-    """
-    Get ERC20 token allowance
+    """Get an ERC-20 allowance from the selected blockchain.
 
-    - This endpoint retrieves the allowance of a specific ERC20 token for a given account address.
-    - The data returned by this API also reflects the state of non-finalized blocks.
-    - Now, it supports only ERC20 tokens that are deployed on the Ethereum network.
-    - `blockchain_platform` is required to specify which blockchain's ERC20 token allowance to retrieve.
-        - Defaults to ETHEREUM if not specified.
+    If the supplied token address does not expose a compatible ERC-20 `allowance`, the result is normally zero.
+    `blockchain_platform` selects Ethereum or Avalanche and defaults to Ethereum.
+
+    Errors:
+    - 422: an address, query parameter, or platform value is invalid.
     """
 
     blockchain_platform = IbetWSTBlockchain(query.blockchain_platform)

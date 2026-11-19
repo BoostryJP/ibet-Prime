@@ -296,7 +296,7 @@ def _decode_private_key(
     "/tokens",
     operation_id="IssueBondToken",
     response_model=IssueTokenResponse,
-    responses=get_routers_responses(422, 401, AuthorizationError, SendTransactionError),
+    responses=get_routers_responses(AuthorizationError, 422, SendTransactionError),
 )
 async def issue_bond_token(
     db: DBAsyncSession,
@@ -306,7 +306,21 @@ async def issue_bond_token(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Issue ibetStraightBond token"""
+    """Issue an ibetStraightBond token.
+
+    The request completes after the token is deployed.
+
+    If any update-only field is supplied, initial updates are queued and the returned token status is `PENDING`.
+    Otherwise, the returned token status is `SUCCEEDED`.
+    Requested IbetWST activation is queued and can be confirmed with the token retrieval endpoint.
+
+    The request must authenticate with an EOA password or auth token.
+
+    Errors:
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 422: the request or a header is invalid.
+    - 503 `SendTransactionError` (code 2): token issuance cannot be submitted.
+    """
 
     # Validate Headers
     validate_headers(
@@ -521,7 +535,13 @@ async def list_all_bond_tokens(
     db: DBAsyncSession,
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all issued bond tokens"""
+    """List issued bond tokens, with optional issuer filtering.
+
+    Each result includes the current token attributes, token status, contract version, and IbetWST settings.
+
+    Errors:
+    - 422: `issuer-address` is present but invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -600,12 +620,20 @@ async def list_all_bond_tokens(
     "/tokens/{token_address}",
     operation_id="RetrieveBondToken",
     response_model=IbetStraightBondResponse,
-    responses=get_routers_responses(404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404),
 )
 async def retrieve_bond_token(
     db: DBAsyncSession, token_address: Annotated[str, Path()]
 ):
-    """Retrieve the bond token"""
+    """Retrieve an issued bond token.
+
+    The response includes current token attributes, token status, contract version, and IbetWST settings.
+    Failed tokens are treated as not found.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): issuance processing is still pending.
+    - 404: the token is not present or failed.
+    """
     # Get Token
     _token: Token | None = (
         await db.scalars(
@@ -667,14 +695,13 @@ async def retrieve_bond_token(
     operation_id="UpdateBondToken",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
-        SendTransactionError,
         OperationNotSupportedVersionError,
         OperationNotAllowedStateError,
+        AuthorizationError,
+        404,
+        422,
+        SendTransactionError,
     ),
 )
 async def update_bond_token(
@@ -686,7 +713,24 @@ async def update_bond_token(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Update the bond token"""
+    """Update bond token contract attributes.
+
+    The request completes after the token update succeeds.
+    Requested IbetWST activation is accepted for later completion and can be confirmed with the token retrieval endpoint.
+    Only the authenticated issuer's non-failed token can be updated.
+
+    The token must not be pending, and requested attributes must be supported by its contract version.
+    IbetWST activation is ignored for blockchains already activated.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 400 `OperationNotSupportedVersionError` (code 6): an attribute is unsupported by the token version.
+    - 400 `OperationNotAllowedStateError` (code 102): an IbetWST deployment is already in progress.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the authenticated issuer.
+    - 422: the request or a header is invalid.
+    - 503 `SendTransactionError` (code 2): the update transaction cannot be sent.
+    """
 
     # Validate Headers
     validate_headers(
@@ -878,14 +922,21 @@ async def update_bond_token(
     "/tokens/{token_address}/history",
     operation_id="ListBondOperationLogHistory",
     response_model=ListTokenOperationLogHistoryResponse,
-    responses=get_routers_responses(404, InvalidParameterError),
+    responses=get_routers_responses(422),
 )
 async def list_bond_operation_log_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     request_query: Annotated[ListTokenOperationLogHistoryQuery, Query()],
 ):
-    """List all bond token operation log history"""
+    """List a bond token's operation-log history.
+
+    Results can be filtered by operation category, modified-content text, and creation dates.
+    The endpoint supports deterministic sorting and pagination and returns counts both before and after filtering.
+
+    Errors:
+    - 422: a query parameter is invalid.
+    """
     stmt = select(TokenUpdateOperationLog).where(
         and_(
             TokenUpdateOperationLog.type == TokenType.IBET_STRAIGHT_BOND,
@@ -983,14 +1034,23 @@ async def list_bond_operation_log_history(
     "/tokens/{token_address}/additional_issue",
     operation_id="ListBondAdditionalIssuanceHistory",
     response_model=IssueRedeemHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_bond_additional_issuance_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     request_query: Annotated[ListAdditionalIssuanceHistoryQuery, Query()],
 ):
-    """List bond additional issuance history"""
+    """List a bond token's additional-issuance history.
+
+    Results support sorting and pagination and may not include a just-completed issuance until it is available.
+    Failed and pending tokens are not available for this request.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 404: the token is not present or failed.
+    - 422: a query parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1089,11 +1149,10 @@ async def list_bond_additional_issuance_history(
     operation_id="IssueAdditionalBond",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
         SendTransactionError,
     ),
 )
@@ -1106,7 +1165,19 @@ async def issue_additional_bond(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Issue additional bonds"""
+    """Issue an additional amount of an ibetStraightBond.
+
+    The request completes after the additional issuance succeeds.
+    The result may not appear in the issuance-history endpoint immediately.
+    Only an issuer-owned, non-pending token can be used.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    - 503 `SendTransactionError` (code 2): the transaction cannot be sent.
+    """
 
     # Validate Headers
     validate_headers(
@@ -1174,7 +1245,14 @@ async def list_all_batch_additional_bond_issue(
     get_query: Annotated[ListAllAdditionalIssueUploadQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all bond batch additional issues"""
+    """List additional-issuance batch uploads for a bond token.
+
+    Results can be filtered by issuer and processing state.
+    Results are ordered by upload creation time and paginated.
+
+    Errors:
+    - 422: a query parameter is invalid.
+    """
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1250,7 +1328,7 @@ async def list_all_batch_additional_bond_issue(
     operation_id="IssueAdditionalBondsInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        InvalidParameterError, AuthorizationError, 404, 422
     ),
 )
 async def issue_additional_bonds_in_batch(
@@ -1262,7 +1340,20 @@ async def issue_additional_bonds_in_batch(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Issue additional bonds in batch"""
+    """Queue additional bond issuances for asynchronous batch processing.
+
+    The request accepts the batch and returns its batch identifier without waiting for the issuances to finish.
+    Poll the batch-status endpoint with the returned identifier to monitor progress and item results.
+    Only an authenticated issuer-owned, non-pending token can be queued.
+
+    The request list must contain at least one item.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the list is empty or the token is pending.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -1335,7 +1426,7 @@ async def issue_additional_bonds_in_batch(
     "/tokens/{token_address}/additional_issue/batch/{batch_id}",
     operation_id="RetrieveBatchAdditionalBondIssueStatus",
     response_model=GetBatchIssueRedeemResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_batch_additional_bond_issue_status(
     db: DBAsyncSession,
@@ -1343,7 +1434,17 @@ async def retrieve_batch_additional_bond_issue_status(
     batch_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve detailed status of additional bond batch issuance"""
+    """Retrieve the status and item results of an additional-issuance batch.
+
+    The response reports aggregate processing state and current item results, including personal information when available.
+    Poll this endpoint until the batch is marked as processed.
+
+    The token, batch identifier, issuer, and issuance category must match.
+
+    Errors:
+    - 404: no matching batch exists for the supplied token and issuer.
+    - 422: a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1422,14 +1523,23 @@ async def retrieve_batch_additional_bond_issue_status(
     "/tokens/{token_address}/redeem",
     operation_id="ListBondRedemptionHistory",
     response_model=IssueRedeemHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_bond_redemption_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     get_query: Annotated[ListRedeemHistoryQuery, Query()],
 ):
-    """List the history of bond redemptions"""
+    """List a bond token's redemption history.
+
+    Results support deterministic sorting and pagination and may not include a just-completed redemption until it is available.
+    Failed and pending tokens are not available for this request.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 404: the token is not present or failed.
+    - 422: a query parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -1528,11 +1638,10 @@ async def list_bond_redemption_history(
     operation_id="RedeemBond",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
         SendTransactionError,
     ),
 )
@@ -1545,7 +1654,19 @@ async def redeem_bond(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Redeem bond token"""
+    """Redeem an amount of an ibetStraightBond.
+
+    The request completes after the redemption succeeds.
+    The result may not appear in the redemption-history endpoint immediately.
+    Only an issuer-owned, non-pending token can be redeemed.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    - 503 `SendTransactionError` (code 2): the transaction cannot be sent.
+    """
 
     # Validate Headers
     validate_headers(
@@ -1613,7 +1734,14 @@ async def list_all_batch_bond_redemption(
     get_query: Annotated[ListAllRedeemUploadQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all batch bond redemptions"""
+    """List redemption batch uploads and their item results.
+
+    Results include current item states and can be filtered by issuer and processing state.
+    Results are ordered by upload creation time and paginated.
+
+    Errors:
+    - 422: a query parameter is invalid.
+    """
     # Get a list of uploads
     stmt = select(BatchIssueRedeemUpload).where(
         and_(
@@ -1755,7 +1883,7 @@ async def list_all_batch_bond_redemption(
     operation_id="RedeemBondsInBatch",
     response_model=BatchIssueRedeemUploadIdResponse,
     responses=get_routers_responses(
-        422, 401, 404, AuthorizationError, InvalidParameterError
+        InvalidParameterError, AuthorizationError, 404, 422
     ),
 )
 async def redeem_bonds_in_batch(
@@ -1767,7 +1895,20 @@ async def redeem_bonds_in_batch(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Redeem bonds in batch"""
+    """Queue bond redemptions for asynchronous batch processing.
+
+    The request accepts the batch and returns its batch identifier without waiting for the redemptions to finish.
+    Poll the batch-status endpoint with the returned identifier to monitor progress and item results.
+    Only an authenticated issuer-owned, non-pending token can be queued.
+
+    The request list must contain at least one item.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the list is empty or the token is pending.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -1840,7 +1981,7 @@ async def redeem_bonds_in_batch(
     "/tokens/{token_address}/redeem/batch/{batch_id}",
     operation_id="RetrieveBatchBondRedemptionStatus",
     response_model=GetBatchIssueRedeemResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_batch_bond_redemption_status(
     db: DBAsyncSession,
@@ -1848,7 +1989,17 @@ async def retrieve_batch_bond_redemption_status(
     batch_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve detailed status of batch bond redemption"""
+    """Retrieve the status and item results of a bond-redemption batch.
+
+    The response reports aggregate processing state and current item results, including personal information when available.
+    Poll this endpoint until the batch is marked as processed.
+
+    The token, batch identifier, issuer, and redemption category must match.
+
+    Errors:
+    - 404: no matching batch exists for the supplied token and issuer.
+    - 422: a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -1933,7 +2084,14 @@ async def list_all_scheduled_bond_token_update_events(
     token_address: Annotated[str, Path()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all scheduled bond token update events"""
+    """List scheduled update events for a bond token.
+
+    Events can be filtered by issuer.
+    Soft-deleted events are included and identified in the response.
+
+    Errors:
+    - No endpoint-specific 4xx or 5xx errors are raised.
+    """
 
     if issuer_address is None:
         _token_events: Sequence[ScheduledEvents] = (
@@ -1995,12 +2153,11 @@ async def list_all_scheduled_bond_token_update_events(
     operation_id="ScheduleBondTokenUpdateEvent",
     response_model=ScheduledEventIdResponse,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
         OperationNotSupportedVersionError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def schedule_bond_token_update_event(
@@ -2012,7 +2169,20 @@ async def schedule_bond_token_update_event(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Schedule a new bond token update event"""
+    """Schedule one bond-token update event for asynchronous execution.
+
+    The request accepts the event with `PROCESSING` status and returns its identifier.
+    Poll the scheduled-event retrieval endpoint to monitor its status.
+
+    Only the authenticated issuer's non-pending token can be scheduled, and update attributes must be supported by its version.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 400 `OperationNotSupportedVersionError` (code 6): an update attribute is unsupported by the token version.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -2101,12 +2271,11 @@ async def schedule_bond_token_update_event(
     operation_id="ScheduleBondTokenUpdateEventsInBatch",
     response_model=ScheduledEventIdListResponse,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
         OperationNotSupportedVersionError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def schedule_bond_token_update_events_in_batch(
@@ -2118,7 +2287,21 @@ async def schedule_bond_token_update_events_in_batch(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Schedule bond token update events in batch"""
+    """Schedule multiple bond-token update events for asynchronous execution.
+
+    The request accepts all events with `PROCESSING` status after their version checks succeed.
+    The response returns the generated identifiers in request order.
+    Poll the scheduled-event retrieval endpoint for each identifier to monitor progress.
+
+    Only the authenticated issuer's non-pending token can be scheduled.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 400 `OperationNotSupportedVersionError` (code 6): an update attribute is unsupported by the token version.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -2220,7 +2403,13 @@ async def retrieve_scheduled_bond_token_update_event(
     scheduled_event_id: Annotated[str, Path()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """Retrieve a scheduled bond token update event"""
+    """Retrieve one scheduled bond-token update event.
+
+    The event can be scoped by the optional issuer header.
+
+    Errors:
+    - 404: no event matches the token, issuer, and event identifier.
+    """
 
     if issuer_address is None:
         _token_event: ScheduledEvents | None = (
@@ -2281,7 +2470,7 @@ async def retrieve_scheduled_bond_token_update_event(
     "/tokens/{token_address}/scheduled_events/{scheduled_event_id}",
     operation_id="DeleteScheduledBondTokenUpdateEvent",
     response_model=ScheduledEventResponse,
-    responses=get_routers_responses(422, 401, 404, AuthorizationError),
+    responses=get_routers_responses(AuthorizationError, 404, 422),
 )
 async def delete_scheduled_bond_token_update_event(
     db: DBAsyncSession,
@@ -2293,7 +2482,17 @@ async def delete_scheduled_bond_token_update_event(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Delete a scheduled bond token update event"""
+    """Delete or soft-delete a scheduled bond-token update event.
+
+    The authenticated issuer's matching event is deleted by default.
+    When `soft_delete=true`, the event remains visible with `is_soft_deleted=true`.
+    The response contains the event's state before deletion, with the requested deletion state reflected.
+
+    Errors:
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: no event matches the token, issuer, and event identifier.
+    - 422: the query, request, or a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -2361,7 +2560,7 @@ async def delete_scheduled_bond_token_update_event(
     "/tokens/{token_address}/holders",
     operation_id="ListAllBondTokenHolders",
     response_model=HoldersResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 404),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_all_bond_token_holders(
     db: DBAsyncSession,
@@ -2369,7 +2568,19 @@ async def list_all_bond_token_holders(
     get_query: Annotated[ListAllHoldersQuery, Query()],
     issuer_address: Annotated[str, Header()],
 ):
-    """List all bond token holders"""
+    """List holder positions and information for a bond token.
+
+    The endpoint combines balances, locked value, personal information, and holder-specific extra information.
+    It supports filtering, deterministic sorting, and pagination over issuer-owned token holders.
+    Former zero-balance holders are excluded unless explicitly requested.
+
+    The issuer and token must exist, and the token must not be pending.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the issuer does not exist or the token is pending.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the query or `issuer-address` header is invalid.
+    """
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
 
@@ -2694,14 +2905,23 @@ async def list_all_bond_token_holders(
     "/tokens/{token_address}/holders/count",
     operation_id="CountBondTokenHolders",
     response_model=HolderCountResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 404),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def count_bond_token_holders(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Count the number of bond token holders"""
+    """Count current nonzero holders of an issuer-owned bond token.
+
+    The count includes accounts with balance, exchange balance or commitment, pending transfer, or locked value.
+    The issuer and token must exist, and the token must not be pending.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the issuer does not exist or the token is pending.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2779,7 +2999,7 @@ async def count_bond_token_holders(
     "/tokens/{token_address}/holders/{account_address}",
     operation_id="RetrieveBondTokenHolder",
     response_model=HolderResponse,
-    responses=get_routers_responses(422, InvalidParameterError, 404),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def retrieve_bond_token_holder(
     db: DBAsyncSession,
@@ -2787,7 +3007,19 @@ async def retrieve_bond_token_holder(
     account_address: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve bond token holder"""
+    """Retrieve one account's bond-token holder state.
+
+    The response combines position balances, locked value, latest issuer personal information, and token-holder extra information.
+    If no position exists, numeric balances are returned as zero and `modified` is null.
+    The holder is not required to have a current balance.
+
+    The issuer and token must exist, and the token must not be pending.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the issuer does not exist or the token is pending.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -2959,10 +3191,10 @@ async def retrieve_bond_token_holder(
     operation_id="RegisterBondTokenHolderExtraInfo",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        404,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def register_bond_token_holder_extra_info(
@@ -2975,6 +3207,20 @@ async def register_bond_token_holder_extra_info(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
+    """Create or replace issuer-managed extra information for a bond holder.
+
+    The request creates or replaces the holder's metadata for the token.
+    The account does not need to hold a current position.
+
+    The request must authenticate and target a non-pending token owned by the issuer.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    """
+
     # Validate Headers
     validate_headers(
         issuer_address=(issuer_address, address_is_valid_address),
@@ -3034,13 +3280,12 @@ async def register_bond_token_holder_extra_info(
     operation_id="RegisterBondTokenHolderPersonalInfo",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
-        SendTransactionError,
         PersonalInfoExceedsSizeLimit,
+        AuthorizationError,
+        404,
+        422,
+        SendTransactionError,
     ),
 )
 async def register_bond_token_holder_personal_info(
@@ -3052,7 +3297,21 @@ async def register_bond_token_holder_personal_info(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Register personal information of bond token holders"""
+    """Register a holder's personal information for an issuer-owned bond.
+
+    The request completes after the requested registration succeeds.
+    Only an authenticated issuer-owned, non-pending token can be used.
+
+    Personal information sent to the contract must fit within the configured size limit.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 400 `PersonalInfoExceedsSizeLimit` (code 11): on-chain personal information exceeds the configured limit.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    - 503 `SendTransactionError` (code 2): the personal-information transaction cannot be sent.
+    """
 
     # Validate Headers
     validate_headers(
@@ -3150,7 +3409,7 @@ async def register_bond_token_holder_personal_info(
     "/tokens/{token_address}/personal_info/batch",
     operation_id="ListAllBondTokenBatchPersonalInfoRegistration",
     response_model=ListBatchRegisterPersonalInfoUploadResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_all_bond_token_batch_personal_info_registration(
     db: DBAsyncSession,
@@ -3158,7 +3417,16 @@ async def list_all_bond_token_batch_personal_info_registration(
     issuer_address: Annotated[str, Header()],
     get_query: Annotated[ListAllPersonalInfoBatchRegistrationUploadQuery, Query()],
 ):
-    """List all personal information batch registration"""
+    """List personal-information batch uploads for an issuer-owned bond.
+
+    The endpoint filters uploads by processing status and supports creation-time sorting and pagination.
+    Results show the current processing status for the matching issuer and token.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: a query or header parameter is invalid.
+    """
     # Verify that the token is issued by the issuer_address
     _token: Token | None = (
         await db.scalars(
@@ -3248,12 +3516,11 @@ async def list_all_bond_token_batch_personal_info_registration(
     operation_id="InitiateBondTokenBatchPersonalInfoRegistration",
     response_model=BatchRegisterPersonalInfoUploadResponse,
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
         InvalidParameterError,
         BatchPersonalInfoRegistrationValidationError,
+        AuthorizationError,
+        404,
+        422,
     ),
 )
 async def initiate_bond_token_batch_personal_info_registration(
@@ -3265,7 +3532,21 @@ async def initiate_bond_token_batch_personal_info_registration(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Initiate bond token batch personal information registration"""
+    """Queue holder personal information for asynchronous batch registration.
+
+    The request accepts the batch after validating all entries and returns its batch identifier.
+    Poll the batch-status endpoint with the returned identifier to monitor progress and item results.
+    Only an authenticated issuer-owned, non-pending token can be queued.
+
+    The list must be nonempty, and on-chain item JSON must fit within the configured message limit.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the list is empty or the token is pending.
+    - 400 `BatchPersonalInfoRegistrationValidationError` (code 12): an on-chain item exceeds the personal-information limit.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token is not present, failed, or not owned by the issuer.
+    - 422: the request or a header is invalid.
+    """
 
     # Validate Headers
     validate_headers(
@@ -3367,7 +3648,7 @@ async def initiate_bond_token_batch_personal_info_registration(
     "/tokens/{token_address}/personal_info/batch/{batch_id}",
     operation_id="RetrieveBondTokenPersonalInfoBatchRegistrationStatus",
     response_model=GetBatchRegisterPersonalInfoResponse,
-    responses=get_routers_responses(422, 401, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_bond_token_personal_info_batch_registration_status(
     db: DBAsyncSession,
@@ -3375,7 +3656,17 @@ async def retrieve_bond_token_personal_info_batch_registration_status(
     batch_id: Annotated[str, Path()],
     issuer_address: Annotated[str, Header()],
 ):
-    """Retrieve the status of bond token personal information batch registration"""
+    """Retrieve one personal-information registration batch and its item results.
+
+    The endpoint returns the current aggregate status and each record's submitted personal-information fields.
+    Poll this endpoint until the batch is marked as processed.
+
+    The batch identifier must belong to the supplied issuer.
+
+    Errors:
+    - 404: no matching batch exists for the issuer.
+    - 422: a path parameter or the `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -3443,7 +3734,13 @@ async def list_bond_token_lock_unlock_events(
     request_query: Annotated[ListAllTokenLockEventsQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all lock/unlock bond token events"""
+    """List lock and unlock events for a bond token.
+
+    The endpoint combines lock and unlock records, supports event and address filters, deterministic sorting, and pagination.
+
+    Errors:
+    - 422: a query parameter or optional `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -3641,10 +3938,9 @@ async def list_bond_token_lock_unlock_events(
     operation_id="TransferBondTokenOwnership",
     response_model=None,
     responses=get_routers_responses(
-        422,
-        401,
-        AuthorizationError,
         InvalidParameterError,
+        AuthorizationError,
+        422,
         SendTransactionError,
     ),
 )
@@ -3656,7 +3952,18 @@ async def transfer_bond_token_ownership(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Transfer bond token ownership"""
+    """Force-transfer bond-token ownership.
+
+    The request completes after the forced transfer succeeds.
+    The result may not appear in the transfer-history endpoint immediately.
+    Only an issuer-owned, non-pending token can be transferred.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is absent, failed, not issuer-owned, or pending.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 422: the request or a header is invalid.
+    - 503 `SendTransactionError` (code 2): the transaction cannot be sent.
+    """
 
     # Validate Headers
     validate_headers(
@@ -3715,14 +4022,23 @@ async def transfer_bond_token_ownership(
     "/transfers/{token_address}",
     operation_id="ListBondTokenTransferHistory",
     response_model=TransferHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_bond_token_transfer_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     query: Annotated[ListTransferHistoryQuery, Query()],
 ):
-    """List bond token transfer history"""
+    """List a bond token's transfer history.
+
+    The endpoint supports address, time, amount, source-event, and event-data filters with sorting and pagination.
+    Available personal information for the sender and recipient is included.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 404: the token is not present or failed.
+    - 422: a query parameter is invalid.
+    """
     # Check if the token has been issued
     _token: Token | None = (
         await db.scalars(
@@ -3912,7 +4228,14 @@ async def list_all_bond_token_transfer_approval_history(
     get_query: Annotated[ListTransferApprovalHistoryQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List all bond token transfer approval history"""
+    """List aggregate transfer-approval counts by issuer and bond token.
+
+    The response includes unapproved, escrow-finished, transferred, and canceled counts.
+    It supports optional issuer filtering and pagination.
+
+    Errors:
+    - 422: a query parameter or optional `issuer-address` header is invalid.
+    """
     # Create a subquery for 'status' added IDXTransferApproval
     subquery = aliased(
         IDXTransferApproval,
@@ -4053,14 +4376,23 @@ async def list_all_bond_token_transfer_approval_history(
     "/transfer_approvals/{token_address}",
     operation_id="ListSpecificBondTokenTransferApprovalHistory",
     response_model=TransferApprovalHistoryResponse,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def list_specific_bond_token_transfer_approval_history(
     db: DBAsyncSession,
     token_address: Annotated[str, Path()],
     get_query: Annotated[ListSpecificTokenTransferApprovalHistoryQuery, Query()],
 ):
-    """List specific bond token transfer approval history"""
+    """List transfer-approval applications and their derived status for one bond.
+
+    The response includes application state, operation history, and available personal information.
+    It supports detailed filtering, deterministic sorting, and pagination.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 404: the token is not present or failed.
+    - 422: a query parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -4421,13 +4753,13 @@ async def list_specific_bond_token_transfer_approval_history(
     "/transfer_approvals/{token_address}/{id}",
     operation_id="UpdateBondTokenTransferApprovalStatus",
     responses=get_routers_responses(
-        422,
-        401,
-        404,
-        AuthorizationError,
+        ContractRevertError,
         InvalidParameterError,
-        SendTransactionError,
         OperationNotAllowedStateError,
+        AuthorizationError,
+        404,
+        422,
+        SendTransactionError,
     ),
 )
 async def update_bond_token_transfer_approval_status(
@@ -4440,7 +4772,23 @@ async def update_bond_token_transfer_approval_status(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Update bond token transfer approval status"""
+    """Approve or cancel a bond transfer-approval application.
+
+    The request completes after the requested approval or cancellation succeeds.
+    A successful operation makes the application and both counterparties' personal information available in transfer-approval history.
+
+    The application must be actionable, and both counterparties must have issuer personal information registered.
+    Escrow-backed approvals require completed escrow; escrow-backed applications cannot be canceled.
+
+    Errors:
+    - 400 `ContractRevertError` (code varies): the approval or cancellation contract call reverts.
+    - 400 `InvalidParameterError` (code 1): the token is pending, the application state is invalid, the operation is duplicated, or cancellation is unavailable.
+    - 400 `OperationNotAllowedStateError` (code 101): personal information is missing for either counterparty.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 404: the token or transfer-approval application is not present.
+    - 422: the request or a header is invalid.
+    - 503 `SendTransactionError` (code 2): a transaction cannot be sent.
+    """
 
     # Validate Headers
     validate_headers(
@@ -4655,9 +5003,9 @@ async def update_bond_token_transfer_approval_status(
     operation_id="RetrieveBondTokenTransferApprovalStatus",
     response_model=TransferApprovalTokenDetailResponse,
     responses=get_routers_responses(
-        422,
-        404,
         InvalidParameterError,
+        404,
+        422,
     ),
 )
 async def retrieve_bond_token_transfer_approval_status(
@@ -4665,7 +5013,16 @@ async def retrieve_bond_token_transfer_approval_status(
     token_address: Annotated[str, Path()],
     id: Annotated[int, Path()],
 ):
-    """Retrieve bond token transfer approval status"""
+    """Retrieve one bond transfer-approval application's current derived state.
+
+    The response reports whether the application is pending, escrow-finished, approved, or canceled.
+    Available personal information from an operation or the issuer's current records is included.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the token is pending.
+    - 404: the token or transfer-approval application is not present.
+    - 422: a path parameter is invalid.
+    """
     # Get token
     _token: Token | None = (
         await db.scalars(
@@ -4883,13 +5240,11 @@ async def retrieve_bond_token_transfer_approval_status(
     operation_id="BulkTransferBondTokenOwnership",
     response_model=BulkTransferUploadIdResponse,
     responses=get_routers_responses(
-        401,
-        422,
-        AuthorizationError,
-        InvalidParameterError,
-        MultipleTokenTransferNotAllowedError,
         TokenNotExistError,
         NonTransferableTokenError,
+        MultipleTokenTransferNotAllowedError,
+        AuthorizationError,
+        422,
     ),
 )
 async def bulk_transfer_bond_token_ownership(
@@ -4900,9 +5255,19 @@ async def bulk_transfer_bond_token_ownership(
     eoa_password: Annotated[Optional[str], Header()] = None,
     auth_token: Annotated[Optional[str], Header()] = None,
 ):
-    """Bulk transfer bond token ownership
+    """Queue multiple forced transfers of one bond token for asynchronous processing.
 
-    - All `token_address` must be the same.
+    The request accepts the transfers and returns an upload identifier without waiting for them to finish.
+    Poll the bulk-transfer upload and record endpoints with the returned identifier to monitor progress and outcomes.
+
+    Every item must name the same issuer-owned bond token, which must exist and not be pending.
+
+    Errors:
+    - 400 `TokenNotExistError` (code 7): the token is absent, failed, or not issuer-owned.
+    - 400 `NonTransferableTokenError` (code 8): the token is pending.
+    - 400 `MultipleTokenTransferNotAllowedError` (code 9): the request contains multiple token addresses.
+    - 401 `AuthorizationError` (code 1): authentication fails.
+    - 422: the request or a header is invalid.
     """
     # Validate Headers
     validate_headers(
@@ -4995,7 +5360,14 @@ async def list_bond_token_bulk_transfers(
     get_query: Annotated[ListBulkTransferUploadQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """List bond token bulk transfers"""
+    """List bond-token bulk-transfer uploads.
+
+    Results can be filtered by issuer and token address.
+    Results are paginated, with an identifier-ordered view when no issuer filter is supplied.
+
+    Errors:
+    - 422: a query parameter or optional `issuer-address` header is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))
@@ -5075,7 +5447,7 @@ async def list_bond_token_bulk_transfers(
     "/bulk_transfer/{upload_id}",
     operation_id="RetrieveBondTokenBulkTransfer",
     response_model=BulkTransferUploadRecordResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_bond_token_bulk_transfer(
     db: DBAsyncSession,
@@ -5083,7 +5455,15 @@ async def retrieve_bond_token_bulk_transfer(
     get_query: Annotated[ListBulkTransferQuery, Query()],
     issuer_address: Annotated[Optional[str], Header()] = None,
 ):
-    """Retrieve bond token bulk transfer upload records"""
+    """Retrieve item records for a bond bulk-transfer upload.
+
+    The endpoint supports optional issuer filtering and pagination and includes available sender and recipient personal information.
+    Poll this endpoint to monitor current item statuses and transaction errors.
+
+    Errors:
+    - 404: no matching bulk-transfer records exist for the upload and issuer filter.
+    - 422: a query or header parameter is invalid.
+    """
 
     # Validate Headers
     validate_headers(issuer_address=(issuer_address, address_is_valid_address))

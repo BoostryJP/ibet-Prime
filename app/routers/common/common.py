@@ -47,14 +47,12 @@ router = APIRouter(tags=["common"])
     responses=get_routers_responses(ServiceUnavailableError),
 )
 async def service_health_check(db: DBAsyncSession):
-    """Service health check
+    """Check the availability and synchronization of required services.
 
-    Check following services are available:
-    - Database
-    - ibet Node
-    - Ethereum Node (if IbetWST ETH feature is enabled)
-    - Avalanche Node (if IbetWST AVA feature is enabled)
-    - E2EE Setting
+    Ethereum and Avalanche availability is checked only when the corresponding IbetWST features are enabled.
+
+    Errors:
+    - 503 `ServiceUnavailableError` (code 1): a required service is unavailable, a required node is not synchronized, or the E2EE key is invalid.
     """
     errors: list[str] = []
 
@@ -131,7 +129,11 @@ async def __check_avalanche_node_is_synced(errors: list[str], db: AsyncSession):
     responses=get_routers_responses(ServiceUnavailableError),
 )
 async def get_latest_block_number():
-    """Get the latest block number"""
+    """Get the latest ibet node block number.
+
+    Errors:
+    - 503 `ServiceUnavailableError` (code 1): the configured ibet node cannot provide the current block number.
+    """
     block_number = await web3.eth.block_number
 
     return json_response({"block_number": block_number})

@@ -90,13 +90,25 @@ utc_tz = pytz.timezone("UTC")
     "/accounts",
     operation_id="CreateE2EMessagingAccount",
     response_model=E2EMessagingAccountResponse,
-    responses=get_routers_responses(422, InvalidParameterError, SendTransactionError),
+    responses=get_routers_responses(InvalidParameterError, 422, SendTransactionError),
 )
 async def create_e2e_messaging_account(
     db: DBAsyncSession,
     data: E2EMessagingAccountCreateRequest,
 ):
-    """Create E2EMessaging account"""
+    """Create an E2E messaging account and register its RSA public key.
+
+    A successful response confirms creation of the account and submission of its RSA public-key registration.
+    Private key material is not returned.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, password and passphrase inputs must be encrypted with the public key returned by `/e2ee`.
+    An omitted RSA passphrase uses the configured default.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): a password does not satisfy its policy, or `E2E_MESSAGING_CONTRACT_ADDRESS` is not configured.
+    - 422: the request is invalid, or an encrypted field cannot be decoded.
+    - 503 `SendTransactionError` (code 2): the public-key transaction cannot be submitted, including a contract revert.
+    """
     # Check Password Policy(EOA password)
     eoa_password = (
         E2EEUtils.decrypt(data.eoa_password)
@@ -202,7 +214,11 @@ async def create_e2e_messaging_account(
     response_model=List[E2EMessagingAccountResponse],
 )
 async def list_all_e2e_messaging_accounts(db: DBAsyncSession):
-    """List all e2e messaging accounts"""
+    """List all E2E messaging accounts in address order.
+
+    Each account includes its latest RSA public key when available.
+    Logically deleted accounts are returned, while private keys and encrypted passwords are omitted.
+    """
 
     # Create query to get the latest RSA key
     # NOTE:
@@ -271,7 +287,14 @@ async def list_all_e2e_messaging_accounts(db: DBAsyncSession):
 async def retrieve_e2e_messaging_account(
     db: DBAsyncSession, account_address: Annotated[str, Path()]
 ):
-    """Retrieve an e2e messaging account"""
+    """Retrieve an E2E messaging account and its latest RSA public key.
+
+    A logically deleted account is returned with no RSA public key.
+    Private keys and encrypted passwords are never included.
+
+    Errors:
+    - 404: no account exists for `account_address`.
+    """
 
     _account: E2EMessagingAccount | None = (
         await db.scalars(
@@ -321,7 +344,14 @@ async def retrieve_e2e_messaging_account(
 async def delete_e2e_messaging_account(
     db: DBAsyncSession, account_address: Annotated[str, Path()]
 ):
-    """Logically delete an e2e messaging account"""
+    """Logically delete an E2E messaging account.
+
+    The account is marked as deleted, and its RSA public key becomes unavailable.
+    Repeating the request succeeds for an existing account and leaves it deleted.
+
+    Errors:
+    - 404: no account exists for `account_address`.
+    """
 
     _account: E2EMessagingAccount | None = (
         await db.scalars(
@@ -362,14 +392,22 @@ async def delete_e2e_messaging_account(
     "/accounts/{account_address}/rsa_key",
     operation_id="UpdateE2EMessagingAccountRSAKey",
     response_model=E2EMessagingAccountResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def update_e2e_messaging_account_rsa_key(
     db: DBAsyncSession,
     account_address: Annotated[str, Path()],
     data: E2EMessagingAccountUpdateRsaKeyRequest,
 ):
-    """Update an e2e messaging account rsa key"""
+    """Update the scheduled RSA-key generation settings for an active account.
+
+    This endpoint changes the settings used by subsequent scheduled key generation.
+    The current RSA public key, if present, is returned.
+
+    Errors:
+    - 404: the account does not exist or is logically deleted.
+    - 422: the request is invalid.
+    """
 
     _account = (
         await db.scalars(
@@ -418,14 +456,25 @@ async def update_e2e_messaging_account_rsa_key(
     "/accounts/{account_address}/eoa_password",
     operation_id="ChangeE2EMessagingAccountEOAPassword",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def change_e2e_messaging_account_eoa_password(
     db: DBAsyncSession,
     account_address: Annotated[str, Path()],
     data: E2EMessagingAccountChangeEOAPasswordRequest,
 ):
-    """Change E2EMessaging account's EOA password"""
+    """Change an E2E messaging account's EOA password and re-encrypt its key file.
+
+    The old password must match the stored password.
+    The account address remains unchanged.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, both password values must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the old password does not match, or the new password does not satisfy the configured policy.
+    - 404: no account exists for `account_address`.
+    - 422: the request is invalid, or an encrypted password cannot be decoded.
+    """
 
     # Get E2E Messaging Account
     _account: E2EMessagingAccount | None = (
@@ -485,14 +534,24 @@ async def change_e2e_messaging_account_eoa_password(
     "/accounts/{account_address}/rsa_passphrase",
     operation_id="ChangeE2EMessagingAccountRSAPassphrase",
     response_model=None,
-    responses=get_routers_responses(422, 404, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def change_e2e_messaging_account_rsa_passphrase(
     db: DBAsyncSession,
     account_address: Annotated[str, Path()],
     data: E2EMessagingAccountChangeRSAPassphraseRequest,
 ):
-    """Change E2EMessaging account's RSA passphrase"""
+    """Change the passphrase protecting an E2E messaging account's latest RSA private key.
+
+    The account and latest RSA key must exist, and the old passphrase must match.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, both passphrase values must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the old passphrase does not match, or the new passphrase does not satisfy the configured policy.
+    - 404: the account or its latest RSA key does not exist.
+    - 422: the request is invalid, or an encrypted passphrase cannot be decoded.
+    """
 
     # Get E2E Messaging Account
     _account: E2EMessagingAccount | None = (
@@ -567,7 +626,15 @@ async def change_e2e_messaging_account_rsa_passphrase(
 async def list_all_e2e_messages(
     db: DBAsyncSession, get_query: Annotated[ListAllE2EMessagesQuery, Query()]
 ):
-    """List all e2e messages"""
+    """List E2E messages with filtering and pagination.
+
+    Results are ordered by message ID in ascending order.
+    Sender, recipient, type, and message substring filters are supported.
+    Timestamps are returned as ISO 8601 values with timezone offsets.
+
+    Errors:
+    - 422: a query parameter is invalid.
+    """
 
     # Get E2E Messaging
     stmt = select(IDXE2EMessaging).order_by(asc(IDXE2EMessaging.id))
@@ -642,12 +709,20 @@ async def list_all_e2e_messages(
     "/messages/{id}",
     operation_id="RetrieveE2EMessage",
     response_model=E2EMessagingResponse,
-    responses=get_routers_responses(422, 404),
+    responses=get_routers_responses(404, 422),
 )
 async def retrieve_e2e_messaging(
     db: DBAsyncSession, _id: Annotated[int, Path(..., alias="id")]
 ):
-    """Retrieve an e2e message"""
+    """Retrieve one E2E message by ID.
+
+    A JSON-encoded message is returned as JSON; otherwise its string value is returned.
+    The timestamp is returned as an ISO 8601 value with a timezone offset.
+
+    Errors:
+    - 404: no message exists for `id`.
+    - 422: `id` is invalid.
+    """
 
     # Get E2E Messaging
     _e2e_messaging: IDXE2EMessaging | None = (

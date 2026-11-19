@@ -106,6 +106,15 @@ class Error422Model(BaseModel):
     detail: list[Error422DetailModel]
 
 
+class Error500MetaModel(MetaModel):
+    code: int = Field(..., examples=[1])
+    title: str = Field(..., examples=["InternalServerError"])
+
+
+class Error500Model(BaseModel):
+    meta: Error500MetaModel
+
+
 class Error503MetaModel(MetaModel):
     code: int = Field(..., examples=[1])
     title: str = Field(..., examples=["ServiceUnavailableError"])
@@ -125,6 +134,7 @@ DEFAULT_RESPONSE: dict[int, dict[str, str | type[BaseModel]]] = {
     404: {"description": "Not Found Error", "model": Error404Model},
     405: {"description": "Method Not Allowed", "model": Error405Model},
     422: {"description": "Validation Error", "model": Error422Model},
+    500: {"description": "Internal Server Error", "model": Error500Model},
     503: {"description": "Service Unavailable Error", "model": Error503Model},
 }
 

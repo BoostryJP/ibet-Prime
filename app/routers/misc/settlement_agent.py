@@ -80,13 +80,23 @@ local_tz = pytz.timezone(config.TZ)
     "/dvp/agent/accounts",
     operation_id="CreateDVPAgentAccount",
     response_model=DVPAgentAccountResponse,
-    responses=get_routers_responses(422, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 422),
 )
 async def create_account(
     db: DBAsyncSession,
     create_req: CreateDVPAgentAccountRequest,
 ):
-    """Create DVP-Payment Agent Account"""
+    """Create a DVP paying-agent EOA account.
+
+    Private key material is not returned.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, `eoa_password` must be encrypted with the public key returned by `/e2ee`.
+    In dedicated-agent mode, the account is associated with `DEDICATED_DVP_AGENT_ID`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the EOA password does not satisfy the configured policy.
+    - 422: the request is invalid, or the encrypted password cannot be decoded.
+    """
 
     # Check Password Policy(EOA password)
     eoa_password = (
@@ -142,7 +152,11 @@ async def create_account(
     response_model=ListAllDVPAgentAccountResponse,
 )
 async def list_all_accounts(db: DBAsyncSession):
-    """List all DVP-Payment Agent accounts"""
+    """List DVP paying-agent accounts.
+
+    Logically deleted accounts are included.
+    In dedicated-agent mode, only the configured agent's accounts are returned.
+    """
 
     if DEDICATED_DVP_AGENT_MODE:
         _accounts: Sequence[DVPAgentAccount] = (
@@ -178,7 +192,13 @@ async def delete_account(
     db: DBAsyncSession,
     account_address: Annotated[str, Path()],
 ):
-    """Logically delete an DVP-Payment Agent Account"""
+    """Logically delete a DVP paying-agent account.
+
+    In dedicated-agent mode, only the configured agent's accounts can be deleted.
+
+    Errors:
+    - 404: no matching account exists for `account_address`.
+    """
 
     # Search for an account
     if DEDICATED_DVP_AGENT_MODE:
@@ -223,14 +243,26 @@ async def delete_account(
     "/dvp/agent/account/{account_address}/eoa_password",
     operation_id="ChangeDVPAgentAccountPassword",
     response_model=None,
-    responses=get_routers_responses(404, 422, InvalidParameterError),
+    responses=get_routers_responses(InvalidParameterError, 404, 422),
 )
 async def change_eoa_password(
     db: DBAsyncSession,
     account_address: Annotated[str, Path()],
     change_req: DVPAgentAccountChangeEOAPasswordRequest,
 ):
-    """Change Agent's EOA Password"""
+    """Change a DVP paying-agent's EOA password.
+
+    The old password must match the stored password.
+    The account address remains unchanged.
+    In dedicated-agent mode, only the configured dedicated agent's account can be updated.
+
+    When `E2EE_REQUEST_ENABLED` is enabled, both password values must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the old password does not match, or the new password does not satisfy the configured policy.
+    - 404: no matching agent account exists.
+    - 422: the request is invalid, or an encrypted password cannot be decoded.
+    """
 
     # Search for an account
     if DEDICATED_DVP_AGENT_MODE:
@@ -308,7 +340,16 @@ async def list_all_dvp_agent_deliveries(
     exchange_address: Annotated[str, Path()],
     request_query: Annotated[ListAllDVPAgentDeliveriesQuery, Query()],
 ):
-    """List all DVP deliveries for paying agent"""
+    """List DVP deliveries for a paying agent with filtering and pagination.
+
+    The exchange address and `agent_address` query parameter are required.
+    Token, seller, validity, status, and creation-time filters are supported.
+    Results are sorted by creation time, and returned timestamps include timezone offsets.
+    In dedicated-agent mode, only the configured agent's deliveries are returned.
+
+    Errors:
+    - 422: a path or query parameter is invalid.
+    """
     if DEDICATED_DVP_AGENT_MODE:
         stmt = select(IDXDelivery).where(
             and_(
@@ -457,7 +498,7 @@ async def list_all_dvp_agent_deliveries(
     operation_id="UpdateDVPAgentDelivery",
     response_model=None,
     responses=get_routers_responses(
-        404, 422, InvalidParameterError, SendTransactionError
+        InvalidParameterError, 404, 422, SendTransactionError
     ),
 )
 async def update_dvp_agent_delivery(
@@ -466,7 +507,20 @@ async def update_dvp_agent_delivery(
     delivery_id: Annotated[int, Path()],
     data: FinishDVPDeliveryRequest | AbortDVPDeliveryRequest,
 ):
-    """Finish/Abort DVP delivery"""
+    """Finish or abort a DVP delivery as the selected paying agent.
+
+    A successful response means the selected operation was submitted.
+    Poll the delivery endpoint to observe the resulting state change.
+
+    In dedicated-agent mode, the account must belong to the configured agent.
+    When `E2EE_REQUEST_ENABLED` is enabled, `eoa_password` must be encrypted with the public key returned by `/e2ee`.
+
+    Errors:
+    - 400 `InvalidParameterError` (code 1): the EOA password does not match.
+    - 404: no matching agent account exists.
+    - 422: the request is invalid or selects an unsupported operation.
+    - 503 `SendTransactionError` (code 2): transaction submission fails, including a contract revert.
+    """
 
     # Search for agent account
     if DEDICATED_DVP_AGENT_MODE:
