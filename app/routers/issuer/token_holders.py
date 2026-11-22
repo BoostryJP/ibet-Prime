@@ -750,7 +750,7 @@ async def retrieve_token_holders_collection(
         Sequence[tuple[TokenHolder, IDXPersonalInfo | None]],
         (await db.execute(stmt)).tuples().all(),
     )
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,

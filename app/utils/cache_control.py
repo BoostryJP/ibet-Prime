@@ -16,6 +16,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import override
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
@@ -60,6 +62,7 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
             else self.DEFAULT_CACHE_ENABLED_STATUSES
         )
 
+    @override
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:

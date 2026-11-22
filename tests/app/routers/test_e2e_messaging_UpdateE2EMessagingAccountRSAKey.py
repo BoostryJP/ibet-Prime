@@ -150,7 +150,7 @@ class TestUpdateE2EMessagingAccountRSAKey:
         await async_db.commit()
 
         # request target api
-        req_param = {}
+        req_param: dict[str, object] = {}
         resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"
@@ -283,7 +283,7 @@ class TestUpdateE2EMessagingAccountRSAKey:
     # no data
     @pytest.mark.asyncio
     async def test_error_2(self, async_client: AsyncClient, async_db: AsyncSession):
-        req_param = {}
+        req_param: dict[str, object] = {}
         resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"

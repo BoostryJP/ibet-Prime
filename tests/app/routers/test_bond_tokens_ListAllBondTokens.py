@@ -134,7 +134,7 @@ class TestListAllBondTokens:
 
         resp = await async_client.get(self.apiurl)
 
-        assumed_response = [
+        assumed_response: list[dict[str, object]] = [
             {
                 "issuer_address": token.issuer_address,
                 "token_address": token.token_address,
@@ -339,7 +339,7 @@ class TestListAllBondTokens:
 
         resp = await async_client.get(self.apiurl)
 
-        assumed_response = [
+        assumed_response: list[dict[str, object]] = [
             {
                 "issuer_address": token_1.issuer_address,
                 "token_address": token_1.token_address,
@@ -569,7 +569,7 @@ class TestListAllBondTokens:
             self.apiurl, headers={"issuer-address": issuer_address_1}
         )
 
-        assumed_response = [
+        assumed_response: list[dict[str, object]] = [
             {
                 "issuer_address": token_1.issuer_address,
                 "token_address": token_1.token_address,
@@ -781,7 +781,7 @@ class TestListAllBondTokens:
             self.apiurl, headers={"issuer-address": issuer_address_1}
         )
 
-        assumed_response = [
+        assumed_response: list[dict[str, object]] = [
             {
                 "issuer_address": token_1.issuer_address,
                 "token_address": token_1.token_address,

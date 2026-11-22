@@ -34,7 +34,7 @@ class _ResponseValidationSample(BaseModel):
 class TestResponseValidationExceptionHandler:
     @staticmethod
     def _register_route(path: str, status_code: int) -> None:
-        async def endpoint():
+        async def endpoint() -> dict[str, None]:
             return {"value": None}
 
         app.add_api_route(

@@ -191,7 +191,7 @@ class TestRecordNewFreezeLog:
             "app.routers.misc.freeze_log.FREEZE_LOG_CONTRACT_ADDRESS",
             FREEZE_LOG_CONTRACT_ADDRESS,
         ):
-            req_param = {}
+            req_param: dict[str, object] = {}
             resp = await async_client.post(self.test_url, json=req_param)  # type: ignore
 
         # Assertion

@@ -329,7 +329,7 @@ async def create_fake_bond_token_contract(
 def get_fake_token_contract(token_address: str) -> MagicMock:
     contract = MagicMock()
     contract.address = token_address
-    contract.abi = {}
+    contract.abi = dict[str, object]()
     return contract
 
 

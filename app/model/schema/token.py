@@ -704,7 +704,7 @@ class TokenOperationLogResponse(BaseModel):
 class ListTokenOperationLogHistoryResponse(BaseModel):
     result_set: ResultSet
     history: list[TokenOperationLogResponse] = Field(
-        default=[], description="token update histories"
+        default=list[TokenOperationLogResponse](), description="token update histories"
     )
 
 

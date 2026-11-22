@@ -413,8 +413,8 @@ class Processor:
     ):
         if data_str is not None:
             try:
-                data = json.loads(data_str)
-                validated_data = DataMessage(**data)
+                data: dict[str, object] | None = json.loads(data_str)
+                validated_data = DataMessage.model_validate(data)
                 message = validated_data.message
             except ValidationError:
                 data = {}

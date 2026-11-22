@@ -2181,7 +2181,8 @@ class TestListSpecificBondTokenTransferApprovalHistory:
                 )
             )
         ).one()
-        for snapshot in ({"address": "保存住所"}, {}):
+        snapshots: tuple[dict[str, str], ...] = ({"address": "保存住所"}, {})
+        for snapshot in snapshots:
             history.from_address_personal_info = snapshot
             history.to_address_personal_info = snapshot
             await async_db.commit()
@@ -2206,7 +2207,7 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         # prepare data
         approval_filter_url = await self._prepare_filter_data(async_db)
 
-        for params, expected in (
+        amount_cases: tuple[tuple[dict[str, int], list[int]], ...] = (
             ({"amount": 20}, [103]),
             ({"amount": 20, "amount_operator": 0}, [103]),
             ({"amount": 20, "amount_operator": 1}, [106, 105, 104, 103]),
@@ -2216,7 +2217,8 @@ class TestListSpecificBondTokenTransferApprovalHistory:
             ({"amount": 0, "amount_operator": 2}, [101]),
             ({"amount_operator": 1}, [106, 105, 104, 103, 102, 101]),
             ({"amount": 99}, []),
-        ):
+        )
+        for params, expected in amount_cases:
             await self._assert_filtered(
                 async_client, approval_filter_url, params, expected
             )
@@ -2234,14 +2236,15 @@ class TestListSpecificBondTokenTransferApprovalHistory:
         # prepare data
         approval_filter_url = await self._prepare_filter_data(async_db)
 
-        for ids, expected in (
+        id_cases: tuple[tuple[list[int], list[int]], ...] = (
             ([102], [102]),
             ([101, 103], [103, 101]),
             ([103, 103, 999, 201], [103]),
             ([999], []),
             ([201], []),
             ([501], []),  # application_id is not the index row id.
-        ):
+        )
+        for ids, expected in id_cases:
             await self._assert_filtered(
                 async_client, approval_filter_url, {"ids": ids}, expected
             )

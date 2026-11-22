@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Literal
+from typing import Literal, override
 
 from fastapi import status
 from pydantic import BaseModel
@@ -180,6 +180,7 @@ class ContractRevertError(AppError):
         self.message = message
         super().__init__(message)
 
+    @override
     def __repr__(self):
         return f"<ContractRevertError(code={self.code}, message={self.message})>"
 

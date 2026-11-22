@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from asyncio import Semaphore, Task, TaskGroup
-from typing import Any, Coroutine, TypeVar
+from typing import Any, Coroutine, TypeVar, override
 
 T = TypeVar("T")
 
@@ -50,6 +50,7 @@ class SemaphoreTaskGroup(TaskGroup):
             dispatched: list[Task[T]] = [tg.create_task(coro) for coro in args]
         return dispatched
 
+    @override
     def create_task(
         self, coro: Coroutine[Any, Any, T], *args: Any, **kwargs: Any
     ) -> Task[T]:

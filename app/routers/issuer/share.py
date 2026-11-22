@@ -1459,7 +1459,7 @@ async def retrieve_batch_additional_share_issue_status(
         .all()
     )
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -1800,7 +1800,7 @@ async def list_all_batch_share_redemption(
     for record in record_list:
         record_list_by_upload_id[record[0].upload_id].append(record)
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -2018,7 +2018,7 @@ async def retrieve_batch_redeem(
         .all()
     )
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -2774,7 +2774,7 @@ async def list_all_share_token_holders(
         ]
     ] = (await db.execute(stmt)).tuples().all()
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -3062,7 +3062,7 @@ async def retrieve_share_token_holder(
                 modified = holder_lock_modified
 
     # Get personal information
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,

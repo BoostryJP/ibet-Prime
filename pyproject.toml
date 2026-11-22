@@ -113,10 +113,6 @@ project-includes = [
 python-version = "3.14"
 preset = "strict"
 
-[tool.pyrefly.errors]
-implicit-any-empty-container = false
-missing-override-decorator = false
-
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "session"
 addopts = "-m 'not alembic'"

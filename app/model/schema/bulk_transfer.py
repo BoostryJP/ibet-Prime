@@ -108,7 +108,7 @@ class BulkTransferUploadResponse(BaseModel):
 
     result_set: ResultSet
     bulk_transfer_uploads: list[BulkTransferUpload] = Field(
-        default=[], description="Bulk transfer uploads"
+        default=list[BulkTransferUpload](), description="Bulk transfer uploads"
     )
 
 

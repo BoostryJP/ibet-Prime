@@ -22,6 +22,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from ctypes.util import find_library
 from datetime import UTC, datetime
+from typing import override
 
 from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
@@ -142,6 +143,7 @@ async def lifespan(_: FastAPI):
 
 
 class PrimeAPI(FastAPI):
+    @override
     def openapi(self) -> OpenAPISchema:
         return custom_openapi(self)()
 

@@ -422,7 +422,7 @@ class TestCreateE2EMessagingAccount:
     # required field
     @pytest.mark.asyncio
     async def test_error_1_2(self, async_client: AsyncClient, async_db: AsyncSession):
-        req_param = {}
+        req_param: dict[str, object] = {}
         resp = await async_client.post(self.base_url, json=req_param)  # type: ignore
 
         # assertion

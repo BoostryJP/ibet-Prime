@@ -22,7 +22,7 @@ import sys
 import threading
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, cast
+from typing import Any, cast, override
 from weakref import WeakKeyDictionary
 
 from aiohttp import ClientError, ClientTimeout
@@ -157,7 +157,7 @@ class AsyncWeb3Wrapper:
             # Some call sites still resolve AsyncWeb3 outside a running loop.
             # Keep a separate per-thread cache for that fallback path.
             try:
-                async_web3_map = cast(
+                async_web3_map: AsyncWeb3CacheMap = cast(
                     AsyncWeb3CacheMap,
                     thread_local.async_web3_without_loop,
                 )
@@ -215,6 +215,7 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
         self._init_resolved_endpoint_cache()
         self.endpoint_uri: URI | None = None
 
+    @override
     def _get_cache_ttl(self) -> float:
         return float(WEB3_REQUEST_WAIT_TIME)
 
@@ -242,6 +243,7 @@ class FailOverHTTPProvider(ResolvedEndpointCacheMixin, HTTPProvider):
         self._set_cached_endpoint_uri(endpoint_uri)
         return endpoint_uri
 
+    @override
     def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         db_session = Session(autocommit=False, autoflush=True, bind=engine)
         try:
@@ -321,6 +323,7 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
             self._request_session_manager = session_manager
         self.endpoint_uri: URI | None = None
 
+    @override
     def _get_cache_ttl(self) -> float:
         return float(WEB3_REQUEST_WAIT_TIME)
 
@@ -348,6 +351,7 @@ class AsyncFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
         self._set_cached_endpoint_uri(endpoint_uri)
         return endpoint_uri
 
+    @override
     async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         db_session = AsyncSession(autocommit=False, autoflush=True, bind=async_engine)
         try:
