@@ -79,13 +79,6 @@ See [migrations/README.md](migrations/README.md).
 
 You can create a `.env` file to define local environment variables.
 
-### Type checking
-
-Run `make typecheck` to check the application, batch jobs, and tests with Pyrefly.
-The strict configuration is in `pyproject.toml`; type errors fail the check.
-The `implicit-any-empty-container` and `missing-override-decorator` checks are
-disabled explicitly.
-
 ### Running tests
 
 For test container startup, see [docker-compose.yml](docker-compose.yml).
