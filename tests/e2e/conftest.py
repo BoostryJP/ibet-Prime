@@ -23,16 +23,18 @@ import threading
 import time
 from collections.abc import AsyncGenerator, Iterator
 from dataclasses import dataclass
-from typing import Any, Protocol, TypedDict
+from typing import Any, TypedDict
 
 import pytest
 import pytest_asyncio
 import uvicorn
 from fastapi import HTTPException
 from playwright.async_api import Browser, async_playwright
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import db_async_session
 from app.main import app
+from app.model.schema.bc_explorer import ListBlockDataQuery
 from app.routers.misc import bc_explorer, bc_explorer_ui
 
 
@@ -50,19 +52,6 @@ class ExplorerSeedData:
     tx_hash: str
     from_address: str
     to_address: str
-
-
-class BlockQuery(Protocol):
-    """
-    Query parameters for listing blocks in the explorer.
-    """
-
-    from_block_number: int | None
-    to_block_number: int | None
-    sort_order: int | None
-    limit: int | None
-    offset: int | None
-    has_transactions: bool | None
 
 
 class BlockDataRow(TypedDict):
@@ -226,11 +215,13 @@ def enable_bc_explorer_ui() -> Iterator[None]:
     original_get_block_data = bc_explorer.service_get_block_data
     original_get_tx_data = bc_explorer.service_get_tx_data
 
-    async def _mock_get_latest_block_number(_: Any) -> int:
+    async def _mock_get_latest_block_number(db: AsyncSession) -> int:
         """Return the latest block number from the seed data."""
         return EXPLORER_SEED_DATA.latest_block_number
 
-    async def _mock_list_block_data(db: Any, get_query: BlockQuery) -> dict[str, Any]:
+    async def _mock_list_block_data(
+        db: AsyncSession, get_query: ListBlockDataQuery
+    ) -> dict[str, Any]:
         """Return a list of blocks based on the seed data, applying filters and pagination from the query."""
         blocks: list[BlockDataRow] = [
             _make_block_data(
@@ -281,32 +272,38 @@ def enable_bc_explorer_ui() -> Iterator[None]:
             "block_data": sliced_blocks,
         }
 
-    async def _mock_get_block_data(db: Any, block_number: int) -> BlockDetailRow:
+    async def _mock_get_block_data(
+        db: AsyncSession, block_number: int
+    ) -> dict[str, Any]:
         """Return block details based on the block number, using the seed data."""
         if block_number == EXPLORER_SEED_DATA.block_with_transactions_number:
-            return _make_block_detail(
-                EXPLORER_SEED_DATA.block_with_transactions_number,
-                EXPLORER_SEED_DATA.block_with_transactions_hash,
-                [EXPLORER_SEED_DATA.tx_hash],
+            return dict(
+                _make_block_detail(
+                    EXPLORER_SEED_DATA.block_with_transactions_number,
+                    EXPLORER_SEED_DATA.block_with_transactions_hash,
+                    [EXPLORER_SEED_DATA.tx_hash],
+                )
             )
         if block_number == EXPLORER_SEED_DATA.block_without_transactions_number:
-            return _make_block_detail(
-                EXPLORER_SEED_DATA.block_without_transactions_number,
-                EXPLORER_SEED_DATA.block_without_transactions_hash,
-                [],
+            return dict(
+                _make_block_detail(
+                    EXPLORER_SEED_DATA.block_without_transactions_number,
+                    EXPLORER_SEED_DATA.block_without_transactions_hash,
+                    [],
+                )
             )
         raise HTTPException(status_code=404, detail="block data not found")
 
-    async def _mock_get_tx_data(db: Any, hash: str) -> TxDetailRow:
+    async def _mock_get_tx_data(db: AsyncSession, hash: str) -> dict[str, Any]:
         """Return transaction details based on the transaction hash, using the seed data."""
         if hash == EXPLORER_SEED_DATA.tx_hash:
-            return _make_tx_detail(hash)
+            return dict(_make_tx_detail(hash))
         raise HTTPException(status_code=404, detail="block data not found")
 
     bc_explorer_ui.BC_EXPLORER_ENABLED = True
 
     # The UI module uses a private helper, so we replace it directly for the test run.
-    bc_explorer_ui._get_latest_block_number = _mock_get_latest_block_number  # pyright: ignore[reportPrivateUsage]
+    bc_explorer_ui._get_latest_block_number = _mock_get_latest_block_number
     bc_explorer.service_list_block_data = _mock_list_block_data
     bc_explorer.service_get_block_data = _mock_get_block_data
     bc_explorer.service_get_tx_data = _mock_get_tx_data
@@ -324,7 +321,7 @@ def enable_bc_explorer_ui() -> Iterator[None]:
 
     # Restore the original services and router after the test completes.
     bc_explorer_ui.BC_EXPLORER_ENABLED = original_bc_enabled
-    bc_explorer_ui._get_latest_block_number = original_get_latest_block_number  # pyright: ignore[reportPrivateUsage]
+    bc_explorer_ui._get_latest_block_number = original_get_latest_block_number
     bc_explorer.service_list_block_data = original_list_block_data
     bc_explorer.service_get_block_data = original_get_block_data
     bc_explorer.service_get_tx_data = original_get_tx_data

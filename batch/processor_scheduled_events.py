@@ -42,6 +42,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     ScheduledEvents,
+    ScheduledEventStatus,
     ScheduledEventType,
     TokenType,
     TokenUpdateOperationCategory,
@@ -173,7 +174,9 @@ class Processor:
                 ):  # If issuer does not exist, update the status of the upload to ERROR
                     LOG.warning(f"Issuer of the event_id:{_event.id} does not exist")
                     await self.__sink_on_finish_event_process(
-                        db_session=db_session, record_id=_event.id, status=2
+                        db_session=db_session,
+                        record_id=_event.id,
+                        status=ScheduledEventStatus.FAILED,
                     )
                     await self.__sink_on_error_notification(
                         db_session=db_session,
@@ -197,7 +200,9 @@ class Processor:
                     f"Could not get the private key of the issuer of id:{_event.id}"
                 )
                 await self.__sink_on_finish_event_process(
-                    db_session=db_session, record_id=_event.id, status=2
+                    db_session=db_session,
+                    record_id=_event.id,
+                    status=ScheduledEventStatus.FAILED,
                 )
                 await self.__sink_on_error_notification(
                     db_session=db_session,
@@ -253,14 +258,18 @@ class Processor:
                         )
 
                 await self.__sink_on_finish_event_process(
-                    db_session=db_session, record_id=_event.id, status=1
+                    db_session=db_session,
+                    record_id=_event.id,
+                    status=ScheduledEventStatus.SUCCEEDED,
                 )
             except ContractRevertError as e:
                 LOG.warning(
                     f"Transaction reverted: id=<{_event.id}> error_code:<{e.code}> error_msg:<{e.message}>"
                 )
                 await self.__sink_on_finish_event_process(
-                    db_session=db_session, record_id=_event.id, status=2
+                    db_session=db_session,
+                    record_id=_event.id,
+                    status=ScheduledEventStatus.FAILED,
                 )
                 await self.__sink_on_error_notification(
                     db_session=db_session,
@@ -273,7 +282,9 @@ class Processor:
             except SendTransactionError:
                 LOG.warning(f"Failed to send transaction: id=<{_event.id}>")
                 await self.__sink_on_finish_event_process(
-                    db_session=db_session, record_id=_event.id, status=2
+                    db_session=db_session,
+                    record_id=_event.id,
+                    status=ScheduledEventStatus.FAILED,
                 )
                 await self.__sink_on_error_notification(
                     db_session=db_session,
@@ -289,7 +300,7 @@ class Processor:
 
     @staticmethod
     async def __sink_on_finish_event_process(
-        db_session: AsyncSession, record_id: int, status: int
+        db_session: AsyncSession, record_id: int, status: ScheduledEventStatus
     ):
         await db_session.execute(
             update(ScheduledEvents)

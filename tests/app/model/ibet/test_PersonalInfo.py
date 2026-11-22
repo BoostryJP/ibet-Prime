@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.exceptions import ContractLogicError, TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import Wei
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import Account, AccountRsaStatus
@@ -115,7 +116,7 @@ class TestGetInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -146,7 +147,7 @@ class TestGetInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -213,7 +214,7 @@ class TestGetInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -260,7 +261,7 @@ class TestGetInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -356,7 +357,7 @@ class TestRegisterInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -492,7 +493,7 @@ class TestModifyInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -560,7 +561,7 @@ class TestModifyInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -627,7 +628,7 @@ class TestModifyInfo:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -738,7 +739,7 @@ class TestGetRegisterEvent:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -800,7 +801,7 @@ class TestGetModifyEvent:
                 "nonce": web3.eth.get_transaction_count(setting_user["address"]),  # type: ignore
                 "from": setting_user["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )
@@ -835,7 +836,7 @@ class TestGetModifyEvent:
                 "nonce": web3.eth.get_transaction_count(issuer["address"]),  # type: ignore
                 "from": issuer["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
                 "chainId": CHAIN_ID,
             }
         )

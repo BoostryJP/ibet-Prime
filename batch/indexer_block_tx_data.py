@@ -72,18 +72,18 @@ class Processor:
                 block_model.sha3_uncles = block_data.get("sha3Uncles").to_0x_hex()  # type: ignore
                 block_model.miner = block_data.get("miner")
                 block_model.state_root = block_data.get("stateRoot").to_0x_hex()  # type: ignore
-                block_model.transactions_root = block_data.get(
+                block_model.transactions_root = block_data[
                     "transactionsRoot"
-                ).to_0x_hex()  # type: ignore
+                ].to_0x_hex()
                 block_model.receipts_root = block_data.get("receiptsRoot").to_0x_hex()  # type: ignore
                 block_model.logs_bloom = block_data.get("logsBloom").to_0x_hex()  # type: ignore
                 block_model.difficulty = block_data.get("difficulty")
                 block_model.gas_limit = block_data.get("gasLimit")
                 block_model.gas_used = block_data.get("gasUsed")
                 block_model.timestamp = block_data.get("timestamp")
-                block_model.proof_of_authority_data = block_data.get(
+                block_model.proof_of_authority_data = block_data[
                     "proofOfAuthorityData"
-                ).to_0x_hex()  # type: ignore
+                ].to_0x_hex()
                 block_model.mix_hash = block_data.get("mixHash").to_0x_hex()  # type: ignore
                 block_model.nonce = block_data.get("nonce").to_0x_hex()  # type: ignore
                 block_model.hash = block_data.get("hash").to_0x_hex()  # type: ignore

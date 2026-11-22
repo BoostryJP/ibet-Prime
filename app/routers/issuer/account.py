@@ -967,7 +967,7 @@ async def list_all_child_account(
         )
     if get_query.name is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["name"]  # pyright: ignore[reportPrivateUsage]
+            IDXPersonalInfo._personal_info["name"]
             .as_string()
             .like("%" + get_query.name + "%")
         )
@@ -1025,7 +1025,7 @@ async def list_all_child_account(
             )
         case ListAllChildAccountSortItem.name:
             stmt = stmt.order_by(
-                _order(_sort_order)(IDXPersonalInfo._personal_info["name"].as_string())  # pyright: ignore[reportPrivateUsage]
+                _order(_sort_order)(IDXPersonalInfo._personal_info["name"].as_string())
             )
         case ListAllChildAccountSortItem.created:
             stmt = stmt.order_by(_order(_sort_order)(IDXPersonalInfo.created))

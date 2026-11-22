@@ -4598,7 +4598,7 @@ async def list_specific_bond_token_transfer_approval_history(
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
-        stmt = stmt.order_by(desc(sort_attr))
+        stmt = stmt.order_by(sort_attr.desc())
     if get_query.sort_item != IDXTransferApprovalsSortItem.ID:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(subquery.id))

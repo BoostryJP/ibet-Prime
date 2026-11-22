@@ -191,6 +191,7 @@ class TestProcessor:
                 .limit(1)
             )
         ).first()
+        assert _node is not None
         assert _node.is_synced == True
 
     # <Normal_3>

@@ -100,6 +100,12 @@ Swagger UI 形式のドキュメントを参照することができるはずで
 
 ローカル環境の環境変数は、`.env` ファイルを作成し、定義することが可能です。
 
+### 型チェック
+
+`make typecheck` で、アプリケーション・バッチ・テストを Pyrefly で検査します。
+strict 設定は `pyproject.toml` にあり、型エラーはチェック失敗になります。
+`implicit-any-empty-container` と `missing-override-decorator` は明示的に無効化しています。
+
 ### テスト実行
 
 テスト用コンテナの起動に関しては、`docker-compose.yml` を参照してください。

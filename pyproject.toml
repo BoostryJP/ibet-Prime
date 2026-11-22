@@ -37,7 +37,7 @@ dependencies = [
 dev = [
     "pytest>=9.1.1,<10.0.0",
     "pytest-cov>=6.0.0,<8.0.0",
-    "pyright>=1.1.411",
+    "pyrefly>=1.4.1,<2.0.0",
     "pyyaml<7.0,>=6.0",
     "pre-commit>=4.6.1,<5.0.0",
     "ruff>=0.16.1,<1.0.0",
@@ -99,6 +99,23 @@ exclude = ["migrations/*"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
+
+[tool.pyrefly]
+project-includes = [
+    "config.py",
+    "eth_config.py",
+    "avalanche_config.py",
+    "app/",
+    "batch/",
+    "tests/",
+    "server.py",
+]
+python-version = "3.14"
+preset = "strict"
+
+[tool.pyrefly.errors]
+implicit-any-empty-container = false
+missing-override-decorator = false
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "session"

@@ -19,8 +19,9 @@ SPDX-License-Identifier: Apache-2.0
 
 from collections.abc import Callable
 from enum import Enum
-from functools import lru_cache
-from typing import Any, TypeAlias, Union
+from functools import lru_cache, reduce
+from operator import or_
+from typing import Any, TypeAlias, TypedDict
 
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
@@ -125,7 +126,12 @@ class Error503Model(BaseModel):
     detail: str
 
 
-DEFAULT_RESPONSE: dict[int, dict[str, str | type[BaseModel]]] = {
+class DefaultResponse(TypedDict):
+    description: str
+    model: type[BaseModel]
+
+
+DEFAULT_RESPONSE: dict[int, DefaultResponse] = {
     400: {
         "description": "Invalid Parameter Error / Send Transaction Error / Contract Revert Error etc",
         "model": Error400Model,
@@ -139,6 +145,17 @@ DEFAULT_RESPONSE: dict[int, dict[str, str | type[BaseModel]]] = {
 }
 
 
+def _create_error_code_enum(app_error: type[AppError]) -> type[Enum]:
+    """Build an enum whose name and members come from the error class at runtime."""
+    if app_error.code is not None:
+        codes = [app_error.code]
+    elif app_error.code_list is not None:
+        codes = app_error.code_list
+    else:
+        raise ValueError("AppError must have either 'code' or 'code_list' defined.")
+    return Enum(f"{app_error.__name__}Code", {str(code): code for code in codes})
+
+
 @lru_cache(None)
 def create_error_model(app_error: type[AppError]) -> type[BaseModel]:
     """
@@ -150,16 +167,7 @@ def create_error_model(app_error: type[AppError]) -> type[BaseModel]:
     @return: pydantic Model created dynamically
     """
     base_name = app_error.__name__
-    if app_error.code is not None:
-        error_code_enum = Enum(
-            f"{base_name}Code", {f"{app_error.code}": app_error.code}
-        )
-    elif app_error.code_list is not None:
-        error_code_enum = Enum(
-            f"{base_name}Code", {f"{code}": code for code in app_error.code_list}
-        )
-    else:
-        raise ValueError("AppError must have either 'code' or 'code_list' defined.")
+    error_code_enum = _create_error_code_enum(app_error)
     metainfo_model = create_model(
         f"{base_name}Metainfo",
         code=(
@@ -196,7 +204,7 @@ def get_routers_responses(
     @param args: tuple of AppError
     @return: responses dict
     """
-    responses_per_status_code: dict[int, list[str | type[BaseModel]]] = {}
+    responses_per_status_code: dict[int, list[type[BaseModel]]] = {}
     for arg in args:
         if not isinstance(arg, int):
             responses_per_status_code.setdefault(arg.status_code, [])
@@ -213,7 +221,7 @@ def get_routers_responses(
         if len(error_models) > 0:
             default_response = DEFAULT_RESPONSE.get(status_code)
             responses[status_code] = {
-                "model": Union[tuple(set(error_models))],
+                "model": reduce(or_, set(error_models)),
                 "description": default_response["description"]
                 if default_response is not None
                 else "",
