@@ -59,6 +59,8 @@ dev = [
     "opentelemetry-instrumentation-sqlalchemy>=0.54b0,<1.0.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.33.1,<2.0.0",
     "playwright>=1.62.0",
+    "types-pytz>=2026.6.0.20261031",
+    "types-pyyaml>=6.0.12.20261113",
 ]
 
 [tool.ruff]
@@ -112,6 +114,7 @@ project-includes = [
 ]
 python-version = "3.14"
 preset = "strict"
+min-severity = "warn"
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "session"

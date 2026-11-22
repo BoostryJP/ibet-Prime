@@ -1030,7 +1030,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 self.base_fx_rate = 0.0
 
             interest_payment_date_list: list[str] = []
-            interest_payment_date_string = str(_interest_payment_date).replace("'", '"')
+            interest_payment_date_string = _interest_payment_date.replace("'", '"')
             interest_payment_date: dict[str, str] = {}
             try:
                 if interest_payment_date_string != "":

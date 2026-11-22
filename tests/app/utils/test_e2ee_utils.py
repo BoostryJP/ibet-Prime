@@ -97,11 +97,11 @@ class TestE2EEUtils:
         with (
             mock.patch("app.utils.e2ee_utils.E2EE_RSA_PASSPHRASE", None),
             mock.patch(
-                "app.utils.e2ee_utils.E2EEUtils._E2EEUtils__get_rsa_settings",
+                "app.utils.e2ee_utils.E2EEUtils._get_rsa_settings",
                 return_value=validated_rsa_settings,
             ),
             mock.patch(
-                "app.utils.e2ee_utils.E2EEUtils._E2EEUtils__get_crypto_data",
+                "app.utils.e2ee_utils.E2EEUtils._get_crypto_data",
                 return_value=crypto_data,
             ) as mock_get_crypto_data,
             mock.patch("app.utils.e2ee_utils.RSA.importKey") as mock_import_key,

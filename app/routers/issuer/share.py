@@ -1390,7 +1390,7 @@ async def issue_additional_shares_in_batch(
 
     await db.commit()
 
-    return json_response({"batch_id": str(upload_id)})
+    return json_response({"batch_id": upload_id})
 
 
 # GET: /share/tokens/{token_address}/additional_issue/batch/{batch_id}
@@ -1949,7 +1949,7 @@ async def redeem_shares_in_batch(
 
     await db.commit()
 
-    return json_response({"batch_id": str(upload_id)})
+    return json_response({"batch_id": upload_id})
 
 
 # GET: /share/tokens/{token_address}/redeem/batch/{batch_id}
@@ -5304,7 +5304,7 @@ async def bulk_transfer_share_token_ownership(
 
     await db.commit()
 
-    return json_response({"upload_id": str(upload_id)})
+    return json_response({"upload_id": upload_id})
 
 
 # GET: /share/bulk_transfer

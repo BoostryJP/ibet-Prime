@@ -207,8 +207,8 @@ class Processor:
         # Check block synchronization status
         syncing = web3.eth.syncing
         if isinstance(syncing, dict):
-            remaining_blocks = int(syncing.get("highestBlock", 0)) - int(
-                syncing.get("currentBlock", 0)
+            remaining_blocks = syncing.get("highestBlock", 0) - syncing.get(
+                "currentBlock", 0
             )
             if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
                 # If the remaining blocks are more than the threshold, mark as not synced

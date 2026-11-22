@@ -90,7 +90,7 @@ class FakeAsyncEth:
         return {"timestamp": 1_700_000_000 + block_number}
 
     async def get_transaction(self, transaction_hash: str) -> dict[str, str]:
-        return {"from": _TRANSACTIONS[str(transaction_hash)]}
+        return {"from": _TRANSACTIONS[transaction_hash]}
 
 
 class FakeAsyncWeb3:

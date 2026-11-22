@@ -91,7 +91,7 @@ class Processor:
                 issuer_pk = bytes.fromhex(_account.issuer_public_key)
 
                 # Derive the child address
-                index_sk = int(_tmp.child_account_index).to_bytes(32)
+                index_sk = _tmp.child_account_index.to_bytes(32)
                 index_pk = private_key_to_public_key(index_sk)
 
                 child_pk_uncompressed = combine_public_keys(

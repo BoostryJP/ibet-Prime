@@ -754,7 +754,7 @@ async def create_child_account(
 
     assert _child_index is not None
     index = _child_index.next_index
-    index_sk = int(index).to_bytes(32)
+    index_sk = index.to_bytes(32)
     index_pk = private_key_to_public_key(index_sk)
 
     # Derive the child address
