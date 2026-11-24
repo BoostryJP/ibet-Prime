@@ -52,7 +52,7 @@ class E2EEUtils:
         :param data: Data to encrypt
         :return: Base64-encoded encrypted data
         """
-        crypto_data = E2EEUtils.__get_crypto_data()
+        crypto_data = E2EEUtils._get_crypto_data()
         public_key = cast(str | None, crypto_data.get("public_key"))
         if public_key is None:
             return data
@@ -70,8 +70,8 @@ class E2EEUtils:
         :param base64_encrypt_data: Base64-encoded encrypted data
         :return: Decrypted data
         """
-        rsa_settings = E2EEUtils.__get_rsa_settings()
-        crypto_data = E2EEUtils.__get_crypto_data()
+        rsa_settings = E2EEUtils._get_rsa_settings()
+        crypto_data = E2EEUtils._get_crypto_data()
         private_key = cast(str | None, crypto_data.get("private_key"))
         if private_key is None:
             return base64_encrypt_data
@@ -104,14 +104,14 @@ class E2EEUtils:
 
         :return: Private Key, Public Key
         """
-        crypto_data = E2EEUtils.__get_crypto_data()
+        crypto_data = E2EEUtils._get_crypto_data()
         return (
             cast(str | None, crypto_data.get("private_key")),
             cast(str | None, crypto_data.get("public_key")),
         )
 
     @staticmethod
-    def __get_rsa_settings() -> tuple[int, str, str]:
+    def _get_rsa_settings() -> tuple[int, str, str]:
         if E2EE_RSA_RESOURCE_MODE is None:
             raise ValueError("E2EE_RSA_RESOURCE_MODE is not configured")
         if E2EE_RSA_RESOURCE is None:
@@ -126,7 +126,7 @@ class E2EEUtils:
         )
 
     @staticmethod
-    def __get_crypto_data() -> DictCache:
+    def _get_crypto_data() -> DictCache:
         if E2EEUtils.cache.get("expiration_datetime") is None:
             cast(Any, E2EEUtils.cache).update(
                 **{
@@ -137,7 +137,7 @@ class E2EEUtils:
                 }
             )
 
-        rsa_resource_mode, rsa_resource, rsa_passphrase = E2EEUtils.__get_rsa_settings()
+        rsa_resource_mode, rsa_resource, rsa_passphrase = E2EEUtils._get_rsa_settings()
 
         # Use Cache
         expiration_datetime = cast(

@@ -178,8 +178,8 @@ class Processor:
         # Check sync to other node
         syncing = web3.eth.syncing
         if isinstance(syncing, dict):
-            remaining_blocks = int(syncing.get("highestBlock", 0)) - int(
-                syncing.get("currentBlock", 0)
+            remaining_blocks = syncing.get("highestBlock", 0) - syncing.get(
+                "currentBlock", 0
             )
             if remaining_blocks > BLOCK_SYNC_REMAINING_THRESHOLD:
                 is_synced = False

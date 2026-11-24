@@ -17,6 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from decimal import Decimal
 from typing import Annotated, Any, Optional, Sequence, cast
 
 from eth_keyfile.keyfile import decode_keyfile_json
@@ -173,7 +174,7 @@ async def list_all_positions(
     if request_query.offset is not None:
         stmt = stmt.offset(request_query.offset)
 
-    _position_list: Sequence[tuple[IDXPosition, int | None, Token]] = (
+    _position_list: Sequence[tuple[IDXPosition, int | Decimal | None, Token]] = (
         (await db.execute(stmt.options(defer(Token.abi)))).tuples().all()
     )
 

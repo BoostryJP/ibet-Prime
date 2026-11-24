@@ -47,13 +47,9 @@ def _load_ava_master_private_key() -> str | None:
     if secret_id is None:
         return None
 
-    client: Any = boto3.client(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        "secretsmanager", region_name=AWS_REGION_NAME
-    )
-    secret_value: Any = client.get_secret_value(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
-        SecretId=secret_id
-    )
-    return cast(str | None, secret_value.get("SecretString"))  # pyright: ignore[reportUnknownMemberType]
+    client: Any = boto3.client("secretsmanager", region_name=AWS_REGION_NAME)
+    secret_value: Any = client.get_secret_value(SecretId=secret_id)
+    return cast(str | None, secret_value.get("SecretString"))
 
 
 AVA_MASTER_PRIVATE_KEY: str | None = _load_ava_master_private_key()

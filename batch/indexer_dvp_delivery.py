@@ -333,7 +333,7 @@ class Processor:
                 #   }
                 raw_data: str = args.get("data")
                 try:
-                    raw_data_json = json.loads(raw_data)
+                    raw_data_json: dict[str, str | None] = json.loads(raw_data)
                 except JSONDecodeError:
                     raw_data_json = {
                         "encryption_algorithm": None,

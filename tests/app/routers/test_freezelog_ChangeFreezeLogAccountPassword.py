@@ -89,7 +89,7 @@ class TestChangeFreezeLogAccountPassword:
         user_address_1 = user_1["address"]
 
         # Request target api
-        req_param = {}
+        req_param: dict[str, object] = {}
         resp = await async_client.post(
             self.base_url.format(account_address=user_address_1),
             json=req_param,  # type: ignore

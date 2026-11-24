@@ -21,6 +21,7 @@ from typing import Any, Dict
 
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import Wei
 
 from app.utils.ibet_contract_utils import ContractUtils
 from config import CHAIN_ID, TX_GAS_LIMIT, WEB3_HTTP_PROVIDER
@@ -45,7 +46,12 @@ class PersonalInfoContractTestUtils:
             contract_name="PersonalInfo", contract_address=contract_address
         )
         tx = personal_info_contract.functions.register(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -89,7 +95,12 @@ class IbetStandardTokenUtils:
             contract_address=contract_address,
         )
         tx = token_contract.functions.transfer(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         tx_hash, _ = ContractUtils.send_transaction(
             transaction=tx, private_key=private_key
@@ -116,7 +127,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.transfer(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -129,7 +145,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.bulkTransfer(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -140,7 +161,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.lock(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -153,7 +179,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.forceLock(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -166,7 +197,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.unlock(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -179,7 +215,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.forceUnlock(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -194,7 +235,12 @@ class IbetSecurityTokenContractTestUtils:
         tx = security_token_contract.functions.forceChangeLockedAccount(
             *args
         ).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -207,7 +253,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.issueFrom(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -220,7 +271,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.redeemFrom(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -235,7 +291,12 @@ class IbetSecurityTokenContractTestUtils:
         tx = security_token_contract.functions.setTransferApprovalRequired(
             *args
         ).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -250,7 +311,12 @@ class IbetSecurityTokenContractTestUtils:
         tx = security_token_contract.functions.applyForTransfer(
             *args
         ).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -263,7 +329,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.cancelTransfer(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -276,7 +347,12 @@ class IbetSecurityTokenContractTestUtils:
             contract_address=contract_address,
         )
         tx = security_token_contract.functions.approveTransfer(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -299,7 +375,12 @@ class IbetExchangeContractTestUtils:
             contract_name="IbetExchange", contract_address=contract_address
         )
         tx = exchange_contract.functions.createOrder(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -318,7 +399,12 @@ class IbetExchangeContractTestUtils:
             contract_name="IbetExchange", contract_address=contract_address
         )
         tx = exchange_contract.functions.forceCancelOrder(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -330,7 +416,12 @@ class IbetExchangeContractTestUtils:
             contract_name="IbetExchange", contract_address=contract_address
         )
         tx = exchange_contract.functions.cancelOrder(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -342,7 +433,12 @@ class IbetExchangeContractTestUtils:
             contract_name="IbetExchange", contract_address=contract_address
         )
         tx = exchange_contract.functions.executeOrder(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -361,7 +457,12 @@ class IbetExchangeContractTestUtils:
             contract_name="IbetExchange", contract_address=contract_address
         )
         tx = exchange_contract.functions.cancelAgreement(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -373,7 +474,12 @@ class IbetExchangeContractTestUtils:
             contract_name="IbetExchange", contract_address=contract_address
         )
         tx = exchange_contract.functions.confirmAgreement(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -396,7 +502,12 @@ class IbetSecurityTokenEscrowContractTestUtils:
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
         )
         tx = escrow_contract.functions.createEscrow(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -408,7 +519,12 @@ class IbetSecurityTokenEscrowContractTestUtils:
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
         )
         tx = escrow_contract.functions.cancelEscrow(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -420,7 +536,12 @@ class IbetSecurityTokenEscrowContractTestUtils:
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
         )
         tx = escrow_contract.functions.approveTransfer(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -432,7 +553,12 @@ class IbetSecurityTokenEscrowContractTestUtils:
             contract_name="IbetSecurityTokenEscrow", contract_address=contract_address
         )
         tx = escrow_contract.functions.finishEscrow(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -460,7 +586,12 @@ class IbetSecurityTokenDVPContractTestUtils:
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
         )
         tx = dvp_contract.functions.createDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -472,7 +603,12 @@ class IbetSecurityTokenDVPContractTestUtils:
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
         )
         tx = dvp_contract.functions.cancelDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -484,7 +620,12 @@ class IbetSecurityTokenDVPContractTestUtils:
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
         )
         tx = dvp_contract.functions.confirmDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -496,7 +637,12 @@ class IbetSecurityTokenDVPContractTestUtils:
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
         )
         tx = dvp_contract.functions.finishDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 
@@ -508,7 +654,12 @@ class IbetSecurityTokenDVPContractTestUtils:
             contract_name="IbetSecurityTokenDVP", contract_address=contract_address
         )
         tx = dvp_contract.functions.abortDelivery(*args).build_transaction(
-            {"chainId": CHAIN_ID, "from": tx_from, "gas": TX_GAS_LIMIT, "gasPrice": 0}
+            {
+                "chainId": CHAIN_ID,
+                "from": tx_from,
+                "gas": TX_GAS_LIMIT,
+                "gasPrice": Wei(0),
+            }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=private_key)
 

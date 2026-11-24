@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
 from web3.exceptions import ContractLogicError, TimeExhausted
 from web3.middleware import ExtraDataToPOAMiddleware
+from web3.types import Wei
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.ibet import IbetSecurityTokenEscrow, IbetStraightBondContract
@@ -78,7 +79,7 @@ def deploy_security_token_escrow_contract():
             "chainId": CHAIN_ID,
             "from": deployer["address"],
             "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
+            "gasPrice": Wei(0),
         }
     )
     ContractUtils.send_transaction(transaction=tx, private_key=private_key)
@@ -118,7 +119,7 @@ async def issue_bond_token(issuer: UnitTestAccount, exchange_address: str):
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
+            "gasPrice": Wei(0),
         }
     )
     ContractUtils.send_transaction(transaction=tx, private_key=issuer_pk)
@@ -131,7 +132,7 @@ async def issue_bond_token(issuer: UnitTestAccount, exchange_address: str):
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
+            "gasPrice": Wei(0),
         }
     )
     ContractUtils.send_transaction(transaction=tx, private_key=issuer_pk)
@@ -147,7 +148,7 @@ async def issue_bond_token(issuer: UnitTestAccount, exchange_address: str):
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
+            "gasPrice": Wei(0),
         }
     )
     ContractUtils.send_transaction(transaction=tx, private_key=issuer_pk)
@@ -158,7 +159,7 @@ async def issue_bond_token(issuer: UnitTestAccount, exchange_address: str):
             "chainId": CHAIN_ID,
             "from": issuer_address,
             "gas": TX_GAS_LIMIT,
-            "gasPrice": 0,
+            "gasPrice": Wei(0),
         }
     )
     ContractUtils.send_transaction(transaction=tx, private_key=issuer_pk)
@@ -208,7 +209,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)
@@ -219,7 +220,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user1_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user1_account_pk)
@@ -232,7 +233,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)
@@ -250,7 +251,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)
@@ -262,7 +263,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)
@@ -331,7 +332,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)
@@ -342,7 +343,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user1_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user1_account_pk)
@@ -355,7 +356,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)
@@ -373,7 +374,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)
@@ -385,7 +386,7 @@ class TestApproveTransfer:
                 "chainId": CHAIN_ID,
                 "from": user2_account["address"],
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(transaction=tx, private_key=user2_account_pk)

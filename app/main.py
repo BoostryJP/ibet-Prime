@@ -22,6 +22,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from ctypes.util import find_library
 from datetime import UTC, datetime
+from typing import override
 
 from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
@@ -64,7 +65,7 @@ from app.routers.misc import (
 )
 from app.utils import o11y_utils
 from app.utils.cache_control import CacheControlMiddleware
-from app.utils.docs_utils import custom_openapi
+from app.utils.docs_utils import OpenAPISchema, custom_openapi
 from config import (
     APP_ENV,
     BC_EXPLORER_ENABLED,
@@ -141,7 +142,13 @@ async def lifespan(_: FastAPI):
     await on_shutdown()
 
 
-app = FastAPI(
+class PrimeAPI(FastAPI):
+    @override
+    def openapi(self) -> OpenAPISchema:
+        return custom_openapi(self)()
+
+
+app = PrimeAPI(
     title="ibet Prime",
     description="Security token management system for ibet network",
     version="26.12",
@@ -165,8 +172,6 @@ async def api_call_handler(
     output_access_log(request, response, request_start_time)
     return response
 
-
-app.openapi = custom_openapi(app)
 
 libc = ctypes.CDLL(find_library("c"))
 

@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import time
 from dataclasses import dataclass
-from typing import cast
+from typing import cast, override
 
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from eth_typing import URI
@@ -73,6 +73,7 @@ class KeepAliveHTTPSessionManager(HTTPSessionManager):
             connector=TCPConnector(),
         )
 
+    @override
     async def async_cache_and_return_session(
         self,
         endpoint_uri: URI,

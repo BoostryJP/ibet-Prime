@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from web3.exceptions import TimeExhausted
+from web3.types import Wei
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model import EthereumAddress
@@ -103,7 +104,7 @@ class IbetSecurityTokenEscrow(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -151,7 +152,7 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -192,7 +193,7 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -221,7 +222,7 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -256,7 +257,7 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -291,7 +292,7 @@ class IbetSecurityTokenDVP(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -339,7 +340,7 @@ class IbetSecurityTokenDVPNoWait(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash = await AsyncContractUtils.send_transaction_no_wait(
@@ -370,7 +371,7 @@ class IbetSecurityTokenDVPNoWait(IbetExchangeInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash = await AsyncContractUtils.send_transaction_no_wait(

@@ -122,7 +122,7 @@ class TestChangeE2EMessagingAccountEOAPassword:
     async def test_error_1_2(
         self, async_client: AsyncClient, async_db: AsyncSession
     ) -> None:
-        req_param = {}
+        req_param: dict[str, object] = {}
         resp = await async_client.post(
             self.base_url.format(
                 account_address="0x1234567890123456789012345678900000000000"

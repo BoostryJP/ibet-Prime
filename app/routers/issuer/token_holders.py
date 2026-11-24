@@ -98,11 +98,11 @@ async def list_all_token_holders_personal_info(
     match get_query.key_manager_type:
         case KeyManagerType.SELF:
             stmt = stmt.where(
-                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"  # pyright: ignore[reportPrivateUsage]
+                IDXPersonalInfo._personal_info["key_manager"].as_string() == "SELF"
             )
         case KeyManagerType.OTHERS:
             stmt = stmt.where(
-                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"  # pyright: ignore[reportPrivateUsage]
+                IDXPersonalInfo._personal_info["key_manager"].as_string() != "SELF"
             )
         case _:
             pass
@@ -689,20 +689,20 @@ async def retrieve_token_holders_collection(
 
     if get_query.holder_name is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["name"]  # pyright: ignore[reportPrivateUsage]
+            IDXPersonalInfo._personal_info["name"]
             .as_string()
             .like("%" + get_query.holder_name + "%")
         )
 
     if get_query.tax_category is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["tax_category"].as_integer()  # pyright: ignore[reportPrivateUsage]
+            IDXPersonalInfo._personal_info["tax_category"].as_integer()
             == get_query.tax_category
         )
 
     if get_query.key_manager is not None:
         stmt = stmt.where(
-            IDXPersonalInfo._personal_info["key_manager"]  # pyright: ignore[reportPrivateUsage]
+            IDXPersonalInfo._personal_info["key_manager"]
             .as_string()
             .like("%" + get_query.key_manager + "%")
         )
@@ -715,11 +715,11 @@ async def retrieve_token_holders_collection(
     if get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.total_balance:
         sort_attr = total_balance
     elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.tax_category:
-        sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()  # pyright: ignore[reportPrivateUsage]
+        sort_attr = IDXPersonalInfo._personal_info["tax_category"].as_integer()
     elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.key_manager:
-        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()  # pyright: ignore[reportPrivateUsage]
+        sort_attr = IDXPersonalInfo._personal_info["key_manager"].as_string()
     elif get_query.sort_item == RetrieveTokenHoldersCollectionSortItem.holder_name:
-        sort_attr = IDXPersonalInfo._personal_info["name"].as_string()  # pyright: ignore[reportPrivateUsage]
+        sort_attr = IDXPersonalInfo._personal_info["name"].as_string()
     else:
         sort_attr = getattr(
             TokenHolder,
@@ -750,7 +750,7 @@ async def retrieve_token_holders_collection(
         Sequence[tuple[TokenHolder, IDXPersonalInfo | None]],
         (await db.execute(stmt)).tuples().all(),
     )
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,

@@ -20,7 +20,6 @@ SPDX-License-Identifier: Apache-2.0
 import hashlib
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
-from typing import cast
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
@@ -60,10 +59,7 @@ def validate_headers(**kwargs: HeaderValidationTarget) -> None:
     for name, v in kwargs.items():
         name = name.replace("_", "-")
         value, validators = v
-        validator_list = cast(
-            list[HeaderValidator],
-            validators if isinstance(validators, list) else [validators],
-        )
+        validator_list = validators if isinstance(validators, list) else [validators]
         for valid_func in validator_list:
             try:
                 valid_func(name, value)

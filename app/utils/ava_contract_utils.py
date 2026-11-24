@@ -22,7 +22,7 @@ import json
 import sys
 import threading
 from json import JSONDecodeError
-from typing import Any, TypeAlias, cast
+from typing import Any, TypeAlias, cast, override
 from weakref import WeakKeyDictionary
 
 from aiohttp import ClientError
@@ -135,6 +135,7 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
         self.fail_over_mode = fail_over_mode
         self.endpoint_uri: URI | None = None
 
+    @override
     def _get_cache_ttl(self) -> float:
         return float(AVA_WEB3_REQUEST_WAIT_TIME)
 
@@ -166,6 +167,7 @@ class AvaFailOverHTTPProvider(ResolvedEndpointCacheMixin, AsyncHTTPProvider):
         self._set_cached_endpoint_uri(endpoint_uri)
         return endpoint_uri
 
+    @override
     async def make_request(self, method: RPCEndpoint, params: Any) -> RPCResponse:
         """Make an HTTP request to the Avalanche node."""
 

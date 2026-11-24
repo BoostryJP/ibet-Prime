@@ -146,7 +146,7 @@ class TestDeployContract:
                 deployer=self.test_account["address"],
                 private_key=self.private_key,
             )
-        assert str(ex_info.typename) == "SendTransactionError"
+        assert ex_info.typename == "SendTransactionError"
 
     # <Error_2>
     # Send transaction error
@@ -166,7 +166,7 @@ class TestDeployContract:
                     deployer=self.test_account["address"],
                     private_key=self.private_key,
                 )
-        assert str(ex_info.typename) == "SendTransactionError"
+        assert ex_info.typename == "SendTransactionError"
 
 
 class TestGetContract:

@@ -238,7 +238,7 @@ class Processor:
                                 call_data = json.loads(bytes.fromhex(raw_call_data))
                                 if call_data.get("purpose") == "Reallocation":
                                     is_reallocation = True
-                            except ValueError, json.JSONDecodeError:
+                            except ValueError:
                                 pass
                         if is_reallocation:
                             await self.__sink_on_transfer(
@@ -413,8 +413,8 @@ class Processor:
     ):
         if data_str is not None:
             try:
-                data = json.loads(data_str)
-                validated_data = DataMessage(**data)
+                data: dict[str, object] | None = json.loads(data_str)
+                validated_data = DataMessage.model_validate(data)
                 message = validated_data.message
             except ValidationError:
                 data = {}

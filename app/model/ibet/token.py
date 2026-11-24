@@ -28,6 +28,7 @@ from sqlalchemy.exc import IntegrityError as SAIntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 from web3.exceptions import TimeExhausted
+from web3.types import Wei
 
 from app import log
 from app.database import async_engine
@@ -209,7 +210,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -257,7 +258,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -296,7 +297,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -337,7 +338,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -397,7 +398,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -450,7 +451,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -510,7 +511,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -561,7 +562,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -599,7 +600,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -637,7 +638,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -678,7 +679,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -720,7 +721,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -762,7 +763,7 @@ class IbetSecurityTokenInterface(IbetStandardTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, tx_receipt = await AsyncContractUtils.send_transaction(
@@ -1029,7 +1030,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                 self.base_fx_rate = 0.0
 
             interest_payment_date_list: list[str] = []
-            interest_payment_date_string = str(_interest_payment_date).replace("'", '"')
+            interest_payment_date_string = _interest_payment_date.replace("'", '"')
             interest_payment_date: dict[str, str] = {}
             try:
                 if interest_payment_date_string != "":
@@ -1079,7 +1080,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1101,7 +1102,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1123,7 +1124,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1148,7 +1149,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1174,7 +1175,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1196,7 +1197,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1218,7 +1219,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1238,7 +1239,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1260,7 +1261,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1282,7 +1283,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1304,7 +1305,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1324,7 +1325,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1346,7 +1347,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1366,7 +1367,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1388,7 +1389,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1410,7 +1411,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1432,7 +1433,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1454,7 +1455,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1476,7 +1477,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1498,7 +1499,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1518,7 +1519,7 @@ class IbetStraightBondContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1783,7 +1784,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1805,7 +1806,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1827,7 +1828,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1854,7 +1855,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1876,7 +1877,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1898,7 +1899,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1920,7 +1921,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1940,7 +1941,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1962,7 +1963,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -1984,7 +1985,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -2006,7 +2007,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -2028,7 +2029,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -2048,7 +2049,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:
@@ -2068,7 +2069,7 @@ class IbetShareContract(IbetSecurityTokenInterface):
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             try:

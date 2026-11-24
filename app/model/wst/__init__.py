@@ -1,4 +1,3 @@
-# pyright: reportUnusedImport=false
 """
 Copyright BOOSTRY Co., Ltd.
 

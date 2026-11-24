@@ -386,7 +386,7 @@ class Processor:
                         call_data = json.loads(bytes.fromhex(raw_call_data))
                         if call_data.get("purpose") == "Reallocation":
                             reallocation_from = from_account
-                    except ValueError, json.JSONDecodeError:
+                    except ValueError:
                         pass
 
             # Retrieve block timestamp

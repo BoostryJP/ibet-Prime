@@ -33,6 +33,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3.contract import Contract
+from web3.types import Wei
 
 import batch.indexer_personal_info as indexer_personal_info
 from app.model.db import (
@@ -328,7 +329,7 @@ async def create_fake_bond_token_contract(
 def get_fake_token_contract(token_address: str) -> MagicMock:
     contract = MagicMock()
     contract.address = token_address
-    contract.abi = {}
+    contract.abi = dict[str, object]()
     return contract
 
 
@@ -577,7 +578,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": user_address_1,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, user_private_key_1)
@@ -701,7 +702,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": user_address_1,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, user_private_key_1)
@@ -741,7 +742,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": issuer_address,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
@@ -873,7 +874,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": user_address_1,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, user_private_key_1)
@@ -913,7 +914,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": issuer_address,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
@@ -979,7 +980,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": issuer_address,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, issuer_private_key)
@@ -1129,7 +1130,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": issuer_address_1,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, issuer_private_key_1)
@@ -1154,7 +1155,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": issuer_address_2,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, issuer_private_key_2)
@@ -1329,7 +1330,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": user_address_1,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, user_private_key_1)
@@ -1442,7 +1443,7 @@ class TestProcessor:
                 "chainId": CHAIN_ID,
                 "from": user_address_1,
                 "gas": TX_GAS_LIMIT,
-                "gasPrice": 0,
+                "gasPrice": Wei(0),
             }
         )
         ContractUtils.send_transaction(tx, user_private_key_1)

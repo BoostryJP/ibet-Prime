@@ -1390,7 +1390,7 @@ async def issue_additional_shares_in_batch(
 
     await db.commit()
 
-    return json_response({"batch_id": str(upload_id)})
+    return json_response({"batch_id": upload_id})
 
 
 # GET: /share/tokens/{token_address}/additional_issue/batch/{batch_id}
@@ -1459,7 +1459,7 @@ async def retrieve_batch_additional_share_issue_status(
         .all()
     )
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -1800,7 +1800,7 @@ async def list_all_batch_share_redemption(
     for record in record_list:
         record_list_by_upload_id[record[0].upload_id].append(record)
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -1949,7 +1949,7 @@ async def redeem_shares_in_batch(
 
     await db.commit()
 
-    return json_response({"batch_id": str(upload_id)})
+    return json_response({"batch_id": upload_id})
 
 
 # GET: /share/tokens/{token_address}/redeem/batch/{batch_id}
@@ -2018,7 +2018,7 @@ async def retrieve_batch_redeem(
         .all()
     )
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -2774,7 +2774,7 @@ async def list_all_share_token_holders(
         ]
     ] = (await db.execute(stmt)).tuples().all()
 
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -3062,7 +3062,7 @@ async def retrieve_share_token_holder(
                 modified = holder_lock_modified
 
     # Get personal information
-    personal_info_default = {
+    personal_info_default: dict[str, None] = {
         "key_manager": None,
         "name": None,
         "postal_code": None,
@@ -4554,7 +4554,7 @@ async def list_specific_share_token_transfer_approval_history(
     if get_query.sort_order == 0:  # ASC
         stmt = stmt.order_by(sort_attr)
     else:  # DESC
-        stmt = stmt.order_by(desc(sort_attr))
+        stmt = stmt.order_by(sort_attr.desc())
     if get_query.sort_item != IDXTransferApprovalsSortItem.ID:
         # NOTE: Set secondary sort for consistent results
         stmt = stmt.order_by(desc(subquery.id))
@@ -5304,7 +5304,7 @@ async def bulk_transfer_share_token_ownership(
 
     await db.commit()
 
-    return json_response({"upload_id": str(upload_id)})
+    return json_response({"upload_id": upload_id})
 
 
 # GET: /share/bulk_transfer

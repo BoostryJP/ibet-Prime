@@ -21,7 +21,7 @@ import asyncio
 import logging
 import sys
 from asyncio import Event
-from typing import Sequence, Set
+from typing import Sequence, Set, override
 
 import uvloop
 from sqlalchemy import and_, delete, select, update
@@ -63,6 +63,7 @@ LOG = batch_log.get_logger(process_name=process_name)
 
 
 class SupressDecryptFailedLogFilter(logging.Filter):
+    @override
     def filter(self, record: logging.LogRecord):
         if (
             record.levelname == "ERROR"
@@ -273,7 +274,7 @@ class Processor:
         # Back RSA
         personal_info_contract_accessor.issuer.rsa_private_key = org_rsa_private_key
         personal_info_contract_accessor.issuer.rsa_passphrase = org_rsa_passphrase
-        default_info = {
+        default_info: dict[str, None] = {
             "key_manager": None,
             "name": None,
             "postal_code": None,

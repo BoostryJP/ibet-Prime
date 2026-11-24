@@ -17,7 +17,7 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from eth_abi.abi import encode
 from eth_abi.packed import encode_packed
@@ -25,7 +25,7 @@ from eth_utils.address import to_checksum_address
 from eth_utils.crypto import keccak
 from pydantic import BaseModel, Field
 from web3.contract import AsyncContract
-from web3.types import Nonce
+from web3.types import Nonce, Wei
 
 from app.exceptions import SendTransactionError
 from app.model import EthereumAddress
@@ -703,7 +703,9 @@ class _BaseERC20:
 
     contract_name = "IbetERC20"
     contract: AsyncContract
-    contract_utils = EthAsyncContractUtils
+    contract_utils: ClassVar[
+        type[EthAsyncContractUtils] | type[AvaAsyncContractUtils]
+    ] = EthAsyncContractUtils
 
     def __init__(
         self,
@@ -774,7 +776,7 @@ class _BaseIbetWST(_BaseERC20):
     """
 
     contract_name = "AuthIbetWST"
-    tx_utils = EthTxUtils
+    tx_utils: ClassVar[type[EthTxUtils] | type[AvaTxUtils]] = EthTxUtils
     chain_id = ETH_CHAIN_ID
 
     def __init__(self, contract_address: str = ZERO_ADDRESS):
@@ -871,8 +873,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 650_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -910,8 +912,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 250_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -952,8 +954,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 500_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -994,8 +996,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 230_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -1036,8 +1038,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 230_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -1087,8 +1089,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 350_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -1138,8 +1140,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 350_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -1230,8 +1232,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 1_500_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -1269,8 +1271,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 350_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -1308,8 +1310,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 700_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction
@@ -1347,8 +1349,8 @@ class _BaseIbetWST(_BaseERC20):
                     "chainId": self.chain_id,
                     "from": to_checksum_address(tx_sender),
                     "gas": 350_000,
-                    "maxFeePerGas": fees["maxFeePerGas"],
-                    "maxPriorityFeePerGas": fees["maxPriorityFeePerGas"],
+                    "maxFeePerGas": Wei(fees["maxFeePerGas"]),
+                    "maxPriorityFeePerGas": Wei(fees["maxPriorityFeePerGas"]),
                 }
             )
             # Send the transaction

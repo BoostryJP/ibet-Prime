@@ -232,7 +232,7 @@ def blockchain_mocks(monkeypatch: pytest.MonkeyPatch) -> None:
         return events
 
     async def get_transaction(transaction_hash: str) -> dict[str, HexBytes]:
-        return {"input": _TRANSACTION_INPUTS[str(transaction_hash)]}
+        return {"input": _TRANSACTION_INPUTS[transaction_hash]}
 
     async def get_token(self: Any):
         self.issuer_address = _TOKEN_ISSUERS.get(self.token_address, "")

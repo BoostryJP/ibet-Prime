@@ -18,6 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 from web3.exceptions import TimeExhausted
+from web3.types import Wei
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model import EthereumAddress
@@ -61,7 +62,7 @@ class TokenListContract:
                     "chainId": CHAIN_ID,
                     "from": tx_sender,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             await AsyncContractUtils.send_transaction(

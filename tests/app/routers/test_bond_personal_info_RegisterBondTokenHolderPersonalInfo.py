@@ -618,7 +618,7 @@ class TestRegisterBondTokenHolderPersonalInfo:
         _token_address = "0xd9F55747DE740297ff1eEe537aBE0f8d73B7D783"
 
         # request target API
-        req_param = {
+        req_param: dict[str, None] = {
             "account_address": None,
             "key_manager": None,
             "name": None,

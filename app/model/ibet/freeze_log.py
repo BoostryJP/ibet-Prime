@@ -21,6 +21,7 @@ import logging
 
 from eth_keyfile.keyfile import decode_keyfile_json
 from web3.exceptions import TimeExhausted
+from web3.types import Wei
 
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import FreezeLogAccount
@@ -65,7 +66,7 @@ class FreezeLogContract:
                     "chainId": CHAIN_ID,
                     "from": self.log_account.account_address,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(
@@ -110,7 +111,7 @@ class FreezeLogContract:
                     "chainId": CHAIN_ID,
                     "from": self.log_account.account_address,
                     "gas": TX_GAS_LIMIT,
-                    "gasPrice": 0,
+                    "gasPrice": Wei(0),
                 }
             )
             tx_hash, _ = await AsyncContractUtils.send_transaction(

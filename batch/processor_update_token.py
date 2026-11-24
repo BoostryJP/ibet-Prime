@@ -43,6 +43,7 @@ from app.model.db import (
     Notification,
     NotificationType,
     Token,
+    TokenStatus,
     TokenType,
     UpdateToken,
 )
@@ -361,7 +362,7 @@ class Processor:
                 await db_session.execute(
                     update(Token)
                     .where(Token.token_address == _update_token.token_address)
-                    .values(token_status=status)
+                    .values(token_status=TokenStatus(status))
                 )
 
     @staticmethod

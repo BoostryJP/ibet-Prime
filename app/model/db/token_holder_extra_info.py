@@ -17,6 +17,8 @@ limitations under the License.
 SPDX-License-Identifier: Apache-2.0
 """
 
+from typing import ClassVar
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -57,7 +59,7 @@ class TokenHolderExtraInfo(Base):
             "external_id3": self.external_id3,
         }
 
-    default_extra_info = {
+    default_extra_info: ClassVar[dict[str, None]] = {
         "external_id1_type": None,
         "external_id1": None,
         "external_id2_type": None,

@@ -63,7 +63,7 @@ REDEEM_TX_HASH = "0x" + "13" * 32
 def get_fake_contract(contract_name: str, contract_address: str) -> MagicMock:
     contract = MagicMock()
     contract.address = contract_address
-    contract.abi = {}
+    contract.abi = dict[str, object]()
     contract.events = MagicMock()
     return contract
 
