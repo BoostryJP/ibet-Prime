@@ -38,13 +38,15 @@ from web3.exceptions import (
     ContractLogicError,
     TimeExhausted,
 )
-from web3.types import TxData, TxParams, TxReceipt
+from web3.types import TxData, TxParams, TxReceipt, Wei
 
+from app import log
 from app.exceptions import ContractRevertError, SendTransactionError
 from app.model.db import TransactionLock
 from app.utils.ibet_web3_utils import AsyncWeb3Wrapper, Web3Wrapper
 from config import ASYNC_DATABASE_URL, CHAIN_ID, DATABASE_URL, TX_GAS_LIMIT
 
+LOG = log.get_logger()
 web3 = Web3Wrapper()
 async_web3 = AsyncWeb3Wrapper()
 
@@ -57,6 +59,59 @@ def _as_hex_str(tx_hash: TransactionHashInput) -> HexStr:
     if isinstance(tx_hash, HexBytes):
         return HexStr(tx_hash.to_0x_hex())
     return HexStr(tx_hash)
+
+
+def _build_replay_tx(tx: TxData | None) -> tuple[TxParams, int] | None:
+    if tx is None:
+        return None
+
+    tx_to = tx.get("to")
+    tx_from = tx.get("from")
+    tx_value = tx.get("value")
+    tx_input = tx.get("input")
+    block_number = tx.get("blockNumber")
+    if tx_to is not None and not isinstance(tx_to, str):
+        return None
+    if not isinstance(tx_from, str):
+        return None
+    if isinstance(tx_value, bool) or not isinstance(tx_value, int):
+        return None
+    if not isinstance(tx_input, (str, bytes, bytearray, HexBytes)):
+        return None
+    if (
+        isinstance(block_number, bool)
+        or not isinstance(block_number, int)
+        or block_number < 1
+    ):
+        return None
+
+    tx_data: str | bytes = tx_input if isinstance(tx_input, str) else bytes(tx_input)
+    replay_tx_dict: dict[str, Any] = {
+        "from": tx_from,
+        "value": Wei(tx_value),
+        "data": tx_data,
+    }
+    if tx_to is not None:
+        replay_tx_dict["to"] = tx_to
+    return cast(TxParams, replay_tx_dict), block_number
+
+
+def _extract_revert_reason(
+    exc: ContractLogicError, tx_hash_hex: HexStr, block_number: int
+) -> str | None:
+    if len(exc.args) == 0 or exc.args[0] is None:
+        LOG.warning(
+            "Failed to inspect transaction revert: "
+            f"transaction_hash={tx_hash_hex} "
+            f"block_number={block_number} error={exc}"
+        )
+        return None
+    error = exc.args[0]
+    if isinstance(error, str) and len(error.split("execution reverted: ")) == 2:
+        msg = error.split("execution reverted: ")[1]
+    else:
+        msg = error
+    return str(msg)
 
 
 class ContractUtils:
@@ -247,37 +302,41 @@ class ContractUtils:
         return tx_hash.to_0x_hex(), tx_receipt
 
     @staticmethod
-    def inspect_tx_failure(tx_hash: TransactionHashInput) -> str:
-        tx = web3.eth.get_transaction(_as_hex_str(tx_hash))
+    def inspect_tx_failure(tx_hash: TransactionHashInput) -> str | None:
+        tx_hash_hex = _as_hex_str(tx_hash)
+        try:
+            tx: TxData | None = web3.eth.get_transaction(tx_hash_hex)
+        except Exception as exc:
+            LOG.warning(
+                "Failed to get transaction for revert inspection: "
+                f"transaction_hash={tx_hash_hex} error={exc}"
+            )
+            return None
 
-        # build a new transaction to replay:
-        replay_tx = cast(
-            TxParams,
-            {
-                "to": tx.get("to"),
-                "from": tx.get("from"),
-                "value": tx.get("value"),
-                "data": tx.get("input"),
-            },
-        )
-        block_number = tx.get("blockNumber")
-        if block_number is None:
-            raise SendTransactionError("Transaction has not been mined yet")
+        replay_target = _build_replay_tx(tx)
+        if replay_target is None:
+            return None
+        replay_tx, block_number = replay_target
 
         # replay the transaction locally:
         try:
             web3.eth.call(replay_tx, block_number - 1)
-        except ContractLogicError as e:
-            if len(e.args) == 0:
-                return str(e)
-            if len(e.args[0].split("execution reverted: ")) == 2:
-                msg = e.args[0].split("execution reverted: ")[1]
-            else:
-                msg = e.args[0]
-            return msg
-        except Exception as e:
-            raise e
-        raise Exception("Inspecting transaction revert is failed.")
+        except ContractLogicError as exc:
+            return _extract_revert_reason(exc, tx_hash_hex, block_number)
+        except Exception as exc:
+            LOG.warning(
+                "Failed to replay transaction revert: "
+                f"transaction_hash={tx_hash_hex} "
+                f"block_number={block_number} error={exc}"
+            )
+            return None
+
+        LOG.warning(
+            "Transaction replay unexpectedly succeeded: "
+            f"transaction_hash={tx_hash_hex} "
+            f"block_number={block_number}"
+        )
+        return None
 
     @staticmethod
     def get_block_by_transaction_hash(tx_hash: TransactionHashInput):
@@ -634,37 +693,41 @@ class AsyncContractUtils:
         return tx_receipt
 
     @staticmethod
-    async def inspect_tx_failure(tx_hash: TransactionHashInput) -> str:
-        tx = await async_web3.eth.get_transaction(_as_hex_str(tx_hash))
+    async def inspect_tx_failure(tx_hash: TransactionHashInput) -> str | None:
+        tx_hash_hex = _as_hex_str(tx_hash)
+        try:
+            tx: TxData | None = await async_web3.eth.get_transaction(tx_hash_hex)
+        except Exception as exc:
+            LOG.warning(
+                "Failed to get transaction for revert inspection: "
+                f"transaction_hash={tx_hash_hex} error={exc}"
+            )
+            return None
 
-        # build a new transaction to replay:
-        replay_tx = cast(
-            TxParams,
-            {
-                "to": tx.get("to"),
-                "from": tx.get("from"),
-                "value": tx.get("value"),
-                "data": tx.get("input"),
-            },
-        )
-        block_number = tx.get("blockNumber")
-        if block_number is None:
-            raise SendTransactionError("Transaction has not been mined yet")
+        replay_target = _build_replay_tx(tx)
+        if replay_target is None:
+            return None
+        replay_tx, block_number = replay_target
 
         # replay the transaction locally:
         try:
             await async_web3.eth.call(replay_tx, block_number - 1)
-        except ContractLogicError as e:
-            if len(e.args) == 0:
-                return str(e)
-            if len(e.args[0].split("execution reverted: ")) == 2:
-                msg = e.args[0].split("execution reverted: ")[1]
-            else:
-                msg = e.args[0]
-            return msg
-        except Exception as e:
-            raise e
-        raise Exception("Inspecting transaction revert is failed.")
+        except ContractLogicError as exc:
+            return _extract_revert_reason(exc, tx_hash_hex, block_number)
+        except Exception as exc:
+            LOG.warning(
+                "Failed to replay transaction revert: "
+                f"transaction_hash={tx_hash_hex} "
+                f"block_number={block_number} error={exc}"
+            )
+            return None
+
+        LOG.warning(
+            "Transaction replay unexpectedly succeeded: "
+            f"transaction_hash={tx_hash_hex} "
+            f"block_number={block_number}"
+        )
+        return None
 
     @staticmethod
     async def get_block_by_transaction_hash(tx_hash: TransactionHashInput):

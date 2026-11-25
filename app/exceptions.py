@@ -174,8 +174,8 @@ class ContractRevertError(AppError):
     status_code = status.HTTP_400_BAD_REQUEST
     code_list = [0] + list(REVERT_CODE_MAP.keys())
 
-    def __init__(self, code_msg: str):
-        code, message = error_code_msg(code_msg)
+    def __init__(self, code_msg: str | None = None):
+        code, message = (0, "") if code_msg is None else error_code_msg(code_msg)
         self.code = code
         self.message = message
         super().__init__(message)

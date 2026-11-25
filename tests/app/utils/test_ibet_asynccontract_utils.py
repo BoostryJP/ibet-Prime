@@ -25,6 +25,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import pytest
 from aiohttp import ClientTimeout
 from eth_keyfile.keyfile import decode_keyfile_json
+from hexbytes import HexBytes
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncHTTPProvider, AsyncWeb3, Web3
@@ -567,6 +568,73 @@ class TestSendTransaction:
 
         await async_db.rollback()
 
+    # <Error_4>
+    # Transaction REVERT when revert replay unexpectedly succeeds
+    @pytest.mark.asyncio
+    async def test_error_4(self):
+        fake_engine = MagicMock()
+        fake_engine.dispose = AsyncMock()
+        fake_session = MagicMock()
+        fake_session.scalars = AsyncMock(
+            return_value=MagicMock(first=MagicMock(return_value=None))
+        )
+        fake_session.rollback = AsyncMock()
+        fake_session.close = AsyncMock()
+        fake_signed_tx = MagicMock()
+        fake_signed_tx.raw_transaction.to_0x_hex.return_value = "0xsigned"
+        fake_tx_hash = MagicMock()
+        fake_tx_hash.to_0x_hex.return_value = "0xhash"
+        fake_receipt = {"status": 0, "transactionHash": fake_tx_hash}
+        fake_tx = {
+            "to": ZERO_ADDRESS,
+            "from": self.test_account["address"],
+            "value": 0,
+            "input": HexBytes("0x1234"),
+            "blockNumber": 10,
+        }
+
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.create_async_engine",
+                return_value=fake_engine,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.AsyncSession", return_value=fake_session
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction_count",
+                AsyncMock(return_value=7),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.account.sign_transaction",
+                return_value=fake_signed_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.send_raw_transaction",
+                AsyncMock(return_value=fake_tx_hash),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.wait_for_transaction_receipt",
+                AsyncMock(return_value=fake_receipt),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction",
+                AsyncMock(return_value=fake_tx),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.call",
+                AsyncMock(return_value=HexBytes("0x")),
+            ),
+        ):
+            with pytest.raises(ContractRevertError) as exc_info:
+                await AsyncContractUtils.send_transaction(
+                    transaction={"from": self.test_account["address"]},
+                    private_key=self.private_key,
+                )
+
+        assert exc_info.value.code == 0
+        assert exc_info.value.message == ""
+
 
 # Test for send_transaction_no_wait and wait_for_transaction_receipt
 class TestSendTransactionNoWait:
@@ -856,3 +924,160 @@ class TestGetBlockByTransactionHash:
         assert block_number == tx_receipt["blockNumber"]
         assert block_timestamp is not None
         assert block_timestamp > 0
+
+
+# Test for inspect_tx_failure
+class TestInspectTxFailure:
+    tx_hash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    base_tx: dict[str, Any] = {
+        "to": ZERO_ADDRESS,
+        "from": default_eth_account("user1")["address"],
+        "value": 0,
+        "input": HexBytes("0xdeadbeef"),
+        "blockNumber": 10,
+    }
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+    # <Normal_1>
+    # Extract revert code or message (including contract creation with to=None)
+    @pytest.mark.asyncio
+    async def test_normal_1(self):
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction",
+                AsyncMock(return_value=self.base_tx),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.call",
+                AsyncMock(side_effect=ContractLogicError("execution reverted: 110902")),
+            ) as eth_call,
+        ):
+            assert await AsyncContractUtils.inspect_tx_failure(self.tx_hash) == "110902"
+
+        eth_call.assert_awaited_once_with(
+            {
+                "from": self.base_tx["from"],
+                "value": 0,
+                "data": b"\xde\xad\xbe\xef",
+                "to": ZERO_ADDRESS,
+            },
+            9,
+        )
+
+        deploy_tx = {**self.base_tx, "to": None}
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction",
+                AsyncMock(return_value=deploy_tx),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.call",
+                AsyncMock(side_effect=ContractLogicError("execution reverted")),
+            ) as deploy_call,
+        ):
+            assert (
+                await AsyncContractUtils.inspect_tx_failure(self.tx_hash)
+                == "execution reverted"
+            )
+
+        deploy_call.assert_awaited_once_with(
+            {
+                "from": self.base_tx["from"],
+                "value": 0,
+                "data": b"\xde\xad\xbe\xef",
+            },
+            9,
+        )
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+    # <Error_1>
+    # Unavailable or unmined transaction state returns None
+    @pytest.mark.asyncio
+    async def test_error_1(self):
+        for invalid_tx in (
+            None,
+            {**self.base_tx, "blockNumber": None},
+            {**self.base_tx, "blockNumber": 0},
+            {**self.base_tx, "from": None},
+        ):
+            with patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction",
+                AsyncMock(return_value=invalid_tx),
+            ):
+                assert await AsyncContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+    # <Error_2>
+    # Transaction lookup RPC error logs warning and returns None
+    @pytest.mark.asyncio
+    async def test_error_2(self):
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction",
+                AsyncMock(side_effect=Web3Exception("RPC unavailable")),
+            ),
+            patch.object(contract_module.LOG, "warning") as log_warning,
+        ):
+            assert await AsyncContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+        log_warning.assert_called_once()
+        assert (
+            "Failed to get transaction for revert inspection:"
+            in log_warning.call_args.args[0]
+        )
+
+    # <Error_3>
+    # Replay RPC error or empty ContractLogicError logs warning and returns None
+    @pytest.mark.asyncio
+    async def test_error_3(self):
+        for exc, expected_log in (
+            (
+                Web3Exception("missing trie node"),
+                "Failed to replay transaction revert:",
+            ),
+            (
+                ContractLogicError(),
+                "Failed to inspect transaction revert:",
+            ),
+        ):
+            with (
+                patch(
+                    "app.utils.ibet_contract_utils.async_web3.eth.get_transaction",
+                    AsyncMock(return_value=self.base_tx),
+                ),
+                patch(
+                    "app.utils.ibet_contract_utils.async_web3.eth.call",
+                    AsyncMock(side_effect=exc),
+                ),
+                patch.object(contract_module.LOG, "warning") as log_warning,
+            ):
+                assert await AsyncContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+            log_warning.assert_called_once()
+            assert expected_log in log_warning.call_args.args[0]
+
+    # <Error_4>
+    # Unexpectedly successful replay logs warning and returns None
+    @pytest.mark.asyncio
+    async def test_error_4(self):
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.get_transaction",
+                AsyncMock(return_value=self.base_tx),
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.async_web3.eth.call",
+                AsyncMock(return_value=HexBytes("0x")),
+            ),
+            patch.object(contract_module.LOG, "warning") as log_warning,
+        ):
+            assert await AsyncContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+        log_warning.assert_called_once()
+        assert (
+            "Transaction replay unexpectedly succeeded:"
+            in log_warning.call_args.args[0]
+        )
