@@ -23,6 +23,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from eth_keyfile.keyfile import decode_keyfile_json
+from hexbytes import HexBytes
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import Web3
@@ -457,6 +458,68 @@ class TestSendTransaction:
         fake_session.close.assert_called_once()
         fake_engine.dispose.assert_called_once()
 
+    # <Error_4>
+    # Transaction REVERT when revert replay unexpectedly succeeds
+    def test_error_4(self):
+        fake_engine = MagicMock()
+        fake_engine.dispose = MagicMock()
+        fake_session = MagicMock()
+        fake_session.scalars.return_value.first.return_value = None
+        fake_session.rollback = MagicMock()
+        fake_session.close = MagicMock()
+        fake_signed_tx = MagicMock()
+        fake_signed_tx.raw_transaction.to_0x_hex.return_value = "0xsigned"
+        fake_tx_hash = MagicMock()
+        fake_tx_hash.to_0x_hex.return_value = "0xhash"
+        fake_receipt = {"status": 0, "transactionHash": fake_tx_hash}
+        fake_tx = {
+            "to": ZERO_ADDRESS,
+            "from": self.test_account["address"],
+            "value": 0,
+            "input": HexBytes("0x1234"),
+            "blockNumber": 10,
+        }
+
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.create_engine",
+                return_value=fake_engine,
+            ),
+            patch("app.utils.ibet_contract_utils.Session", return_value=fake_session),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction_count",
+                return_value=7,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.account.sign_transaction",
+                return_value=fake_signed_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.send_raw_transaction",
+                return_value=fake_tx_hash,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.wait_for_transaction_receipt",
+                return_value=fake_receipt,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction",
+                return_value=fake_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.call",
+                return_value=HexBytes("0x"),
+            ),
+        ):
+            with pytest.raises(ContractRevertError) as exc_info:
+                ContractUtils.send_transaction(
+                    transaction={"from": self.test_account["address"]},
+                    private_key=self.private_key,
+                )
+
+        assert exc_info.value.code == 0
+        assert exc_info.value.message == ""
+
 
 class TestGetBlockByTransactionHash:
     test_account = default_eth_account("user1")
@@ -529,3 +592,153 @@ class TestGetBlockByTransactionHash:
     ###########################################################################
     # Error Case
     ###########################################################################
+
+
+class TestInspectTxFailure:
+    tx_hash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    base_tx: dict[str, Any] = {
+        "to": ZERO_ADDRESS,
+        "from": default_eth_account("user1")["address"],
+        "value": 0,
+        "input": HexBytes("0xdeadbeef"),
+        "blockNumber": 10,
+    }
+
+    ###########################################################################
+    # Normal Case
+    ###########################################################################
+    # <Normal_1>
+    # Extract revert code or message (including contract creation with to=None)
+    def test_normal_1(self):
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction",
+                return_value=self.base_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.call",
+                side_effect=ContractLogicError("execution reverted: 110902"),
+            ) as eth_call,
+        ):
+            assert ContractUtils.inspect_tx_failure(self.tx_hash) == "110902"
+
+        eth_call.assert_called_once_with(
+            {
+                "from": self.base_tx["from"],
+                "value": 0,
+                "data": b"\xde\xad\xbe\xef",
+                "to": ZERO_ADDRESS,
+            },
+            9,
+        )
+
+        deploy_tx = {**self.base_tx, "to": None}
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction",
+                return_value=deploy_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.call",
+                side_effect=ContractLogicError("execution reverted"),
+            ) as deploy_call,
+        ):
+            assert (
+                ContractUtils.inspect_tx_failure(self.tx_hash) == "execution reverted"
+            )
+
+        deploy_call.assert_called_once_with(
+            {
+                "from": self.base_tx["from"],
+                "value": 0,
+                "data": b"\xde\xad\xbe\xef",
+            },
+            9,
+        )
+
+    ###########################################################################
+    # Error Case
+    ###########################################################################
+    # <Error_1>
+    # Unavailable or unmined transaction state returns None
+    def test_error_1(self):
+        for invalid_tx in (
+            None,
+            {**self.base_tx, "blockNumber": None},
+            {**self.base_tx, "blockNumber": 0},
+            {**self.base_tx, "from": None},
+        ):
+            with patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction",
+                return_value=invalid_tx,
+            ):
+                assert ContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+    # <Error_2>
+    # Transaction lookup RPC error logs warning and returns None
+    def test_error_2(self):
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction",
+                side_effect=Web3Exception("RPC unavailable"),
+            ),
+            patch("app.utils.ibet_contract_utils.LOG.warning") as log_warning,
+        ):
+            assert ContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+        log_warning.assert_called_once()
+        assert (
+            "Failed to get transaction for revert inspection:"
+            in log_warning.call_args.args[0]
+        )
+
+    # <Error_3>
+    # Replay RPC error or empty ContractLogicError logs warning and returns None
+    def test_error_3(self):
+        for exc, expected_log in (
+            (
+                Web3Exception("missing trie node"),
+                "Failed to replay transaction revert:",
+            ),
+            (
+                ContractLogicError(),
+                "Failed to inspect transaction revert:",
+            ),
+        ):
+            with (
+                patch(
+                    "app.utils.ibet_contract_utils.web3.eth.get_transaction",
+                    return_value=self.base_tx,
+                ),
+                patch(
+                    "app.utils.ibet_contract_utils.web3.eth.call",
+                    side_effect=exc,
+                ),
+                patch("app.utils.ibet_contract_utils.LOG.warning") as log_warning,
+            ):
+                assert ContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+            log_warning.assert_called_once()
+            assert expected_log in log_warning.call_args.args[0]
+
+    # <Error_4>
+    # Unexpectedly successful replay logs warning and returns None
+    def test_error_4(self):
+        with (
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.get_transaction",
+                return_value=self.base_tx,
+            ),
+            patch(
+                "app.utils.ibet_contract_utils.web3.eth.call",
+                return_value=HexBytes("0x"),
+            ),
+            patch("app.utils.ibet_contract_utils.LOG.warning") as log_warning,
+        ):
+            assert ContractUtils.inspect_tx_failure(self.tx_hash) is None
+
+        log_warning.assert_called_once()
+        assert (
+            "Transaction replay unexpectedly succeeded:"
+            in log_warning.call_args.args[0]
+        )
